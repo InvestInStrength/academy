@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Clean, professional academy/certification feel.
+ * "brand" is the primary action colour; tweak these when final branding lands.
+ */
+@theme {
+  --color-brand-50: #eef4fb;
+  --color-brand-100: #d6e4f5;
+  --color-brand-500: #2f5d8a;
+  --color-brand-600: #244c73;
+  --color-brand-700: #1d3d5c;
+  --color-brand-800: #172f47;
+}
+
+:root {
+  --background: #f6f7f9;
+  --foreground: #0f172a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
