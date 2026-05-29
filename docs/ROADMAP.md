@@ -80,13 +80,25 @@ Still open (decide when we reach the relevant slice, not blocking now):
   trust-on-submit); durable rate-limit store.
 
 ### MVP slice sequence (1–5) complete
-All originally-planned MVP slices are built. Remaining before public launch are
-cross-cutting hardening items, not new slices:
+All originally-planned MVP slices are built and verified end-to-end against a live
+Supabase project + Resend domain (2026-05-29).
+
+**🎨 TOP PRE-LAUNCH ITEM — UI/UX + functionality sweep (client-flagged 2026-05-29).**
+The flows work, but design and functional polish need a dedicated pass across all
+surfaces: admin (dashboard, courses/topics, question bank, questionnaire builder,
+participants, certificates, settings/admins), candidate (hub, email gate, attempt,
+result, certificate), and public verification. Treat as its own slice before
+launch — visual design, layout/spacing, empty states, loading/pending states,
+error messaging, mobile responsiveness, and any rough functional edges.
+
+Other remaining cross-cutting hardening items (not new slices):
 - Durable rate-limit store (Upstash/Redis) — replace the in-memory stopgap.
 - Server-side PNG/PDF rendering + Supabase Storage upload (currently client-side
   PNG + on-page/attached SVG).
 - Admin certificate-template CRUD (default renderer used today).
-- Automated tests (schemas, server-action parsing, DB invariants).
+- Automated tests — **started 2026-05-29**: Vitest with 22 unit tests for the
+  scoring engine + key Zod schemas (`pnpm test`). Still to add: server-action
+  parsing and DB-invariant/integration tests.
 - Candidate email verification (currently trust-on-submit).
 - End-to-end QA against a real Supabase project (everything so far is verified at
   the type/build/route level only).

@@ -75,16 +75,16 @@ the questionnaire — do not treat this as a generic quiz app.**
 - **MVP slices 1, 1.5, 2, 3, 4, and 5 are all complete.** Foundation, admin auth,
   content CRUD, hardening, participants + assignments, candidate attempt flow,
   certificate generation, public verification, and Resend email delivery are done.
-- **No new slices remain** — see `docs/ROADMAP.md` "MVP slice sequence complete"
-  for the cross-cutting pre-launch items (durable rate-limit store, server-side
-  PNG/PDF + Storage, certificate-template CRUD, automated tests, candidate email
-  verification, and end-to-end QA against a real Supabase project).
+- **Verified end-to-end against a live Supabase project + Resend domain
+  (2026-05-29) — the full flow works.**
+- **Top pre-launch item: a UI/UX + functionality polish sweep** across all
+  surfaces (client-flagged). Other cross-cutting items: durable rate-limit store,
+  server-side PNG/PDF + Storage, certificate-template CRUD, automated tests,
+  candidate email verification. See `docs/ROADMAP.md`.
 - Certificates: rendered SVG frozen into `certificate_public_snapshot` at issue
   (`src/lib/certificate/{render,issue}.ts`); never shows the score. Email via
   `src/lib/email/certificate-email.ts` (Resend; disabled gracefully when
   RESEND_API_KEY is unset). Public verify by token (QR) or by ID (`/verify`).
-- Everything is verified at the type/build/route level only; it has NOT been run
-  against a live Supabase project yet.
 - Candidate flow is `src/app/certification/[accessToken]/*`; it is UNauthenticated
   and reads via the service-role DTO layer `src/lib/certification/data.ts`
   (explicit field selection only — never `select("*")`, never expose
