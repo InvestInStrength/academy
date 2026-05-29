@@ -1,24 +1,95 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. Clean, professional academy/certification feel.
- * "brand" is the primary action colour; tweak these when final branding lands.
+ * Invest in Strength brand.
+ * Primary "brand" colour = olive #3a4039 (from the logo); paper = warm off-white.
+ * The `brand` scale generates utilities like bg-brand-600, text-brand-700, etc.
  */
 @theme {
-  --color-brand-50: #eef4fb;
-  --color-brand-100: #d6e4f5;
-  --color-brand-500: #2f5d8a;
-  --color-brand-600: #244c73;
-  --color-brand-700: #1d3d5c;
-  --color-brand-800: #172f47;
+  --color-brand-50: #f2f4f1;
+  --color-brand-100: #e4e7e2;
+  --color-brand-500: #4b524a;
+  --color-brand-600: #3a4039;
+  --color-brand-700: #2f342e;
+  --color-brand-800: #23271f;
+
+  /* Iceblue accent — for highlights and transparent fades (use with opacity,
+     e.g. bg-ice/20, or in gradients). */
+  --color-ice: #b8d8d6;
+
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  --background: #f6f7f9;
-  --foreground: #0f172a;
+  --background: #f5f5f2;
+  --foreground: #272b24;
+}
+
+/* Global UI scale. All sizing (text, padding, heights, gaps, radii) is rem-based,
+   so bumping the root font size enlarges the whole platform proportionally.
+   Dial this up/down to taste. */
+html {
+  font-size: 118.75%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Iceblue text-selection highlight. */
+::selection {
+  background: #b8d8d6;
+  color: #23271f;
+}
+
+/* Buttons should use the pointer cursor on hover (not the default arrow). */
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+
+/*
+ * Subtle topographic brand pattern. Add `topo-surface` to a container and the
+ * pattern sits behind its content at low opacity ("subtle, not too strong").
+ */
+.topo-surface {
+  position: relative;
+  isolation: isolate;
+}
+.topo-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: url("/brand/topo.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1100px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/*
+ * Mudgreen (olive) dark surface. A transparent dark gradient overlay is layered
+ * on top of the mudgreen background to give it depth. Use the WHITE logo and
+ * cream text on this surface.
+ */
+.mudgreen-surface {
+  position: relative;
+  isolation: isolate;
+  background-color: #3a4039;
+  color: #fafafa;
+}
+.mudgreen-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    115% 115% at 50% 0%,
+    rgba(0, 0, 0, 0) 35%,
+    rgba(0, 0, 0, 0.38) 100%
+  );
+  pointer-events: none;
 }

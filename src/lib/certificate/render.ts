@@ -111,23 +111,23 @@ export async function renderCertificateSvg(
     .join("");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${CERTIFICATE_WIDTH}" height="${CERTIFICATE_HEIGHT}" viewBox="0 0 ${CERTIFICATE_WIDTH} ${CERTIFICATE_HEIGHT}">
-  <rect width="${CERTIFICATE_WIDTH}" height="${CERTIFICATE_HEIGHT}" fill="#ffffff"/>
-  <rect x="24" y="24" width="${CERTIFICATE_WIDTH - 48}" height="${CERTIFICATE_HEIGHT - 48}" fill="none" stroke="#1d3d5c" stroke-width="3"/>
-  <rect x="36" y="36" width="${CERTIFICATE_WIDTH - 72}" height="${CERTIFICATE_HEIGHT - 72}" fill="none" stroke="#244c73" stroke-width="1"/>
+  <rect width="${CERTIFICATE_WIDTH}" height="${CERTIFICATE_HEIGHT}" fill="#fafafa"/>
+  <rect x="24" y="24" width="${CERTIFICATE_WIDTH - 48}" height="${CERTIFICATE_HEIGHT - 48}" fill="none" stroke="#3a4039" stroke-width="3"/>
+  <rect x="36" y="36" width="${CERTIFICATE_WIDTH - 72}" height="${CERTIFICATE_HEIGHT - 72}" fill="none" stroke="#4b524a" stroke-width="1"/>
 
-  <text x="500" y="120" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="4" fill="#244c73">INVEST IN STRENGTH</text>
-  <text x="500" y="185" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="40" fill="#172f47">Certificate of Completion</text>
-  <line x1="380" y1="210" x2="620" y2="210" stroke="#c9a227" stroke-width="2"/>
+  <text x="500" y="120" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="4" fill="#4b524a">INVEST IN STRENGTH</text>
+  <text x="500" y="185" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="40" fill="#23271f">Certificate of Completion</text>
+  <line x1="380" y1="210" x2="620" y2="210" stroke="#4b524a" stroke-width="2"/>
 
   <text x="500" y="270" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#64748b">This certifies that</text>
-  <text x="500" y="320" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#0f172a">${escapeXml(data.candidate_name)}</text>
+  <text x="500" y="320" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#23271f">${escapeXml(data.candidate_name)}</text>
 
   <text x="500" y="375" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#64748b">has successfully completed</text>
-  <text x="500" y="405" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#172f47">${escapeXml(data.course_title)}</text>
+  <text x="500" y="405" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#23271f">${escapeXml(data.course_title)}</text>
   ${topicsSvg}
 
   <text x="120" y="600" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#64748b">Date of completion</text>
-  <text x="120" y="624" font-family="Georgia, 'Times New Roman', serif" font-size="18" fill="#0f172a">${escapeXml(formatLongDate(data.completion_date))}</text>
+  <text x="120" y="624" font-family="Georgia, 'Times New Roman', serif" font-size="18" fill="#23271f">${escapeXml(formatLongDate(data.completion_date))}</text>
 
   <text x="120" y="660" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#94a3b8">Certificate ID: ${escapeXml(data.certificate_number)}</text>
 

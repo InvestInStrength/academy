@@ -5,7 +5,7 @@ export function SignOutButton() {
     <form action={signOutAction}>
       <button
         type="submit"
-        className="text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
+        className="cursor-pointer text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
       >
         Sign out
       </button>

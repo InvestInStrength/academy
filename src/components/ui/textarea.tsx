@@ -8,5 +8,7 @@ export function Textarea({
   rows = 3,
   ...props
 }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea rows={rows} className={cn(fieldClasses, className)} {...props} />;
+  return (
+    <textarea rows={rows} className={cn(fieldClasses, "rounded-2xl", className)} {...props} />
+  );
 }

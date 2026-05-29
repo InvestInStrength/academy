@@ -9,7 +9,7 @@ export function Select({
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={cn(fieldClasses, "pr-8", className)} {...props}>
+    <select className={cn(fieldClasses, "rounded-full pr-8", className)} {...props}>
       {children}
     </select>
   );

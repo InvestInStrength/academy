@@ -1,13 +1,13 @@
 import Link from "next/link";
 
+import { Logo } from "@/components/brand/logo";
+
 export default function HomePage() {
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
+    <main className="topo-surface flex flex-1 items-center justify-center px-6 py-16">
       <div className="w-full max-w-xl text-center">
-        <p className="text-sm font-semibold uppercase tracking-widest text-brand-600">
-          Invest in Strength
-        </p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+        <Logo className="mx-auto h-36" />
+        <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
           Certification Platform
         </h1>
         <p className="mt-4 text-base text-slate-600">
@@ -18,13 +18,13 @@ export default function HomePage() {
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link
             href="/verify"
-            className="inline-flex items-center justify-center rounded-md bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+            className="inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
           >
             Verify a certificate
           </Link>
           <Link
             href="/admin"
-            className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
+            className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
           >
             Admin sign in
           </Link>

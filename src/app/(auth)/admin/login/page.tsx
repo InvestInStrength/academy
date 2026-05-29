@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Logo } from "@/components/brand/logo";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
@@ -15,13 +16,11 @@ export default async function AdminLoginPage({
   const { redirectTo } = await searchParams;
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
+    <main className="topo-surface flex flex-1 items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-brand-600">
-            Invest in Strength
-          </p>
-          <h1 className="mt-1 text-xl font-bold text-slate-900">Admin sign in</h1>
+          <Logo className="mx-auto h-24" />
+          <h1 className="mt-4 text-xl font-extrabold text-slate-900">Admin sign in</h1>
         </div>
         <Card>
           <CardHeader>

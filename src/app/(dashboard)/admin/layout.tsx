@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/admin";
 import { Sidebar } from "@/components/admin/sidebar";
 import { SignOutButton } from "@/components/admin/sign-out-button";
+import { Emblem } from "@/components/brand/logo";
 
 export default async function AdminLayout({
   children,
@@ -16,10 +17,13 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-5 md:flex">
-        <Link href="/admin" className="px-3 text-sm font-bold text-slate-900">
-          Invest in Strength
-          <span className="block text-xs font-medium text-slate-400">
-            Certification admin
+        <Link href="/admin" className="flex items-center gap-2.5 px-3">
+          <Emblem className="h-8 w-8" />
+          <span className="text-sm font-bold text-slate-900">
+            Invest in Strength
+            <span className="block text-xs font-medium text-slate-400">
+              Certification admin
+            </span>
           </span>
         </Link>
         <div className="mt-6 flex-1">
@@ -37,8 +41,11 @@ export default async function AdminLayout({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3 md:hidden">
-          <Link href="/admin" className="text-sm font-bold text-slate-900">
-            IiS Admin
+          <Link href="/admin" className="flex items-center gap-2">
+            <Emblem className="h-7 w-7" />
+            <span className="text-sm font-bold text-slate-900">
+              Invest in Strength
+            </span>
           </Link>
           <SignOutButton />
         </header>
