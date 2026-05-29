@@ -81,10 +81,16 @@ the questionnaire — do not treat this as a generic quiz app.**
   surfaces (client-flagged). Other cross-cutting items: durable rate-limit store,
   server-side PNG/PDF + Storage, certificate-template CRUD, automated tests,
   candidate email verification. See `docs/ROADMAP.md`.
-- Certificates: rendered SVG frozen into `certificate_public_snapshot` at issue
-  (`src/lib/certificate/{render,issue}.ts`); never shows the score. Email via
-  `src/lib/email/certificate-email.ts` (Resend; disabled gracefully when
-  RESEND_API_KEY is unset). Public verify by token (QR) or by ID (`/verify`).
+- Certificates (current/interim): rendered SVG frozen into
+  `certificate_public_snapshot` at issue (`src/lib/certificate/{render,issue}.ts`);
+  never shows the score. Email via `src/lib/email/certificate-email.ts` (Resend;
+  disabled gracefully when RESEND_API_KEY is unset). Public verify by token (QR)
+  or by ID (`/verify`).
+- **Planned: Certificate Output System** (scope expanded 2026-05-30) — official
+  **PDF** + PNG preview + **Instagram Story PNG**, stored in Supabase Storage via
+  a new `certificate_assets` table + typed templates. Spec:
+  **`docs/CERTIFICATE-OUTPUT.md`**; plan: "Slice 6" in `docs/ROADMAP.md`. Don't
+  build the renderer until that slice is explicitly started.
 - Candidate flow is `src/app/certification/[accessToken]/*`; it is UNauthenticated
   and reads via the service-role DTO layer `src/lib/certification/data.ts`
   (explicit field selection only — never `select("*")`, never expose

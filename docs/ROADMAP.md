@@ -91,6 +91,13 @@ result, certificate), and public verification. Treat as its own slice before
 launch — visual design, layout/spacing, empty states, loading/pending states,
 error messaging, mobile responsiveness, and any rough functional edges.
 
+**📜 PLANNED FEATURE SLICE — Certificate Output System (scope expanded
+2026-05-30).** Upgrade certificate output from one SVG/client-PNG to **official
+PDF + PNG preview + Instagram Story PNG**, stored in Supabase Storage via a new
+`certificate_assets` table, with typed templates per `template_type`. Full spec:
+**`docs/CERTIFICATE-OUTPUT.md`**. See "Slice 6" below. This is a headline value
+feature for this (proud, paying) audience — pre-launch, after the UI/UX sweep.
+
 Other remaining cross-cutting hardening items (not new slices):
 - Durable rate-limit store (Upstash/Redis) — replace the in-memory stopgap.
 - Server-side PNG/PDF rendering + Supabase Storage upload (currently client-side
@@ -103,10 +110,10 @@ Other remaining cross-cutting hardening items (not new slices):
 - End-to-end QA against a real Supabase project (everything so far is verified at
   the type/build/route level only).
 
-Migration note: `0001_core_schema.sql` is **not yet applied to any Supabase
-project**, so Slice 1.5 will **revise 0001 in place** (cleaner than stacking a
-corrective `0002`). Once it is applied to a real environment, switch to
-append-only migrations.
+Migration note: `0001_core_schema.sql` **is now applied to the live Supabase
+project (2026-05-30)**. From here, all schema changes are **append-only
+migrations** (no in-place edits to `0001`). The Certificate Output System lands
+as `0002_certificate_assets.sql`.
 
 ---
 
@@ -255,6 +262,50 @@ Define the JSON shapes **first**: `attempt_snapshot`, `recommendation_snapshot`,
 - `/verify/[certificateId]` reads the **snapshot** only and shows certificate
   document + data + valid/revoked status — nothing else. Strict field allow-list.
 - Align public "verify by certificate ID" copy with the actual token/ID scheme.
+
+## Slice 6 — Certificate Output System
+
+Full spec: **`docs/CERTIFICATE-OUTPUT.md`**. Upgrades the existing (working)
+certificate from a single SVG/client-PNG to three server-rendered, stored assets:
+**official PDF**, **official PNG preview**, **Instagram Story PNG (1080×1920)**.
+
+**When to implement (recommendation):** *after* the UI/UX sweep and *after* the
+client provides the official certificate + social SVG designs; **pre-launch**
+(it's a core motivation/retention feature for this audience). It builds on the
+stable Slice 1–5 foundation and only adds infra (Supabase Storage + server-side
+rendering deps) — it does not block on, and is not blocked by, anything except
+those design assets + a Storage bucket. Do not start until explicitly asked.
+
+Steps:
+1. Migration `0002`: add `certificate_assets`; add `template_type` + `width` +
+   `height` to `certificate_templates`; deprecate `certificates.file_url`.
+2. Update `src/types/database.ts` + add `CertificateAssetType` /
+   `CertificateTemplateType` unions.
+3. Official certificate SVG template support (typed, with placeholders).
+4. Instagram Story SVG template support (1080×1920).
+5. Placeholder replacement (XML-escaped) + long-text fit/wrap strategy.
+6. QR generation into templates (reuse `qrcode`).
+7. Generate official **PDF** (resvg PNG → pdf-lib page; raster MVP).
+8. Generate official **PNG preview** (same filled SVG → resvg).
+9. Generate **Instagram Story PNG** (separate template → resvg, 1080×1920).
+10. Store all assets in **Supabase Storage** (`certificates` bucket, stable paths).
+11. Achievement-style **success page**: PDF download, view, IG-story download,
+    email, verification info, same-link reminder.
+12. Same personal link later: passed status + all asset downloads + send-again.
+13. Verification page shows the **official PNG preview**.
+14. Admin candidate detail: all assets, statuses, downloads, **regenerate**, revoke.
+15. Log generation/download/email/failure events in `account_history`.
+16. Regeneration preserves certificate ID/token; never overwrites silently.
+
+Constraints (see spec): server-side rendering only; service-role key never in the
+browser; no admin/private data in public assets; stable paths; clear failure
+states; rendering layer separate from scoring; strict TS types; no single design
+hardcoded in business logic. Bundle **Barlow font files** for resvg (it doesn't
+use `next/font`).
+
+Prereqs before this slice: ✅ certification engine + basic certificate (done) ·
+client-provided official + social **SVG designs** · Supabase **Storage** bucket ·
+deps (`@resvg/resvg-js`, `pdf-lib`).
 
 ## Cross-cutting (track across slices)
 - Rate limiting (login, token, attempt).
