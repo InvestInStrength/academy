@@ -1,5 +1,7 @@
 import QRCode from "qrcode";
 
+import { DEFAULT_CERTIFICATE_TEMPLATE, ISSUER_NAME } from "./templates";
+
 /**
  * Certificate rendering. Produces a self-contained SVG (no external resources,
  * QR inlined as SVG) so it can be shown on the verification page and converted
@@ -19,9 +21,6 @@ export type CertificateRenderData = {
   verification_url: string;
 };
 
-export const CERTIFICATE_WIDTH = 1000;
-export const CERTIFICATE_HEIGHT = 700;
-
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -39,23 +38,6 @@ function formatLongDate(iso: string): string {
   });
 }
 
-function wrapText(text: string, maxChars: number): string[] {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let current = "";
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length > maxChars && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = candidate;
-    }
-  }
-  if (current) lines.push(current);
-  return lines;
-}
-
 /** Strips the XML prolog/doctype from the qrcode library output so it can be
  * nested inside the certificate SVG. */
 function inlineQr(qrSvg: string): string {
@@ -65,73 +47,65 @@ function inlineQr(qrSvg: string): string {
     .trim();
 }
 
-async function qrSvgFor(url: string, size: number): Promise<string> {
+/** Generates an olive-on-cream QR pointing at the verification URL, sized to
+ * fit the default template's 36mm QR area. */
+async function qrSvgFor(url: string): Promise<string> {
   const svg = await QRCode.toString(url, {
     type: "svg",
     margin: 0,
-    width: size,
+    width: 36,
     errorCorrectionLevel: "M",
+    color: { dark: "#3a4039", light: "#fafafa" },
   });
   return inlineQr(svg);
 }
 
+/** Replaces every supported placeholder token in the template with the
+ * corresponding data. Accepts both the spec's preferred vocabulary
+ * (`{{participant_name}}`, `{{certificate_id}}`, `{{verification_qr}}`, etc.)
+ * and the legacy short names (`{{candidate_name}}`, `{{certificate_number}}`,
+ * `{{qr}}`, ...). All user-supplied text is XML-escaped; the QR is inlined raw. */
+function applySubstitutions(
+  template: string,
+  data: CertificateRenderData,
+  qrSvg: string,
+): string {
+  const candidate = escapeXml(data.candidate_name);
+  const courseTitle = escapeXml(data.course_title);
+  const topicsText = escapeXml(data.topics.join("  ·  "));
+  const completion = escapeXml(formatLongDate(data.completion_date));
+  const certificateId = escapeXml(data.certificate_number);
+  const verifyUrl = escapeXml(data.verification_url);
+  const issuer = escapeXml(ISSUER_NAME);
+
+  return template
+    // Preferred vocab (per docs/CERTIFICATE-OUTPUT.md)
+    .replaceAll("{{participant_name}}", candidate)
+    .replaceAll("{{certificate_display_name}}", candidate)
+    .replaceAll("{{course_title}}", courseTitle)
+    .replaceAll("{{included_topics}}", topicsText)
+    .replaceAll("{{completion_date}}", completion)
+    .replaceAll("{{certificate_id}}", certificateId)
+    .replaceAll("{{verification_url}}", verifyUrl)
+    .replaceAll("{{issuer_name}}", issuer)
+    .replaceAll("{{verification_qr}}", qrSvg)
+    // Legacy / short-name vocab (back-compat for any earlier templates)
+    .replaceAll("{{candidate_name}}", candidate)
+    .replaceAll("{{topics}}", topicsText)
+    .replaceAll("{{certificate_number}}", certificateId)
+    .replaceAll("{{qr}}", qrSvg);
+}
+
 /**
- * Renders the certificate SVG. If `templateSvg` is provided (an admin-defined
- * template) its tokens are substituted; otherwise a built-in default is used.
- * Tokens: {{candidate_name}} {{course_title}} {{topics}} {{completion_date}}
- *         {{certificate_number}} {{verification_url}} {{qr}}
+ * Renders the certificate SVG. If `templateSvg` is provided (e.g. an admin-
+ * defined SVG stored on `certificate_templates`), it's used; otherwise the
+ * built-in default template from `./templates.ts` is used.
  */
 export async function renderCertificateSvg(
   data: CertificateRenderData,
   templateSvg?: string | null,
 ): Promise<string> {
-  const qr = await qrSvgFor(data.verification_url, 120);
-
-  if (templateSvg) {
-    const topicsText = data.topics.join(" · ");
-    return templateSvg
-      .replaceAll("{{candidate_name}}", escapeXml(data.candidate_name))
-      .replaceAll("{{course_title}}", escapeXml(data.course_title))
-      .replaceAll("{{topics}}", escapeXml(topicsText))
-      .replaceAll("{{completion_date}}", escapeXml(formatLongDate(data.completion_date)))
-      .replaceAll("{{certificate_number}}", escapeXml(data.certificate_number))
-      .replaceAll("{{verification_url}}", escapeXml(data.verification_url))
-      .replaceAll("{{qr}}", qr);
-  }
-
-  const topicsLine = data.topics.length
-    ? `Topics covered: ${data.topics.join("  ·  ")}`
-    : "";
-  const topicLines = wrapText(topicsLine, 78);
-  const topicsSvg = topicLines
-    .map(
-      (line, index) =>
-        `<text x="500" y="${430 + index * 24}" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#475569">${escapeXml(line)}</text>`,
-    )
-    .join("");
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${CERTIFICATE_WIDTH}" height="${CERTIFICATE_HEIGHT}" viewBox="0 0 ${CERTIFICATE_WIDTH} ${CERTIFICATE_HEIGHT}">
-  <rect width="${CERTIFICATE_WIDTH}" height="${CERTIFICATE_HEIGHT}" fill="#fafafa"/>
-  <rect x="24" y="24" width="${CERTIFICATE_WIDTH - 48}" height="${CERTIFICATE_HEIGHT - 48}" fill="none" stroke="#3a4039" stroke-width="3"/>
-  <rect x="36" y="36" width="${CERTIFICATE_WIDTH - 72}" height="${CERTIFICATE_HEIGHT - 72}" fill="none" stroke="#4b524a" stroke-width="1"/>
-
-  <text x="500" y="120" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="4" fill="#4b524a">INVEST IN STRENGTH</text>
-  <text x="500" y="185" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="40" fill="#23271f">Certificate of Completion</text>
-  <line x1="380" y1="210" x2="620" y2="210" stroke="#4b524a" stroke-width="2"/>
-
-  <text x="500" y="270" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#64748b">This certifies that</text>
-  <text x="500" y="320" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#23271f">${escapeXml(data.candidate_name)}</text>
-
-  <text x="500" y="375" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#64748b">has successfully completed</text>
-  <text x="500" y="405" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#23271f">${escapeXml(data.course_title)}</text>
-  ${topicsSvg}
-
-  <text x="120" y="600" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#64748b">Date of completion</text>
-  <text x="120" y="624" font-family="Georgia, 'Times New Roman', serif" font-size="18" fill="#23271f">${escapeXml(formatLongDate(data.completion_date))}</text>
-
-  <text x="120" y="660" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#94a3b8">Certificate ID: ${escapeXml(data.certificate_number)}</text>
-
-  <g transform="translate(760, 540)">${qr}</g>
-  <text x="820" y="685" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#94a3b8">Scan to verify</text>
-</svg>`;
+  const qr = await qrSvgFor(data.verification_url);
+  const template = templateSvg ?? DEFAULT_CERTIFICATE_TEMPLATE;
+  return applySubstitutions(template, data, qr);
 }

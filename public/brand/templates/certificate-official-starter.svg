@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="297mm" height="210mm"
+     viewBox="0 0 297 210"
+     font-family="Barlow, sans-serif">
+  <!-- ================================================================
+    Invest in Strength — Official Certificate Template (starter)
+    A4 landscape, 297mm × 210mm. Open and edit freely in Adobe Illustrator.
+
+    PLACEHOLDER TOKENS — keep these as literal {{...}} text in the
+    design. The renderer (Slice 6 — Certificate Output System) replaces
+    them at issue time:
+
+      {{issuer_name}}              "Invest in Strength" (the awarding body)
+      {{participant_name}}         the candidate's display name (the
+                                   renderer uses certificate_display_name
+                                   when the admin set one, else full_name)
+      {{course_title}}             main course title
+      {{included_topics}}          joined topic list
+      {{completion_date}}          formatted date (e.g. "15 June 2026")
+      {{certificate_id}}           unique cert ID (e.g. "IIS-2026-A1B2C3D4")
+      {{verification_url}}         full HTTPS URL to /verify/<token>
+      {{verification_qr}}          — see <g id="qr-area"> below. The renderer
+                                     swaps the group's contents for an inlined
+                                     QR SVG sized to fit. Move or resize the
+                                     group to taste.
+
+    DO NOT:
+      • Convert the {{...}} placeholder text to outlines / paths. The
+        renderer must find the literal {{...}} strings to substitute.
+      • Add a score, percentage, attempt count, email address, or any
+        admin-only notes. This document is public and shareable.
+
+    DO:
+      • Give the name + topics generous text areas — long names auto-shrink
+        and long topic lists wrap, but they need room.
+      • Save as SVG (Illustrator → File → Export → SVG, "Presentation
+        Attributes" style, "Use System Fonts" so Barlow is preserved).
+      • Use the brand palette: olive #3a4039, cream/paper #fafafa,
+        darker olive #23271f, and the iceblue accent #b8d8d6 if you want
+        a subtle highlight somewhere.
+  ================================================================ -->
+
+  <!-- Paper background -->
+  <rect width="297" height="210" fill="#fafafa"/>
+
+  <!-- Olive double border -->
+  <rect x="6" y="6" width="285" height="198"
+        fill="none" stroke="#3a4039" stroke-width="0.7"/>
+  <rect x="8" y="8" width="281" height="194"
+        fill="none" stroke="#3a4039" stroke-width="0.15"/>
+
+  <!-- ============== HEADER (issuer eyebrow) ============== -->
+  <text x="148.5" y="22" text-anchor="middle"
+        font-size="3.4" letter-spacing="1.6" font-weight="600"
+        fill="#3a4039">{{issuer_name}}</text>
+
+  <!-- ============== TITLE ============== -->
+  <text x="148.5" y="52" text-anchor="middle"
+        font-size="14" font-weight="800" fill="#23271f">Certificate of Completion</text>
+  <line x1="125" y1="58" x2="172" y2="58"
+        stroke="#3a4039" stroke-width="0.4"/>
+
+  <!-- ============== AWARDEE ============== -->
+  <text x="148.5" y="80" text-anchor="middle"
+        font-size="4" fill="#5b6359">This certifies that</text>
+
+  <text x="148.5" y="102" text-anchor="middle"
+        font-size="12" font-weight="700" fill="#23271f">{{participant_name}}</text>
+
+  <text x="148.5" y="122" text-anchor="middle"
+        font-size="4" fill="#5b6359">has successfully completed</text>
+
+  <text x="148.5" y="138" text-anchor="middle"
+        font-size="7" font-weight="700" fill="#23271f">{{course_title}}</text>
+
+  <text x="148.5" y="152" text-anchor="middle"
+        font-size="3.6" fill="#4b524a">Topics covered: {{included_topics}}</text>
+
+  <!-- ============== FOOTER (bottom-left: date + cert ID) ============== -->
+  <text x="22" y="184" font-size="3" letter-spacing="0.4"
+        fill="#5b6359">DATE OF COMPLETION</text>
+  <text x="22" y="190" font-size="5.5" font-weight="700"
+        fill="#23271f">{{completion_date}}</text>
+  <text x="22" y="198" font-size="2.6"
+        fill="#9aa19a">Certificate ID: {{certificate_id}}</text>
+
+  <!-- ============== FOOTER (bottom-center: verify URL) ============== -->
+  <text x="148.5" y="198" text-anchor="middle" font-size="2.6"
+        fill="#9aa19a">{{verification_url}}</text>
+
+  <!-- ============== QR CODE AREA (bottom-right) ============== -->
+  <!-- The renderer reads the group's position + size from #qr-area and
+       injects the QR SVG sized to fit. The dashed rect + label are just
+       visual guides for design; they get replaced at issue time. -->
+  <g id="qr-area" transform="translate(235, 158)">
+    <rect x="0" y="0" width="36" height="36"
+          fill="none" stroke="#3a4039" stroke-width="0.2"
+          stroke-dasharray="0.8 0.8"/>
+    <text x="18" y="20" text-anchor="middle" font-size="2.4"
+          dominant-baseline="middle"
+          fill="#5b6359">{{verification_qr}}</text>
+  </g>
+</svg>
