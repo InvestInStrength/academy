@@ -17,6 +17,7 @@ const baseLinks = [
 
 const superadminLinks = [
   { href: "/admin/settings/admins", label: "Administrators" },
+  { href: "/admin/settings/language", label: "Language" },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {

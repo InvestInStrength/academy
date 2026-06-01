@@ -31,6 +31,27 @@ export default async function SettingsPage() {
         </Card>
       )}
 
+      {isSuperadmin && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Language</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between gap-3">
+            <p className="text-sm text-slate-600">
+              Multilanguage feature flag. Toggle the active platform language
+              (DE/EN) and enable the dormant second language.
+            </p>
+            <ButtonLink
+              href="/admin/settings/language"
+              size="sm"
+              variant="outline"
+            >
+              Manage language
+            </ButtonLink>
+          </CardContent>
+        </Card>
+      )}
+
       <PlaceholderPanel note="Certificate template management and other settings arrive in a later slice." />
     </div>
   );
