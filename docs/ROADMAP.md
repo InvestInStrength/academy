@@ -129,6 +129,35 @@ Migration numbering (live):
 
 ---
 
+## ✅ Slice 7 — Multilanguage (DE-first) — FULLY SHIPPED 2026-06-01
+
+Slice 7 closed end-to-end across six sub-slices (7a foundation, 7a-plus
+superadmin UI, 7b content schema, 7c reads + dual-write + dual-input
+forms, 7d UI string harvest, 7d-rest finish bilingual admin chrome).
+The platform now serves German by default with English as a dormant
+second slot that the superadmin can enable at any time. Locked rules:
+the capability stays invisible to every surface except the superadmin
+account; in-progress attempts freeze their language; frozen snapshots
+remain immutable.
+
+**Canonical reference — the state of the art, every wired surface, known
+gaps, and how to extend or add a third locale — lives in
+`docs/multilanguage-state.md`.** Read that before:
+- Touching any i18n surface.
+- Adding a new admin or candidate page.
+- Adding a new translatable content field.
+- Starting Slice 6 (cert renderer + email + verification have explicit
+  language-hook requirements documented in §11 there and in the Codex
+  audit §1.9).
+
+Known English-only residue (intentional; doesn't block the German
+launch): Zod inline schema messages, server-action `FormState.message`
+returns, `account_history.event_label`, and cert/email chrome owned
+by Slice 6. Each has a small bounded playbook in
+`docs/multilanguage-state.md` §8.
+
+---
+
 ## Slice 1.5 — Foundation Hardening (gate)
 
 Ordered by the audit's priority. Schema items fold into a revised `0001`.

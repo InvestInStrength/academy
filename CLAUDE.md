@@ -74,33 +74,32 @@ the questionnaire — do not treat this as a generic quiz app.**
 - Hand-maintained types in `src/types/database.ts` — **keep in sync with the
   migration**. Can be replaced with `supabase gen types` output later.
 
-## Multilanguage (Slice 7a + 7a-plus + 7b + 7c + 7d shipped)
-Superadmin-only feature flag. Single global active language (default `de`);
-English is dormant until the superadmin enables it. **Locked rules**: the
-capability stays invisible to every surface except the superadmin; in-progress
-attempts freeze their language at attempt-start (read from `attempts.language`,
-not the live `platform_settings`); frozen snapshots remain immutable.
+## Multilanguage — fully shipped, DE-first
+Slice 7 (a + a-plus + b + c + d + d-rest) is **shipped end-to-end**. The
+platform is bilingual DE/EN with German as the default. The full state of
+the art — architecture, every wired surface, known gaps, how to extend —
+lives in **`docs/multilanguage-state.md`**. Read that before touching any
+i18n surface, adding new admin/candidate pages, adding translatable
+content fields, or starting Slice 6.
 
-- **i18n runtime**: `src/lib/i18n/` — `getActiveLanguage` cached per-request via
-  React `cache()`; pure helpers in `dict.ts` (`t`, `getDictionary`) for tests.
-- **Content fallback**: `src/lib/i18n/content.ts` — `pickLocalized(row, base, locale)`.
-  For `'de'` returns the legacy column directly (safer until admin writes
-  dual-write); for other locales: `_${locale}` → `_de` → legacy.
-- **Attempt lifecycle**: `src/lib/certification/attempt-lifecycle.ts` —
-  `startOrResumeAttempt` materializes the in-progress row when the candidate
-  hits `/attempt`. Pure core split into `attempt-lifecycle-core.ts` for tests.
-- **Superadmin UI**: `/admin/settings/language` — enable EN, switch active
-  language. Hidden from non-superadmin sidebar + settings hub.
-
-Schema is bilingual-ready (`_de`/`_en` columns on every translatable field
-except cert-template — those land with Slice 6 per Codex's sequencing call).
-**Reads route through `pickLocalized`** in both candidate flow (keyed on
-`attempt.language`) and admin chrome (keyed on `platform_settings.active_language`).
-**Admin forms dual-write** — the same DE input populates both legacy `title`
-and `title_de`. When the superadmin enables EN via the settings page, every
-admin content form grows a second EN input per translatable field, and writes
-include `title_en` etc. Snapshots capture the localized text the candidate
-actually saw (defense-in-depth, paired with `attempts.language`).
+Quick orientation:
+- Active language lives in `public.platform_settings` (single row,
+  superadmin-only writes). Read via `getActiveLanguage()` /
+  `isEnglishEnabled()` from `src/lib/i18n/`.
+- Attempt language is frozen on `attempts.language` at attempt-start
+  (`src/lib/certification/attempt-lifecycle.ts`). The candidate flow
+  reads this, not the live setting.
+- Translatable content has `_de` / `_en` columns (migration 0003); reads
+  go through `pickLocalized` (`src/lib/i18n/content.ts`); writes dual-write
+  legacy + `_de` always, plus `_en` when the superadmin has enabled EN.
+- UI chrome strings live in `src/lib/i18n/messages.{de,en}.json`. Server
+  components use `getServerT()`; client components use `useT()` from
+  `src/lib/i18n/client`.
+- The superadmin's only control point is `/admin/settings/language`
+  (hidden from non-superadmin).
+- Known English-only gaps (Zod inline messages, FormState returns,
+  account_history.event_label, Slice 6 cert/email chrome): documented
+  in `docs/multilanguage-state.md` §8 with playbooks for closing them.
 
 Plan + audit: `docs/slice-7a-plan.md`, `docs/codex-brief-multilanguage.md`,
 `docs/codex-audit-multilanguage.md`.
