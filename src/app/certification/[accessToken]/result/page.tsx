@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { getCandidateContext, getLatestResult } from "@/lib/certification/data";
+import {
+  getCandidateContext,
+  getLatestResult,
+  localizedQuestionnaireTitle,
+} from "@/lib/certification/data";
+import { getActiveLanguage } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,12 +40,14 @@ export default async function ResultPage({
   }
 
   const latest = await getLatestResult(context.assignment.id);
+  const locale = await getActiveLanguage();
+  const title = localizedQuestionnaireTitle(context.questionnaire, locale);
 
   if (!latest || latest.score_percentage === null) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{context.questionnaire.title}</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-slate-600">
@@ -84,8 +91,7 @@ export default async function ResultPage({
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-slate-600">
-              You passed the <strong>{context.questionnaire.title}</strong>{" "}
-              assessment.
+              You passed the <strong>{title}</strong> assessment.
             </p>
             <ButtonLink href={`/certification/${accessToken}/certificate`}>
               View your certificate

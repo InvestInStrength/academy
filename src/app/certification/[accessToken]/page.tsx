@@ -1,6 +1,12 @@
 import Link from "next/link";
 
-import { getCandidateContext, getLatestResult } from "@/lib/certification/data";
+import {
+  getCandidateContext,
+  getLatestResult,
+  localizedQuestionnaireDescription,
+  localizedQuestionnaireTitle,
+} from "@/lib/certification/data";
+import { getActiveLanguage } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +45,9 @@ export default async function CertificationHubPage({
   if (!context) return <NeutralNotice />;
 
   const { participant, questionnaire, assignment } = context;
+  const locale = await getActiveLanguage();
+  const title = localizedQuestionnaireTitle(questionnaire, locale);
+  const description = localizedQuestionnaireDescription(questionnaire, locale);
 
   if (!participant.email_confirmed) {
     return (
@@ -48,7 +57,7 @@ export default async function CertificationHubPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-slate-600">
-            You&apos;ve been assigned the <strong>{questionnaire.title}</strong>{" "}
+            You&apos;ve been assigned the <strong>{title}</strong>{" "}
             assessment. Enter your email to begin.
           </p>
           <EmailForm accessToken={accessToken} defaultEmail={participant.email} />
@@ -64,14 +73,14 @@ export default async function CertificationHubPage({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>{questionnaire.title}</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-slate-600">
             Candidate: <strong>{participant.full_name}</strong>
           </p>
-          {questionnaire.description && (
-            <p className="text-sm text-slate-600">{questionnaire.description}</p>
+          {description && (
+            <p className="text-sm text-slate-600">{description}</p>
           )}
           <p className="text-sm text-slate-500">
             Passing score: {questionnaire.passing_percentage}%. You can retake the

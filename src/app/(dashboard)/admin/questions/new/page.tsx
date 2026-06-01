@@ -1,24 +1,39 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import type { Course, CourseTopic } from "@/types/database";
+import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { QuestionForm } from "../question-form";
 
 export default async function NewQuestionPage() {
   const { supabase } = await requireAdmin();
-
-  const [{ data: courseData }, { data: topicData }] = await Promise.all([
-    supabase.from("courses").select("id, title").order("title"),
-    supabase.from("course_topics").select("id, title, course_id").order("sort_order"),
+  const [locale, showEnglish] = await Promise.all([
+    getActiveLanguage(),
+    isEnglishEnabled(),
   ]);
 
-  const courses = (courseData ?? []) as Pick<Course, "id" | "title">[];
-  const topics = (topicData ?? []) as Pick<
-    CourseTopic,
-    "id" | "title" | "course_id"
-  >[];
+  const [{ data: courseData }, { data: topicData }] = await Promise.all([
+    supabase
+      .from("courses")
+      .select("id, title, title_de, title_en")
+      .order("title"),
+    supabase
+      .from("course_topics")
+      .select("id, title, title_de, title_en, course_id")
+      .order("sort_order"),
+  ]);
+
+  const courses = (courseData ?? []).map((c) => ({
+    id: c.id,
+    title: pickLocalized(c, "title", locale) ?? c.title,
+  }));
+  const topics = (topicData ?? []).map((t) => ({
+    id: t.id,
+    title: pickLocalized(t, "title", locale) ?? t.title,
+    course_id: t.course_id,
+  }));
 
   return (
     <div>
@@ -41,7 +56,11 @@ export default async function NewQuestionPage() {
       ) : (
         <Card className="max-w-3xl">
           <CardContent>
-            <QuestionForm courses={courses} topics={topics} />
+            <QuestionForm
+              courses={courses}
+              topics={topics}
+              showEnglish={showEnglish}
+            />
           </CardContent>
         </Card>
       )}

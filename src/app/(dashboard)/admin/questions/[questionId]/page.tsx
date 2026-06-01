@@ -2,12 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import type {
-  Course,
-  CourseTopic,
-  Question,
-  QuestionOption,
-} from "@/types/database";
+import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
+import type { Question, QuestionOption } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GuardedDeleteButton } from "@/components/admin/guarded-delete-button";
@@ -21,6 +18,10 @@ export default async function EditQuestionPage({
 }) {
   const { questionId } = await params;
   const { supabase } = await requireAdmin();
+  const [locale, showEnglish] = await Promise.all([
+    getActiveLanguage(),
+    isEnglishEnabled(),
+  ]);
 
   const { data: question } = await supabase
     .from("questions")
@@ -34,8 +35,14 @@ export default async function EditQuestionPage({
 
   const [{ data: courseData }, { data: topicData }, { data: optionData }] =
     await Promise.all([
-      supabase.from("courses").select("id, title").order("title"),
-      supabase.from("course_topics").select("id, title, course_id").order("sort_order"),
+      supabase
+        .from("courses")
+        .select("id, title, title_de, title_en")
+        .order("title"),
+      supabase
+        .from("course_topics")
+        .select("id, title, title_de, title_en, course_id")
+        .order("sort_order"),
       supabase
         .from("question_options")
         .select("*")
@@ -43,11 +50,15 @@ export default async function EditQuestionPage({
         .order("sort_order"),
     ]);
 
-  const courses = (courseData ?? []) as Pick<Course, "id" | "title">[];
-  const topics = (topicData ?? []) as Pick<
-    CourseTopic,
-    "id" | "title" | "course_id"
-  >[];
+  const courses = (courseData ?? []).map((c) => ({
+    id: c.id,
+    title: pickLocalized(c, "title", locale) ?? c.title,
+  }));
+  const topics = (topicData ?? []).map((t) => ({
+    id: t.id,
+    title: pickLocalized(t, "title", locale) ?? t.title,
+    course_id: t.course_id,
+  }));
   const options: QuestionOption[] = optionData ?? [];
 
   return (
@@ -69,6 +80,7 @@ export default async function EditQuestionPage({
             topics={topics}
             question={question}
             initialOptions={options}
+            showEnglish={showEnglish}
           />
         </CardContent>
       </Card>

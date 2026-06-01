@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { formatDate } from "@/lib/utils";
+import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
 import type { Course } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
 import { ActionButton } from "@/components/admin/action-button";
@@ -12,6 +14,10 @@ import { toggleCourseActive } from "./actions";
 
 export default async function CoursesPage() {
   const { supabase } = await requireAdmin();
+  const [locale, showEnglish] = await Promise.all([
+    getActiveLanguage(),
+    isEnglishEnabled(),
+  ]);
 
   const { data } = await supabase
     .from("courses")
@@ -58,7 +64,7 @@ export default async function CoursesPage() {
                           href={`/admin/courses/${course.id}`}
                           className="font-medium text-brand-700 hover:underline"
                         >
-                          {course.title}
+                          {pickLocalized(course, "title", locale) ?? course.title}
                         </Link>
                       </td>
                       <td className="px-5 py-3">
@@ -92,7 +98,7 @@ export default async function CoursesPage() {
             <CardTitle>Create a course</CardTitle>
           </CardHeader>
           <CardContent>
-            <CourseForm />
+            <CourseForm showEnglish={showEnglish} />
           </CardContent>
         </Card>
       </div>

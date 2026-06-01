@@ -1,27 +1,44 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import type { Course, Question } from "@/types/database";
+import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
+import type { Question } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { QuestionnaireForm } from "../questionnaire-form";
 
 export default async function NewQuestionnairePage() {
   const { supabase } = await requireAdmin();
+  const [locale, showEnglish] = await Promise.all([
+    getActiveLanguage(),
+    isEnglishEnabled(),
+  ]);
 
   const [{ data: courseData }, { data: questionData }] = await Promise.all([
-    supabase.from("courses").select("id, title").order("title"),
+    supabase
+      .from("courses")
+      .select("id, title, title_de, title_en")
+      .order("title"),
     supabase
       .from("questions")
-      .select("id, question_text, course_id, active")
+      .select(
+        "id, question_text, question_text_de, question_text_en, course_id, active",
+      )
       .order("created_at"),
   ]);
 
-  const courses = (courseData ?? []) as Pick<Course, "id" | "title">[];
-  const questions = (questionData ?? []) as Pick<
-    Question,
-    "id" | "question_text" | "course_id" | "active"
-  >[];
+  const courses = (courseData ?? []).map((c) => ({
+    id: c.id,
+    title: pickLocalized(c, "title", locale) ?? c.title,
+  }));
+  const questions = (questionData ?? []).map((q) => ({
+    id: q.id,
+    question_text:
+      pickLocalized(q, "question_text", locale) ?? q.question_text,
+    course_id: q.course_id,
+    active: q.active,
+  })) as Pick<Question, "id" | "question_text" | "course_id" | "active">[];
 
   return (
     <div>
@@ -44,7 +61,11 @@ export default async function NewQuestionnairePage() {
       ) : (
         <Card className="max-w-3xl">
           <CardContent>
-            <QuestionnaireForm courses={courses} questions={questions} />
+            <QuestionnaireForm
+              courses={courses}
+              questions={questions}
+              showEnglish={showEnglish}
+            />
           </CardContent>
         </Card>
       )}

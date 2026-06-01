@@ -18,13 +18,19 @@ function parseQuestionnaireForm(formData: FormData) {
   return questionnaireSchema.safeParse({
     course_id: formData.get("course_id"),
     title: formData.get("title"),
+    title_en: formData.get("title_en") || undefined,
     description: formData.get("description") || undefined,
+    description_en: formData.get("description_en") || undefined,
     passing_percentage: formData.get("passing_percentage") ?? 80,
     randomize_question_order: formData.get("randomize_question_order") === "on",
     randomize_answer_order: formData.get("randomize_answer_order") === "on",
     active: formData.get("active") === "on",
     question_ids: questionIds,
   });
+}
+
+function nullOrText(value: string | undefined): string | null {
+  return value && value.length > 0 ? value : null;
 }
 
 /**
@@ -90,12 +96,17 @@ export async function createQuestionnaire(
   }
 
   const data = parsed.data;
+  const description = nullOrText(data.description);
   const { data: inserted, error } = await supabase
     .from("questionnaires")
     .insert({
       course_id: data.course_id,
       title: data.title,
-      description: data.description ?? null,
+      title_de: data.title,
+      title_en: nullOrText(data.title_en),
+      description,
+      description_de: description,
+      description_en: nullOrText(data.description_en),
       passing_percentage: data.passing_percentage,
       randomize_question_order: data.randomize_question_order,
       randomize_answer_order: data.randomize_answer_order,
@@ -156,11 +167,16 @@ export async function updateQuestionnaire(
   const isLocked = (assignmentCount ?? 0) > 0;
 
   if (isLocked) {
+    const lockedDescription = nullOrText(data.description);
     const { error } = await supabase
       .from("questionnaires")
       .update({
         title: data.title,
-        description: data.description ?? null,
+        title_de: data.title,
+        title_en: nullOrText(data.title_en),
+        description: lockedDescription,
+        description_de: lockedDescription,
+        description_en: nullOrText(data.description_en),
         active: data.active,
       })
       .eq("id", id);
@@ -177,11 +193,16 @@ export async function updateQuestionnaire(
   }
 
   // Course is fixed after creation, so selected questions cannot be orphaned.
+  const unlockedDescription = nullOrText(data.description);
   const { error } = await supabase
     .from("questionnaires")
     .update({
       title: data.title,
-      description: data.description ?? null,
+      title_de: data.title,
+      title_en: nullOrText(data.title_en),
+      description: unlockedDescription,
+      description_de: unlockedDescription,
+      description_en: nullOrText(data.description_en),
       passing_percentage: data.passing_percentage,
       randomize_question_order: data.randomize_question_order,
       randomize_answer_order: data.randomize_answer_order,

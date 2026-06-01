@@ -25,6 +25,7 @@ type Props = {
   questions: SelectableQuestion[];
   questionnaire?: Questionnaire;
   initialQuestionIds?: string[];
+  showEnglish?: boolean;
 };
 
 function truncate(text: string, max = 110) {
@@ -36,6 +37,7 @@ export function QuestionnaireForm({
   questions,
   questionnaire,
   initialQuestionIds,
+  showEnglish = false,
 }: Props) {
   const isEdit = Boolean(questionnaire);
   const [state, formAction] = useActionState(
@@ -88,13 +90,52 @@ export function QuestionnaireForm({
       <input type="hidden" name="course_id" value={courseId} />
       <input type="hidden" name="question_ids" value={JSON.stringify(selectedOrder)} />
 
-      <Field label="Title" htmlFor="title" required error={state.fieldErrors?.title}>
+      <Field
+        label={showEnglish ? "Title (Deutsch)" : "Title"}
+        htmlFor="title"
+        required
+        error={state.fieldErrors?.title}
+      >
         <Input id="title" name="title" defaultValue={questionnaire?.title ?? ""} required maxLength={200} />
       </Field>
 
-      <Field label="Description" htmlFor="description" error={state.fieldErrors?.description}>
+      {showEnglish && (
+        <Field
+          label="Title (English)"
+          htmlFor="title_en"
+          error={state.fieldErrors?.title_en}
+        >
+          <Input
+            id="title_en"
+            name="title_en"
+            defaultValue={questionnaire?.title_en ?? ""}
+            maxLength={200}
+          />
+        </Field>
+      )}
+
+      <Field
+        label={showEnglish ? "Description (Deutsch)" : "Description"}
+        htmlFor="description"
+        error={state.fieldErrors?.description}
+      >
         <Textarea id="description" name="description" defaultValue={questionnaire?.description ?? ""} rows={2} />
       </Field>
+
+      {showEnglish && (
+        <Field
+          label="Description (English)"
+          htmlFor="description_en"
+          error={state.fieldErrors?.description_en}
+        >
+          <Textarea
+            id="description_en"
+            name="description_en"
+            defaultValue={questionnaire?.description_en ?? ""}
+            rows={2}
+          />
+        </Field>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field

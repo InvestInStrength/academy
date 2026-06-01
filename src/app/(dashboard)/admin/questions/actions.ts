@@ -21,6 +21,10 @@ async function topicBelongsToCourse(
   return Boolean(data);
 }
 
+function nullOrText(value: string | undefined): string | null {
+  return value && value.length > 0 ? value : null;
+}
+
 function parseQuestionForm(formData: FormData) {
   const topicId = formData.get("topic_id");
   let options: unknown;
@@ -34,9 +38,12 @@ function parseQuestionForm(formData: FormData) {
     course_id: formData.get("course_id"),
     topic_id: topicId ? String(topicId) : null,
     question_text: formData.get("question_text"),
+    question_text_en: formData.get("question_text_en") || undefined,
     question_type: formData.get("question_type"),
     explanation: formData.get("explanation") || undefined,
+    explanation_en: formData.get("explanation_en") || undefined,
     recommendation_text: formData.get("recommendation_text") || undefined,
+    recommendation_text_en: formData.get("recommendation_text_en") || undefined,
     active: formData.get("active") === "on",
     options,
   });
@@ -64,15 +71,23 @@ export async function createQuestion(
     };
   }
 
+  const explanation = nullOrText(data.explanation);
+  const recommendationText = nullOrText(data.recommendation_text);
   const { data: inserted, error } = await supabase
     .from("questions")
     .insert({
       course_id: data.course_id,
       topic_id: data.topic_id,
       question_text: data.question_text,
+      question_text_de: data.question_text,
+      question_text_en: nullOrText(data.question_text_en),
       question_type: data.question_type,
-      explanation: data.explanation ?? null,
-      recommendation_text: data.recommendation_text ?? null,
+      explanation,
+      explanation_de: explanation,
+      explanation_en: nullOrText(data.explanation_en),
+      recommendation_text: recommendationText,
+      recommendation_text_de: recommendationText,
+      recommendation_text_en: nullOrText(data.recommendation_text_en),
       active: data.active,
     })
     .select("id")
@@ -86,6 +101,8 @@ export async function createQuestion(
     data.options.map((option, index) => ({
       question_id: inserted.id,
       option_text: option.option_text,
+      option_text_de: option.option_text,
+      option_text_en: nullOrText(option.option_text_en),
       is_correct: option.is_correct,
       sort_order: index,
     })),
@@ -126,15 +143,23 @@ export async function updateQuestion(
     };
   }
 
+  const explanation = nullOrText(data.explanation);
+  const recommendationText = nullOrText(data.recommendation_text);
   const { error } = await supabase
     .from("questions")
     .update({
       course_id: data.course_id,
       topic_id: data.topic_id,
       question_text: data.question_text,
+      question_text_de: data.question_text,
+      question_text_en: nullOrText(data.question_text_en),
       question_type: data.question_type,
-      explanation: data.explanation ?? null,
-      recommendation_text: data.recommendation_text ?? null,
+      explanation,
+      explanation_de: explanation,
+      explanation_en: nullOrText(data.explanation_en),
+      recommendation_text: recommendationText,
+      recommendation_text_de: recommendationText,
+      recommendation_text_en: nullOrText(data.recommendation_text_en),
       active: data.active,
     })
     .eq("id", id);
@@ -150,6 +175,8 @@ export async function updateQuestion(
     data.options.map((option, index) => ({
       question_id: id,
       option_text: option.option_text,
+      option_text_de: option.option_text,
+      option_text_en: nullOrText(option.option_text_en),
       is_correct: option.is_correct,
       sort_order: index,
     })),

@@ -11,7 +11,13 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createCourse, updateCourse } from "./actions";
 
-export function CourseForm({ course }: { course?: Course }) {
+export function CourseForm({
+  course,
+  showEnglish = false,
+}: {
+  course?: Course;
+  showEnglish?: boolean;
+}) {
   const isEdit = Boolean(course);
   const [state, formAction] = useActionState(
     isEdit ? updateCourse : createCourse,
@@ -22,7 +28,12 @@ export function CourseForm({ course }: { course?: Course }) {
     <form action={formAction} className="space-y-4">
       {isEdit && <input type="hidden" name="id" value={course!.id} />}
 
-      <Field label="Title" htmlFor="title" required error={state.fieldErrors?.title}>
+      <Field
+        label={showEnglish ? "Title (Deutsch)" : "Title"}
+        htmlFor="title"
+        required
+        error={state.fieldErrors?.title}
+      >
         <Input
           id="title"
           name="title"
@@ -32,8 +43,23 @@ export function CourseForm({ course }: { course?: Course }) {
         />
       </Field>
 
+      {showEnglish && (
+        <Field
+          label="Title (English)"
+          htmlFor="title_en"
+          error={state.fieldErrors?.title_en}
+        >
+          <Input
+            id="title_en"
+            name="title_en"
+            defaultValue={course?.title_en ?? ""}
+            maxLength={200}
+          />
+        </Field>
+      )}
+
       <Field
-        label="Description"
+        label={showEnglish ? "Description (Deutsch)" : "Description"}
         htmlFor="description"
         error={state.fieldErrors?.description}
       >
@@ -44,6 +70,21 @@ export function CourseForm({ course }: { course?: Course }) {
           rows={3}
         />
       </Field>
+
+      {showEnglish && (
+        <Field
+          label="Description (English)"
+          htmlFor="description_en"
+          error={state.fieldErrors?.description_en}
+        >
+          <Textarea
+            id="description_en"
+            name="description_en"
+            defaultValue={course?.description_en ?? ""}
+            rows={3}
+          />
+        </Field>
+      )}
 
       <label className="flex items-center gap-2 text-sm text-slate-700">
         <input

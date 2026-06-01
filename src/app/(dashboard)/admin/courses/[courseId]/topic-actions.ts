@@ -10,10 +10,15 @@ function parseTopicForm(formData: FormData) {
   return topicSchema.safeParse({
     course_id: formData.get("course_id"),
     title: formData.get("title"),
+    title_en: formData.get("title_en") || undefined,
     code: formData.get("code") || undefined,
     sort_order: formData.get("sort_order") ?? 0,
     active: formData.get("active") === "on",
   });
+}
+
+function nullOrText(value: string | undefined): string | null {
+  return value && value.length > 0 ? value : null;
 }
 
 export async function createTopic(
@@ -33,6 +38,8 @@ export async function createTopic(
   const { error } = await supabase.from("course_topics").insert({
     course_id: parsed.data.course_id,
     title: parsed.data.title,
+    title_de: parsed.data.title,
+    title_en: nullOrText(parsed.data.title_en),
     code: parsed.data.code ?? null,
     sort_order: parsed.data.sort_order,
     active: parsed.data.active,
@@ -67,6 +74,8 @@ export async function updateTopic(
     .from("course_topics")
     .update({
       title: parsed.data.title,
+      title_de: parsed.data.title,
+      title_en: nullOrText(parsed.data.title_en),
       code: parsed.data.code ?? null,
       sort_order: parsed.data.sort_order,
       active: parsed.data.active,

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
 import type { Course, CourseTopic } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +19,10 @@ export default async function CourseDetailPage({
 }) {
   const { courseId } = await params;
   const { supabase } = await requireAdmin();
+  const [locale, showEnglish] = await Promise.all([
+    getActiveLanguage(),
+    isEnglishEnabled(),
+  ]);
 
   const { data: course } = await supabase
     .from("courses")
@@ -36,6 +42,7 @@ export default async function CourseDetailPage({
     .order("created_at", { ascending: true });
 
   const topics: CourseTopic[] = topicData ?? [];
+  const localizedTitle = pickLocalized(course, "title", locale) ?? course.title;
 
   return (
     <div>
@@ -47,7 +54,7 @@ export default async function CourseDetailPage({
       </Link>
 
       <div className="mt-3">
-        <PageHeader title={course.title} description="Edit course and manage topics." />
+        <PageHeader title={localizedTitle} description="Edit course and manage topics." />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
@@ -56,11 +63,16 @@ export default async function CourseDetailPage({
             <CardTitle>Course details</CardTitle>
           </CardHeader>
           <CardContent>
-            <CourseForm course={course} />
+            <CourseForm course={course} showEnglish={showEnglish} />
           </CardContent>
         </Card>
 
-        <TopicsSection courseId={course.id} topics={topics} />
+        <TopicsSection
+          courseId={course.id}
+          topics={topics}
+          locale={locale}
+          showEnglish={showEnglish}
+        />
       </div>
 
       <Card className="mt-6 border-red-100">
@@ -75,7 +87,7 @@ export default async function CourseDetailPage({
           <GuardedDeleteButton
             action={deleteCourse}
             hidden={{ id: course.id }}
-            confirm={`Delete "${course.title}"?`}
+            confirm={`Delete "${localizedTitle}"?`}
           >
             Delete course
           </GuardedDeleteButton>

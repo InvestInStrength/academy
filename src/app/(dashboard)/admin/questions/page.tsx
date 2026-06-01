@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import type { Course, CourseTopic, Question } from "@/types/database";
+import { getActiveLanguage } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
+import type { Question } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
 import { ActionButton } from "@/components/admin/action-button";
 import { ButtonLink } from "@/components/ui/button";
@@ -17,17 +19,25 @@ export default async function QuestionsPage({
 }) {
   const { course: courseFilter } = await searchParams;
   const { supabase } = await requireAdmin();
+  const locale = await getActiveLanguage();
 
   const [{ data: courseData }, { data: topicData }] = await Promise.all([
-    supabase.from("courses").select("id, title").order("title"),
-    supabase.from("course_topics").select("id, title, course_id"),
+    supabase
+      .from("courses")
+      .select("id, title, title_de, title_en")
+      .order("title"),
+    supabase.from("course_topics").select("id, title, title_de, title_en, course_id"),
   ]);
 
-  const courses = (courseData ?? []) as Pick<Course, "id" | "title">[];
-  const topics = (topicData ?? []) as Pick<
-    CourseTopic,
-    "id" | "title" | "course_id"
-  >[];
+  const courses = (courseData ?? []).map((c) => ({
+    id: c.id,
+    title: pickLocalized(c, "title", locale) ?? c.title,
+  }));
+  const topics = (topicData ?? []).map((t) => ({
+    id: t.id,
+    title: pickLocalized(t, "title", locale) ?? t.title,
+    course_id: t.course_id,
+  }));
 
   let query = supabase
     .from("questions")
@@ -93,16 +103,20 @@ export default async function QuestionsPage({
                 </tr>
               </thead>
               <tbody>
-                {questions.map((question) => (
+                {questions.map((question) => {
+                  const localizedText =
+                    pickLocalized(question, "question_text", locale) ??
+                    question.question_text;
+                  return (
                   <tr key={question.id} className="border-b border-slate-50 last:border-0 align-top">
                     <td className="max-w-md px-5 py-3">
                       <Link
                         href={`/admin/questions/${question.id}`}
                         className="font-medium text-brand-700 hover:underline"
                       >
-                        {question.question_text.length > 90
-                          ? `${question.question_text.slice(0, 90)}…`
-                          : question.question_text}
+                        {localizedText.length > 90
+                          ? `${localizedText.slice(0, 90)}…`
+                          : localizedText}
                       </Link>
                     </td>
                     <td className="px-5 py-3 text-slate-600">
@@ -134,7 +148,8 @@ export default async function QuestionsPage({
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           )}

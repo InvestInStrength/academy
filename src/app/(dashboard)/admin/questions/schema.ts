@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const optionSchema = z.object({
   option_text: z.string().trim().min(1, { message: "Option text is required." }).max(2000),
+  option_text_en: z.string().trim().max(2000).optional(),
   is_correct: z.boolean(),
 });
 
@@ -14,9 +15,12 @@ export const questionSchema = z
       .trim()
       .min(1, { message: "Question text is required." })
       .max(5000),
+    question_text_en: z.string().trim().max(5000).optional(),
     question_type: z.enum(["single_choice", "multiple_choice"]),
     explanation: z.string().trim().max(5000).optional(),
+    explanation_en: z.string().trim().max(5000).optional(),
     recommendation_text: z.string().trim().max(5000).optional(),
+    recommendation_text_en: z.string().trim().max(5000).optional(),
     active: z.boolean(),
     options: z
       .array(optionSchema)

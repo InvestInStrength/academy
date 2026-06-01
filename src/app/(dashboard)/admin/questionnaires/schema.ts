@@ -4,7 +4,9 @@ export const questionnaireSchema = z
   .object({
     course_id: z.string().uuid({ message: "Select a course." }),
     title: z.string().trim().min(1, { message: "Title is required." }).max(200),
+    title_en: z.string().trim().max(200).optional(),
     description: z.string().trim().max(2000).optional(),
+    description_en: z.string().trim().max(2000).optional(),
     passing_percentage: z.coerce
       .number({ invalid_type_error: "Passing percentage must be a number." })
       .int()

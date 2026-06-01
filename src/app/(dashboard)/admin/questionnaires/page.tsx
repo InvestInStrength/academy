@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import type { Course, Questionnaire } from "@/types/database";
+import { getActiveLanguage } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
+import type { Questionnaire } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
 import { ActionButton } from "@/components/admin/action-button";
 import { ButtonLink } from "@/components/ui/button";
@@ -11,6 +13,7 @@ import { toggleQuestionnaireActive } from "./actions";
 
 export default async function QuestionnairesPage() {
   const { supabase } = await requireAdmin();
+  const locale = await getActiveLanguage();
 
   const [{ data: qData }, { data: courseData }, { data: qqData }] =
     await Promise.all([
@@ -18,13 +21,17 @@ export default async function QuestionnairesPage() {
         .from("questionnaires")
         .select("*")
         .order("created_at", { ascending: false }),
-      supabase.from("courses").select("id, title"),
+      supabase.from("courses").select("id, title, title_de, title_en"),
       supabase.from("questionnaire_questions").select("questionnaire_id"),
     ]);
 
   const questionnaires: Questionnaire[] = qData ?? [];
-  const courses = (courseData ?? []) as Pick<Course, "id" | "title">[];
-  const courseTitle = new Map(courses.map((c) => [c.id, c.title]));
+  const courseTitle = new Map(
+    (courseData ?? []).map((c) => [
+      c.id,
+      pickLocalized(c, "title", locale) ?? c.title,
+    ]),
+  );
 
   const questionCount = new Map<string, number>();
   for (const row of qqData ?? []) {
@@ -80,7 +87,8 @@ export default async function QuestionnairesPage() {
                         href={`/admin/questionnaires/${questionnaire.id}`}
                         className="font-medium text-brand-700 hover:underline"
                       >
-                        {questionnaire.title}
+                        {pickLocalized(questionnaire, "title", locale) ??
+                          questionnaire.title}
                       </Link>
                     </td>
                     <td className="px-5 py-3 text-slate-600">

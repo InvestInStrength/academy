@@ -50,3 +50,33 @@ export async function getServerT(): Promise<{
     t: (key, params) => t(dict, key, params),
   };
 }
+
+function isLocale(value: unknown): value is Locale {
+  return value === "de" || value === "en";
+}
+
+/** Reads `platform_settings.enabled_languages`. Always returns at least `['de']`. */
+export const getEnabledLanguages = cache(async (): Promise<Locale[]> => {
+  try {
+    const service = createSupabaseServiceRoleClient();
+    const { data } = await service
+      .from("platform_settings")
+      .select("enabled_languages")
+      .eq("id", true)
+      .maybeSingle();
+    const enabled = data?.enabled_languages;
+    if (Array.isArray(enabled)) {
+      const filtered = enabled.filter(isLocale);
+      if (filtered.length > 0) return filtered;
+    }
+    return [DEFAULT_LOCALE];
+  } catch {
+    return [DEFAULT_LOCALE];
+  }
+});
+
+/** True when the superadmin has flipped EN on. Drives admin-form dual inputs. */
+export async function isEnglishEnabled(): Promise<boolean> {
+  const enabled = await getEnabledLanguages();
+  return enabled.includes("en");
+}

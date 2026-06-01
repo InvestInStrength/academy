@@ -20,22 +20,39 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createQuestion, updateQuestion } from "./actions";
 
-type OptionRow = { key: string; option_text: string; is_correct: boolean };
+type OptionRow = {
+  key: string;
+  option_text: string;
+  option_text_en: string;
+  is_correct: boolean;
+};
 
 type Props = {
   courses: Pick<Course, "id" | "title">[];
   topics: Pick<CourseTopic, "id" | "title" | "course_id">[];
   question?: Question;
   initialOptions?: QuestionOption[];
+  showEnglish?: boolean;
 };
 
 let optionKeySeed = 0;
 function newOption(): OptionRow {
   optionKeySeed += 1;
-  return { key: `opt-${optionKeySeed}`, option_text: "", is_correct: false };
+  return {
+    key: `opt-${optionKeySeed}`,
+    option_text: "",
+    option_text_en: "",
+    is_correct: false,
+  };
 }
 
-export function QuestionForm({ courses, topics, question, initialOptions }: Props) {
+export function QuestionForm({
+  courses,
+  topics,
+  question,
+  initialOptions,
+  showEnglish = false,
+}: Props) {
   const isEdit = Boolean(question);
   const [state, formAction] = useActionState(
     isEdit ? updateQuestion : createQuestion,
@@ -54,6 +71,7 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
         .map((option) => ({
           key: option.id,
           option_text: option.option_text,
+          option_text_en: option.option_text_en ?? "",
           is_correct: option.is_correct,
         }));
     }
@@ -69,6 +87,14 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
     setOptions((prev) =>
       prev.map((option) =>
         option.key === key ? { ...option, option_text: value } : option,
+      ),
+    );
+  }
+
+  function setOptionTextEn(key: string, value: string) {
+    setOptions((prev) =>
+      prev.map((option) =>
+        option.key === key ? { ...option, option_text_en: value } : option,
       ),
     );
   }
@@ -99,7 +125,6 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
   function onTypeChange(value: QuestionType) {
     setQuestionType(value);
     if (value === "single_choice") {
-      // Keep at most one correct option when switching to single-choice.
       let seenCorrect = false;
       setOptions((prev) =>
         prev.map((option) => {
@@ -114,7 +139,11 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
   }
 
   const serializedOptions = JSON.stringify(
-    options.map(({ option_text, is_correct }) => ({ option_text, is_correct })),
+    options.map(({ option_text, option_text_en, is_correct }) => ({
+      option_text,
+      option_text_en: option_text_en || undefined,
+      is_correct,
+    })),
   );
 
   return (
@@ -161,7 +190,12 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
         </Field>
       </div>
 
-      <Field label="Question" htmlFor="question_text" required error={state.fieldErrors?.question_text}>
+      <Field
+        label={showEnglish ? "Question (Deutsch)" : "Question"}
+        htmlFor="question_text"
+        required
+        error={state.fieldErrors?.question_text}
+      >
         <Textarea
           id="question_text"
           name="question_text"
@@ -170,6 +204,21 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
           required
         />
       </Field>
+
+      {showEnglish && (
+        <Field
+          label="Question (English)"
+          htmlFor="question_text_en"
+          error={state.fieldErrors?.question_text_en}
+        >
+          <Textarea
+            id="question_text_en"
+            name="question_text_en"
+            defaultValue={question?.question_text_en ?? ""}
+            rows={3}
+          />
+        </Field>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Answer type" htmlFor="question_type" error={state.fieldErrors?.question_type}>
@@ -195,10 +244,9 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
         </label>
       </div>
 
-      {/* Answer options */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Answer options</Label>
+          <Label>{showEnglish ? "Answer options (Deutsch + English)" : "Answer options"}</Label>
           <Button type="button" variant="outline" size="sm" onClick={addOption}>
             + Add option
           </Button>
@@ -223,13 +271,25 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
                     className="h-4 w-4 accent-brand-600"
                   />
                 </label>
-                <div className="flex-1">
+                <div className="flex-1 space-y-1">
                   <Input
                     value={option.option_text}
                     onChange={(event) => setOptionText(option.key, event.target.value)}
-                    placeholder={`Option ${index + 1}`}
+                    placeholder={
+                      showEnglish ? `Option ${index + 1} (DE)` : `Option ${index + 1}`
+                    }
                     aria-label={`Option ${index + 1} text`}
                   />
+                  {showEnglish && (
+                    <Input
+                      value={option.option_text_en}
+                      onChange={(event) =>
+                        setOptionTextEn(option.key, event.target.value)
+                      }
+                      placeholder={`Option ${index + 1} (EN)`}
+                      aria-label={`Option ${index + 1} text (English)`}
+                    />
+                  )}
                   {optionError && (
                     <p className="mt-1 text-xs text-red-600">{optionError}</p>
                   )}
@@ -253,7 +313,12 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
         )}
       </div>
 
-      <Field label="Explanation" htmlFor="explanation" hint="Internal note shown in admin attempt insights." error={state.fieldErrors?.explanation}>
+      <Field
+        label="Explanation"
+        htmlFor="explanation"
+        hint="Internal note shown in admin attempt insights."
+        error={state.fieldErrors?.explanation}
+      >
         <Textarea
           id="explanation"
           name="explanation"
@@ -262,7 +327,27 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
         />
       </Field>
 
-      <Field label="Recommendation text" htmlFor="recommendation_text" hint="Shown to candidates who get this topic wrong." error={state.fieldErrors?.recommendation_text}>
+      {showEnglish && (
+        <Field
+          label="Explanation (English)"
+          htmlFor="explanation_en"
+          error={state.fieldErrors?.explanation_en}
+        >
+          <Textarea
+            id="explanation_en"
+            name="explanation_en"
+            defaultValue={question?.explanation_en ?? ""}
+            rows={2}
+          />
+        </Field>
+      )}
+
+      <Field
+        label={showEnglish ? "Recommendation text (Deutsch)" : "Recommendation text"}
+        htmlFor="recommendation_text"
+        hint="Shown to candidates who get this topic wrong."
+        error={state.fieldErrors?.recommendation_text}
+      >
         <Textarea
           id="recommendation_text"
           name="recommendation_text"
@@ -270,6 +355,21 @@ export function QuestionForm({ courses, topics, question, initialOptions }: Prop
           rows={2}
         />
       </Field>
+
+      {showEnglish && (
+        <Field
+          label="Recommendation text (English)"
+          htmlFor="recommendation_text_en"
+          error={state.fieldErrors?.recommendation_text_en}
+        >
+          <Textarea
+            id="recommendation_text_en"
+            name="recommendation_text_en"
+            defaultValue={question?.recommendation_text_en ?? ""}
+            rows={2}
+          />
+        </Field>
+      )}
 
       {state.message && (
         <FormMessage tone={state.ok ? "success" : "error"}>

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 import { issueCertificate } from "@/lib/certificate/issue";
+import { pickLocalized } from "@/lib/i18n/content";
 import type { AssignmentStatus, Json, Locale, QuestionType } from "@/types/database";
 import type {
   AttemptScore,
@@ -34,13 +35,33 @@ export type CandidateContext = {
   questionnaire: {
     id: string;
     title: string;
+    title_de: string | null;
+    title_en: string | null;
     description: string | null;
+    description_de: string | null;
+    description_en: string | null;
     passing_percentage: number;
     randomize_question_order: boolean;
     randomize_answer_order: boolean;
     course_id: string;
   };
 };
+
+/** Picks the locale-resolved questionnaire title from a candidate context. */
+export function localizedQuestionnaireTitle(
+  questionnaire: CandidateContext["questionnaire"],
+  locale: Locale,
+): string {
+  return pickLocalized(questionnaire, "title", locale) ?? questionnaire.title;
+}
+
+/** Picks the locale-resolved questionnaire description (may be null). */
+export function localizedQuestionnaireDescription(
+  questionnaire: CandidateContext["questionnaire"],
+  locale: Locale,
+): string | null {
+  return pickLocalized(questionnaire, "description", locale);
+}
 
 export type LoadedOption = { id: string; option_text: string; is_correct: boolean };
 export type LoadedQuestion = {
@@ -104,7 +125,7 @@ export async function getCandidateContext(
     service
       .from("questionnaires")
       .select(
-        "id, title, description, passing_percentage, randomize_question_order, randomize_answer_order, course_id",
+        "id, title, title_de, title_en, description, description_de, description_en, passing_percentage, randomize_question_order, randomize_answer_order, course_id",
       )
       .eq("id", assignment.questionnaire_id)
       .maybeSingle(),
@@ -125,10 +146,14 @@ export async function getCandidateContext(
 }
 
 /** Loads the questionnaire's questions (with options + topic titles) in base
- * order. Includes is_correct for server-side grading — callers rendering to the
- * candidate must output only id/text, never is_correct. */
+ * order. Each text field is locale-resolved through `pickLocalized` using the
+ * supplied locale (which the caller derives from the attempt's frozen
+ * `language` for in-progress flows, or `platform_settings.active_language`
+ * for admin previews). Includes is_correct for server-side grading — callers
+ * rendering to the candidate must output only id/text, never is_correct. */
 export async function loadQuestionnaireQuestions(
   questionnaireId: string,
+  locale: Locale,
 ): Promise<LoadedQuestion[]> {
   const service = createSupabaseServiceRoleClient();
 
@@ -144,11 +169,15 @@ export async function loadQuestionnaireQuestions(
   const [{ data: questions }, { data: options }] = await Promise.all([
     service
       .from("questions")
-      .select("id, question_text, question_type, topic_id, recommendation_text")
+      .select(
+        "id, question_text, question_text_de, question_text_en, question_type, topic_id, recommendation_text, recommendation_text_de, recommendation_text_en",
+      )
       .in("id", orderedIds),
     service
       .from("question_options")
-      .select("id, question_id, option_text, is_correct, sort_order")
+      .select(
+        "id, question_id, option_text, option_text_de, option_text_en, is_correct, sort_order",
+      )
       .in("question_id", orderedIds)
       .order("sort_order"),
   ]);
@@ -158,9 +187,11 @@ export async function loadQuestionnaireQuestions(
   ];
   const { data: topics } = await service
     .from("course_topics")
-    .select("id, title")
+    .select("id, title, title_de, title_en")
     .in("id", topicIds);
-  const topicTitle = new Map((topics ?? []).map((t) => [t.id, t.title]));
+  const topicTitle = new Map(
+    (topics ?? []).map((t) => [t.id, pickLocalized(t, "title", locale) ?? t.title]),
+  );
 
   const questionById = new Map((questions ?? []).map((q) => [q.id, q]));
   const optionsByQuestion = new Map<string, LoadedOption[]>();
@@ -168,7 +199,8 @@ export async function loadQuestionnaireQuestions(
     const list = optionsByQuestion.get(option.question_id) ?? [];
     list.push({
       id: option.id,
-      option_text: option.option_text,
+      option_text:
+        pickLocalized(option, "option_text", locale) ?? option.option_text,
       is_correct: option.is_correct,
     });
     optionsByQuestion.set(option.question_id, list);
@@ -179,11 +211,12 @@ export async function loadQuestionnaireQuestions(
     .filter((q): q is NonNullable<typeof q> => Boolean(q))
     .map((q) => ({
       question_id: q.id,
-      question_text: q.question_text,
+      question_text:
+        pickLocalized(q, "question_text", locale) ?? q.question_text,
       question_type: q.question_type,
       topic_id: q.topic_id,
       topic_title: q.topic_id ? (topicTitle.get(q.topic_id) ?? null) : null,
-      recommendation_text: q.recommendation_text,
+      recommendation_text: pickLocalized(q, "recommendation_text", locale),
       options: optionsByQuestion.get(q.id) ?? [],
     }));
 }
@@ -254,7 +287,10 @@ export async function recordAttempt(params: {
   const attemptSnapshot: Json = {
     language: attemptLanguage,
     questionnaire_id: context.questionnaire.id,
-    questionnaire_title: context.questionnaire.title,
+    questionnaire_title: localizedQuestionnaireTitle(
+      context.questionnaire,
+      attemptLanguage,
+    ),
     passing_percentage: context.questionnaire.passing_percentage,
     randomize_question_order: context.questionnaire.randomize_question_order,
     randomize_answer_order: context.questionnaire.randomize_answer_order,

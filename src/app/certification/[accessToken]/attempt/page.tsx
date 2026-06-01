@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   getCandidateContext,
   loadQuestionnaireQuestions,
+  localizedQuestionnaireTitle,
   type LoadedQuestion,
 } from "@/lib/certification/data";
 import { startOrResumeAttempt } from "@/lib/certification/attempt-lifecycle";
@@ -44,14 +45,18 @@ export default async function AttemptPage({
   const attempt = await startOrResumeAttempt(context.assignment.id);
   const dict = getDictionary(attempt.language);
   const tr = (key: string) => t(dict, key);
+  const title = localizedQuestionnaireTitle(context.questionnaire, attempt.language);
 
-  const loaded = await loadQuestionnaireQuestions(context.questionnaire.id);
+  const loaded = await loadQuestionnaireQuestions(
+    context.questionnaire.id,
+    attempt.language,
+  );
 
   if (loaded.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{context.questionnaire.title}</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-600">{tr("attempt.no_questions")}</p>
@@ -79,7 +84,7 @@ export default async function AttemptPage({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{context.questionnaire.title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <form action={submitAttempt} className="space-y-6">

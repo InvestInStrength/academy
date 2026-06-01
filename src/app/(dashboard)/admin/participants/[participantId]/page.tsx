@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { getActiveLanguage } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
 import type {
   AccountHistoryEvent,
   AdminProfile,
@@ -23,6 +25,7 @@ export default async function ParticipantDetailPage({
 }) {
   const { participantId } = await params;
   const { supabase } = await requireAdmin();
+  const locale = await getActiveLanguage();
 
   const { data: participant } = await supabase
     .from("participants")
@@ -46,8 +49,14 @@ export default async function ParticipantDetailPage({
       .select("id, questionnaire_id, access_token, status, active, created_at")
       .eq("participant_id", participantId)
       .order("created_at", { ascending: false }),
-    supabase.from("questionnaires").select("id, title, course_id, active").order("title"),
-    supabase.from("course_topics").select("id, title, course_id").order("sort_order"),
+    supabase
+      .from("questionnaires")
+      .select("id, title, title_de, title_en, course_id, active")
+      .order("title"),
+    supabase
+      .from("course_topics")
+      .select("id, title, title_de, title_en, course_id")
+      .order("sort_order"),
     supabase
       .from("account_history")
       .select("*")
@@ -133,17 +142,17 @@ export default async function ParticipantDetailPage({
         <AssignmentsSection
           participantId={participant.id}
           assignments={assignments}
-          questionnaires={
-            (questionnaireData ?? []) as {
-              id: string;
-              title: string;
-              course_id: string;
-              active: boolean;
-            }[]
-          }
-          topics={
-            (topicData ?? []) as { id: string; title: string; course_id: string }[]
-          }
+          questionnaires={(questionnaireData ?? []).map((q) => ({
+            id: q.id,
+            title: pickLocalized(q, "title", locale) ?? q.title,
+            course_id: q.course_id,
+            active: q.active,
+          }))}
+          topics={(topicData ?? []).map((t) => ({
+            id: t.id,
+            title: pickLocalized(t, "title", locale) ?? t.title,
+            course_id: t.course_id,
+          }))}
           assignmentTopics={
             (assignmentTopicData ?? []) as {
               certification_assignment_id: string;

@@ -10,9 +10,15 @@ import { courseSchema } from "./schema";
 function parseCourseForm(formData: FormData) {
   return courseSchema.safeParse({
     title: formData.get("title"),
+    title_en: formData.get("title_en") || undefined,
     description: formData.get("description") || undefined,
+    description_en: formData.get("description_en") || undefined,
     active: formData.get("active") === "on",
   });
+}
+
+function nullOrText(value: string | undefined): string | null {
+  return value && value.length > 0 ? value : null;
 }
 
 export async function createCourse(
@@ -29,12 +35,18 @@ export async function createCourse(
     };
   }
 
+  const d = parsed.data;
+  const description = nullOrText(d.description);
   const { data, error } = await supabase
     .from("courses")
     .insert({
-      title: parsed.data.title,
-      description: parsed.data.description ?? null,
-      active: parsed.data.active,
+      title: d.title,
+      title_de: d.title,
+      title_en: nullOrText(d.title_en),
+      description,
+      description_de: description,
+      description_en: nullOrText(d.description_en),
+      active: d.active,
     })
     .select("id")
     .single();
@@ -66,12 +78,18 @@ export async function updateCourse(
     };
   }
 
+  const d = parsed.data;
+  const description = nullOrText(d.description);
   const { error } = await supabase
     .from("courses")
     .update({
-      title: parsed.data.title,
-      description: parsed.data.description ?? null,
-      active: parsed.data.active,
+      title: d.title,
+      title_de: d.title,
+      title_en: nullOrText(d.title_en),
+      description,
+      description_de: description,
+      description_en: nullOrText(d.description_en),
+      active: d.active,
     })
     .eq("id", id);
 

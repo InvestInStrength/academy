@@ -74,7 +74,7 @@ the questionnaire — do not treat this as a generic quiz app.**
 - Hand-maintained types in `src/types/database.ts` — **keep in sync with the
   migration**. Can be replaced with `supabase gen types` output later.
 
-## Multilanguage (Slice 7a + 7a-plus + 7b shipped)
+## Multilanguage (Slice 7a + 7a-plus + 7b + 7c shipped)
 Superadmin-only feature flag. Single global active language (default `de`);
 English is dormant until the superadmin enables it. **Locked rules**: the
 capability stays invisible to every surface except the superadmin; in-progress
@@ -94,8 +94,13 @@ not the live `platform_settings`); frozen snapshots remain immutable.
 
 Schema is bilingual-ready (`_de`/`_en` columns on every translatable field
 except cert-template — those land with Slice 6 per Codex's sequencing call).
-Read/write paths still use legacy columns. The next slice (call it 7c) wires
-admin-form dual-write + conditional dual-input UI when EN is enabled.
+**Reads route through `pickLocalized`** in both candidate flow (keyed on
+`attempt.language`) and admin chrome (keyed on `platform_settings.active_language`).
+**Admin forms dual-write** — the same DE input populates both legacy `title`
+and `title_de`. When the superadmin enables EN via the settings page, every
+admin content form grows a second EN input per translatable field, and writes
+include `title_en` etc. Snapshots capture the localized text the candidate
+actually saw (defense-in-depth, paired with `attempts.language`).
 
 Plan + audit: `docs/slice-7a-plan.md`, `docs/codex-brief-multilanguage.md`,
 `docs/codex-audit-multilanguage.md`.

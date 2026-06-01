@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import type { Course, Question, Questionnaire } from "@/types/database";
+import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
+import type { Question, Questionnaire } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GuardedDeleteButton } from "@/components/admin/guarded-delete-button";
@@ -16,6 +18,10 @@ export default async function EditQuestionnairePage({
 }) {
   const { questionnaireId } = await params;
   const { supabase } = await requireAdmin();
+  const [locale, showEnglish] = await Promise.all([
+    getActiveLanguage(),
+    isEnglishEnabled(),
+  ]);
 
   const { data: questionnaire } = await supabase
     .from("questionnaires")
@@ -29,10 +35,15 @@ export default async function EditQuestionnairePage({
 
   const [{ data: courseData }, { data: questionData }, { data: qqData }] =
     await Promise.all([
-      supabase.from("courses").select("id, title").order("title"),
+      supabase
+        .from("courses")
+        .select("id, title, title_de, title_en")
+        .order("title"),
       supabase
         .from("questions")
-        .select("id, question_text, course_id, active")
+        .select(
+          "id, question_text, question_text_de, question_text_en, course_id, active",
+        )
         .order("created_at"),
       supabase
         .from("questionnaire_questions")
@@ -41,12 +52,20 @@ export default async function EditQuestionnairePage({
         .order("sort_order"),
     ]);
 
-  const courses = (courseData ?? []) as Pick<Course, "id" | "title">[];
-  const questions = (questionData ?? []) as Pick<
-    Question,
-    "id" | "question_text" | "course_id" | "active"
-  >[];
+  const courses = (courseData ?? []).map((c) => ({
+    id: c.id,
+    title: pickLocalized(c, "title", locale) ?? c.title,
+  }));
+  const questions = (questionData ?? []).map((q) => ({
+    id: q.id,
+    question_text:
+      pickLocalized(q, "question_text", locale) ?? q.question_text,
+    course_id: q.course_id,
+    active: q.active,
+  })) as Pick<Question, "id" | "question_text" | "course_id" | "active">[];
   const initialQuestionIds = (qqData ?? []).map((row) => row.question_id);
+  const localizedQTitle =
+    pickLocalized(questionnaire, "title", locale) ?? questionnaire.title;
 
   return (
     <div>
@@ -57,7 +76,7 @@ export default async function EditQuestionnairePage({
         ← Back to questionnaires
       </Link>
       <div className="mt-3">
-        <PageHeader title={questionnaire.title} description="Edit questionnaire settings and questions." />
+        <PageHeader title={localizedQTitle} description="Edit questionnaire settings and questions." />
       </div>
 
       <Card className="max-w-3xl">
@@ -67,6 +86,7 @@ export default async function EditQuestionnairePage({
             questions={questions}
             questionnaire={questionnaire}
             initialQuestionIds={initialQuestionIds}
+            showEnglish={showEnglish}
           />
         </CardContent>
       </Card>
@@ -83,7 +103,7 @@ export default async function EditQuestionnairePage({
           <GuardedDeleteButton
             action={deleteQuestionnaire}
             hidden={{ id: questionnaire.id }}
-            confirm={`Delete "${questionnaire.title}"?`}
+            confirm={`Delete "${localizedQTitle}"?`}
           >
             Delete questionnaire
           </GuardedDeleteButton>

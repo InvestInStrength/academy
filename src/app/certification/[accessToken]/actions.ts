@@ -144,7 +144,10 @@ export async function submitAttempt(formData: FormData): Promise<void> {
     redirect(`/certification/${accessToken}/attempt`);
   }
 
-  const loaded = await loadQuestionnaireQuestions(context.questionnaire.id);
+  const loaded = await loadQuestionnaireQuestions(
+    context.questionnaire.id,
+    inProgress.language,
+  );
   const byId = new Map(loaded.map((q) => [q.question_id, q]));
 
   // Trust the DB for which questions/options exist; the submitted order only

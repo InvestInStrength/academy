@@ -13,9 +13,10 @@ import { createTopic, updateTopic } from "./topic-actions";
 type Props = {
   courseId: string;
   topic?: CourseTopic;
+  showEnglish?: boolean;
 };
 
-export function TopicForm({ courseId, topic }: Props) {
+export function TopicForm({ courseId, topic, showEnglish = false }: Props) {
   const isEdit = Boolean(topic);
   const [state, formAction] = useActionState(
     isEdit ? updateTopic : createTopic,
@@ -23,12 +24,13 @@ export function TopicForm({ courseId, topic }: Props) {
   );
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Clear the "add topic" form after a successful insert so another can be added.
   useEffect(() => {
     if (state.ok && !isEdit) {
       formRef.current?.reset();
     }
   }, [state, isEdit]);
+
+  const idSuffix = topic?.id ?? "new";
 
   return (
     <form ref={formRef} action={formAction} className="space-y-3">
@@ -36,27 +38,40 @@ export function TopicForm({ courseId, topic }: Props) {
       {isEdit && <input type="hidden" name="id" value={topic!.id} />}
 
       <div className="grid gap-3 sm:grid-cols-[1fr_140px_90px]">
-        <Field label="Topic title" htmlFor={`title-${topic?.id ?? "new"}`} required error={state.fieldErrors?.title}>
+        <Field
+          label={showEnglish ? "Topic title (DE)" : "Topic title"}
+          htmlFor={`title-${idSuffix}`}
+          required
+          error={state.fieldErrors?.title}
+        >
           <Input
-            id={`title-${topic?.id ?? "new"}`}
+            id={`title-${idSuffix}`}
             name="title"
             defaultValue={topic?.title ?? ""}
             required
             maxLength={200}
           />
         </Field>
-        <Field label="Code" htmlFor={`code-${topic?.id ?? "new"}`} error={state.fieldErrors?.code}>
+        <Field
+          label="Code"
+          htmlFor={`code-${idSuffix}`}
+          error={state.fieldErrors?.code}
+        >
           <Input
-            id={`code-${topic?.id ?? "new"}`}
+            id={`code-${idSuffix}`}
             name="code"
             defaultValue={topic?.code ?? ""}
             maxLength={50}
             placeholder="e.g. T1"
           />
         </Field>
-        <Field label="Order" htmlFor={`order-${topic?.id ?? "new"}`} error={state.fieldErrors?.sort_order}>
+        <Field
+          label="Order"
+          htmlFor={`order-${idSuffix}`}
+          error={state.fieldErrors?.sort_order}
+        >
           <Input
-            id={`order-${topic?.id ?? "new"}`}
+            id={`order-${idSuffix}`}
             name="sort_order"
             type="number"
             min={0}
@@ -64,6 +79,21 @@ export function TopicForm({ courseId, topic }: Props) {
           />
         </Field>
       </div>
+
+      {showEnglish && (
+        <Field
+          label="Topic title (EN)"
+          htmlFor={`title-en-${idSuffix}`}
+          error={state.fieldErrors?.title_en}
+        >
+          <Input
+            id={`title-en-${idSuffix}`}
+            name="title_en"
+            defaultValue={topic?.title_en ?? ""}
+            maxLength={200}
+          />
+        </Field>
+      )}
 
       <div className="flex items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-sm text-slate-700">
