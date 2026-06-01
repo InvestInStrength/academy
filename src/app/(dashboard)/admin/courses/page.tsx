@@ -26,12 +26,44 @@ export default async function CoursesPage() {
 
   const courses: Course[] = data ?? [];
 
+  const introSteps = [1, 2, 3, 4, 5, 6].map((n) => ({
+    n,
+    title: t(`admin.courses.intro.step${n}.title`),
+    body: t(`admin.courses.intro.step${n}.body`),
+  }));
+
   return (
     <div>
       <PageHeader
         title={t("admin.courses.title")}
         description={t("admin.courses.description")}
       />
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{t("admin.courses.intro.title")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-600">
+            {t("admin.courses.intro.description")}
+          </p>
+          <ol className="space-y-3">
+            {introSteps.map((step) => (
+              <li key={step.n} className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-700">
+                  {step.n}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">
+                    {step.title}
+                  </p>
+                  <p className="mt-0.5 text-sm text-slate-600">{step.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Card>
