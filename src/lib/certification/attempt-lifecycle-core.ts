@@ -1,0 +1,76 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Database, Locale } from "@/types/database";
+
+/**
+ * Pure core for attempt-lifecycle. Carries no `server-only`, no env-coupled
+ * imports — tests can import this file with a hand-rolled fake client.
+ *
+ * Production callers should use `./attempt-lifecycle.ts` which adds the
+ * service-role-client and active-language plumbing.
+ */
+
+export type InProgressAttempt = {
+  id: string;
+  attempt_number: number;
+  language: Locale;
+};
+
+/** Given a Supabase client + assignment + the active language, finds or
+ * creates an in-progress attempt row.
+ *
+ * Returns the existing row when one is found (its frozen language is
+ * preserved). Inserts a new row only when no in-progress row exists for the
+ * assignment.
+ */
+export async function startOrResumeAttemptWith(
+  service: SupabaseClient<Database>,
+  assignmentId: string,
+  currentActiveLanguage: Locale,
+): Promise<InProgressAttempt> {
+  const { data: existing } = await service
+    .from("attempts")
+    .select("id, attempt_number, language")
+    .eq("certification_assignment_id", assignmentId)
+    .is("submitted_at", null)
+    .order("attempt_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    return {
+      id: existing.id,
+      attempt_number: existing.attempt_number,
+      language: existing.language,
+    };
+  }
+
+  const { data: last } = await service
+    .from("attempts")
+    .select("attempt_number")
+    .eq("certification_assignment_id", assignmentId)
+    .order("attempt_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const attemptNumber = (last?.attempt_number ?? 0) + 1;
+
+  const { data: inserted, error } = await service
+    .from("attempts")
+    .insert({
+      certification_assignment_id: assignmentId,
+      attempt_number: attemptNumber,
+      language: currentActiveLanguage,
+    })
+    .select("id, attempt_number, language")
+    .single();
+
+  if (error || !inserted) {
+    throw new Error(`Failed to start attempt: ${error?.message ?? "unknown"}`);
+  }
+
+  return {
+    id: inserted.id,
+    attempt_number: inserted.attempt_number,
+    language: inserted.language,
+  };
+}

@@ -19,6 +19,7 @@ export type QuestionType = "single_choice" | "multiple_choice";
 export type AssignmentStatus = "not_started" | "in_progress" | "passed" | "failed";
 export type CertificateStatus = "valid" | "revoked";
 export type AdminRole = "admin" | "superadmin";
+export type Locale = "de" | "en";
 
 /** Adds the empty Relationships tuple each table needs to satisfy the
  * supabase-js `GenericTable` constraint (we have no PostgREST embeds typed). */
@@ -374,6 +375,7 @@ export type Database = {
           passed: boolean | null;
           attempt_snapshot: Json | null;
           recommendation_snapshot: Json | null;
+          language: Locale;
           created_at: string;
         };
         Insert: {
@@ -388,6 +390,7 @@ export type Database = {
           passed?: boolean | null;
           attempt_snapshot?: Json | null;
           recommendation_snapshot?: Json | null;
+          language?: Locale;
           created_at?: string;
         };
         Update: {
@@ -402,6 +405,7 @@ export type Database = {
           passed?: boolean | null;
           attempt_snapshot?: Json | null;
           recommendation_snapshot?: Json | null;
+          language?: Locale;
           created_at?: string;
         };
       };
@@ -499,6 +503,26 @@ export type Database = {
           updated_at?: string;
         };
       };
+      platform_settings: {
+        Row: {
+          id: boolean;
+          active_language: Locale;
+          enabled_languages: Locale[];
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          active_language?: Locale;
+          enabled_languages?: Locale[];
+          updated_at?: string;
+        };
+        Update: {
+          id?: boolean;
+          active_language?: Locale;
+          enabled_languages?: Locale[];
+          updated_at?: string;
+        };
+      };
       account_history: {
         Row: {
           id: string;
@@ -565,3 +589,4 @@ export type Attempt = Tables["attempts"]["Row"];
 export type AttemptAnswer = Tables["attempt_answers"]["Row"];
 export type Certificate = Tables["certificates"]["Row"];
 export type AccountHistoryEvent = Tables["account_history"]["Row"];
+export type PlatformSettings = Tables["platform_settings"]["Row"];

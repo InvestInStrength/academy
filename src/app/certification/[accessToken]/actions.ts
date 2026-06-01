@@ -7,6 +7,7 @@ import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { sendCertificateEmail } from "@/lib/email/certificate-email";
+import { getInProgressAttempt } from "@/lib/certification/attempt-lifecycle";
 import {
   confirmParticipantEmail,
   getCandidateContext,
@@ -135,6 +136,14 @@ export async function submitAttempt(formData: FormData): Promise<void> {
     redirect(`/certification/${accessToken}?busy=1`);
   }
 
+  // The attempt row was created at attempt-start (`startOrResumeAttempt` on
+  // the page render). If somehow none exists, bounce back so it can be
+  // materialized — never grade against a missing attempt row.
+  const inProgress = await getInProgressAttempt(context.assignment.id);
+  if (!inProgress) {
+    redirect(`/certification/${accessToken}/attempt`);
+  }
+
   const loaded = await loadQuestionnaireQuestions(context.questionnaire.id);
   const byId = new Map(loaded.map((q) => [q.question_id, q]));
 
@@ -186,6 +195,9 @@ export async function submitAttempt(formData: FormData): Promise<void> {
 
   await recordAttempt({
     context,
+    attemptId: inProgress.id,
+    attemptNumber: inProgress.attempt_number,
+    attemptLanguage: inProgress.language,
     score,
     recommendations,
     displayedQuestionOrder: finalOrder,

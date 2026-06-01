@@ -5,6 +5,8 @@ import {
   loadQuestionnaireQuestions,
   type LoadedQuestion,
 } from "@/lib/certification/data";
+import { startOrResumeAttempt } from "@/lib/certification/attempt-lifecycle";
+import { getDictionary, t } from "@/lib/i18n/dict";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { submitAttempt } from "../actions";
@@ -35,6 +37,14 @@ export default async function AttemptPage({
     redirect(`/certification/${accessToken}/result`);
   }
 
+  // Materialize (or resume) the in-progress attempt row. Its language is
+  // frozen at this moment and persisted on the row, so the rest of the flow
+  // (this render, the submit, the snapshots) speaks one consistent language
+  // even if the superadmin flips the global active language mid-flight.
+  const attempt = await startOrResumeAttempt(context.assignment.id);
+  const dict = getDictionary(attempt.language);
+  const tr = (key: string) => t(dict, key);
+
   const loaded = await loadQuestionnaireQuestions(context.questionnaire.id);
 
   if (loaded.length === 0) {
@@ -44,10 +54,7 @@ export default async function AttemptPage({
           <CardTitle>{context.questionnaire.title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-600">
-            This assessment doesn&apos;t have any questions yet. Please check back
-            later or contact whoever issued your link.
-          </p>
+          <p className="text-sm text-slate-600">{tr("attempt.no_questions")}</p>
         </CardContent>
       </Card>
     );
@@ -89,7 +96,7 @@ export default async function AttemptPage({
                   {index + 1}. {question.question_text}
                   {question.question_type === "multiple_choice" && (
                     <span className="ml-1 text-xs font-normal text-slate-400">
-                      (select all that apply)
+                      {tr("attempt.multiple_choice_hint")}
                     </span>
                   )}
                 </legend>
@@ -113,7 +120,9 @@ export default async function AttemptPage({
             );
           })}
 
-          <SubmitButton pendingText="Submitting…">Submit assessment</SubmitButton>
+          <SubmitButton pendingText={tr("attempt.submitting")}>
+            {tr("attempt.submit")}
+          </SubmitButton>
         </form>
       </CardContent>
     </Card>

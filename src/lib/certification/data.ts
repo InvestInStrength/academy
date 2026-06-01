@@ -2,7 +2,7 @@ import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 import { issueCertificate } from "@/lib/certificate/issue";
-import type { AssignmentStatus, Json, QuestionType } from "@/types/database";
+import type { AssignmentStatus, Json, Locale, QuestionType } from "@/types/database";
 import type {
   AttemptScore,
   GradedQuestion,
@@ -225,27 +225,34 @@ export async function confirmParticipantEmail(
   );
 }
 
-/** Records a completed attempt: the attempt row, per-question snapshots, the
- * updated assignment status, and history events. */
+/** Records a completed attempt. Slice 7a: the attempt row already exists (it
+ * was created at attempt start by `startOrResumeAttempt`), so this function
+ * **updates** the existing row with the grading result + answer snapshots,
+ * rather than inserting a new one. The attempt's frozen `language` is included
+ * in both the structured row read by callers and the JSON snapshots, as
+ * defense-in-depth against schema drift. */
 export async function recordAttempt(params: {
   context: CandidateContext;
+  attemptId: string;
+  attemptNumber: number;
+  attemptLanguage: Locale;
   score: AttemptScore;
   recommendations: TopicRecommendation[];
   displayedQuestionOrder: string[];
 }): Promise<{ passed: boolean; attempt_number: number }> {
-  const { context, score, recommendations, displayedQuestionOrder } = params;
+  const {
+    context,
+    attemptId,
+    attemptNumber,
+    attemptLanguage,
+    score,
+    recommendations,
+    displayedQuestionOrder,
+  } = params;
   const service = createSupabaseServiceRoleClient();
 
-  const { data: last } = await service
-    .from("attempts")
-    .select("attempt_number")
-    .eq("certification_assignment_id", context.assignment.id)
-    .order("attempt_number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const attemptNumber = (last?.attempt_number ?? 0) + 1;
-
   const attemptSnapshot: Json = {
+    language: attemptLanguage,
     questionnaire_id: context.questionnaire.id,
     questionnaire_title: context.questionnaire.title,
     passing_percentage: context.questionnaire.passing_percentage,
@@ -255,11 +262,11 @@ export async function recordAttempt(params: {
     total_questions: score.total,
   };
 
-  const { data: attempt, error } = await service
+  // Update the in-progress attempt row. Guarded by `submitted_at IS NULL` so
+  // we never overwrite an already-submitted attempt.
+  const { error: updError } = await service
     .from("attempts")
-    .insert({
-      certification_assignment_id: context.assignment.id,
-      attempt_number: attemptNumber,
+    .update({
       submitted_at: new Date().toISOString(),
       score_percentage: score.score_percentage,
       correct_count: score.correct_count,
@@ -268,17 +275,18 @@ export async function recordAttempt(params: {
       attempt_snapshot: attemptSnapshot,
       recommendation_snapshot: recommendations as unknown as Json,
     })
-    .select("id")
-    .single();
+    .eq("id", attemptId)
+    .is("submitted_at", null);
 
-  if (error || !attempt) {
+  if (updError) {
     throw new Error("Failed to record attempt");
   }
 
   const answerRows = score.graded.map((question: GradedQuestion, index) => ({
-    attempt_id: attempt.id,
+    attempt_id: attemptId,
     question_id: question.question_id,
     question_snapshot: {
+      language: attemptLanguage,
       question_id: question.question_id,
       question_text: question.question_text,
       question_type: question.question_type,

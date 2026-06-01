@@ -61,9 +61,25 @@ the questionnaire — do not treat this as a generic quiz app.**
   create/edit use `useActionState` + `FormState`.
 
 ## Database
-- One migration so far: `supabase/migrations/0001_core_schema.sql` (full model).
+- Migrations:
+  - `0001_core_schema.sql` — full model.
+  - `0002_platform_settings_and_attempt_language.sql` — Slice 7a multilanguage
+    foundation (typed `platform_settings` single-row table; `attempts.language`
+    frozen at attempt-start).
 - Hand-maintained types in `src/types/database.ts` — **keep in sync with the
   migration**. Can be replaced with `supabase gen types` output later.
+
+## Multilanguage (Slice 7a, in progress)
+Superadmin-only feature flag. Single global active language (default `de`);
+English is dormant until the superadmin enables it. **Locked rules**: the
+capability stays invisible to every surface except the superadmin; in-progress
+attempts freeze their language at attempt-start (read from `attempts.language`,
+not the live `platform_settings`); frozen snapshots remain immutable. i18n
+runtime: `src/lib/i18n/` (`getActiveLanguage` cached per-request via React
+`cache()`; pure helpers in `dict.ts` for tests). Attempt lifecycle:
+`src/lib/certification/attempt-lifecycle.ts` (`startOrResumeAttempt` materializes
+the in-progress row at the moment the candidate hits `/attempt`). Plan + audit:
+`docs/slice-7a-plan.md`, `docs/codex-audit-multilanguage.md`.
 
 ## Commands
 - `pnpm dev` — dev server
