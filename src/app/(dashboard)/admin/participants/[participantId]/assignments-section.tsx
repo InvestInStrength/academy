@@ -1,6 +1,7 @@
 import { certificationUrl, verificationUrl } from "@/lib/public-url";
 import { formatDate } from "@/lib/utils";
-import type { AssignmentStatus, CertificateStatus } from "@/types/database";
+import { getDictionary, t as rawT } from "@/lib/i18n/dict";
+import type { AssignmentStatus, CertificateStatus, Locale } from "@/types/database";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/admin/action-button";
@@ -31,6 +32,7 @@ type CertificateInfo = {
 
 type Props = {
   participantId: string;
+  locale: Locale;
   assignments: Assignment[];
   questionnaires: Questionnaire[];
   topics: Topic[];
@@ -45,21 +47,26 @@ const statusTone: Record<AssignmentStatus, "neutral" | "warning" | "success" | "
   failed: "danger",
 };
 
-const statusLabel: Record<AssignmentStatus, string> = {
-  not_started: "Not started",
-  in_progress: "In progress",
-  passed: "Passed",
-  failed: "Failed",
-};
-
 export function AssignmentsSection({
   participantId,
+  locale,
   assignments,
   questionnaires,
   topics,
   assignmentTopics,
   certificates,
 }: Props) {
+  const dict = getDictionary(locale);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    rawT(dict, key, params);
+
+  const statusLabel: Record<AssignmentStatus, string> = {
+    not_started: t("admin.assignments.status.not_started"),
+    in_progress: t("admin.assignments.status.in_progress"),
+    passed: t("admin.assignments.status.passed"),
+    failed: t("admin.assignments.status.failed"),
+  };
+
   const questionnaireById = new Map(questionnaires.map((q) => [q.id, q]));
   const activeQuestionnaires = questionnaires.filter((q) => q.active);
   const certificateByAssignment = new Map(
@@ -70,12 +77,12 @@ export function AssignmentsSection({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Create a certification assignment</CardTitle>
+          <CardTitle>{t("admin.assignments.create_card")}</CardTitle>
         </CardHeader>
         <CardContent>
           {activeQuestionnaires.length === 0 ? (
             <p className="text-sm text-slate-500">
-              No active questionnaires available. Create and activate one first.
+              {t("admin.assignments.no_active_questionnaires")}
             </p>
           ) : (
             <AssignmentCreateForm
@@ -89,12 +96,12 @@ export function AssignmentsSection({
 
       <Card>
         <CardHeader>
-          <CardTitle>Assignments ({assignments.length})</CardTitle>
+          <CardTitle>{t("admin.assignments.list_title", { count: assignments.length })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {assignments.length === 0 ? (
             <p className="py-4 text-center text-sm text-slate-500">
-              No assignments yet. Create one above.
+              {t("admin.assignments.empty")}
             </p>
           ) : (
             assignments.map((assignment) => {
@@ -115,10 +122,12 @@ export function AssignmentsSection({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-medium text-slate-900">
-                        {questionnaire?.title ?? "(deleted questionnaire)"}
+                        {questionnaire?.title ?? t("admin.assignments.deleted_questionnaire")}
                       </p>
                       <p className="text-xs text-slate-400">
-                        Created {formatDate(assignment.created_at)}
+                        {t("admin.assignments.created_at", {
+                          date: formatDate(assignment.created_at, locale),
+                        })}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -126,14 +135,14 @@ export function AssignmentsSection({
                         {statusLabel[assignment.status]}
                       </Badge>
                       <Badge tone={assignment.active ? "success" : "neutral"}>
-                        {assignment.active ? "Active" : "Inactive"}
+                        {assignment.active ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </div>
                   </div>
 
                   <div className="mt-3 space-y-1">
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                      Personal access link
+                      {t("admin.assignments.personal_link")}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <code className="flex-1 break-all rounded bg-slate-50 px-2 py-1 text-xs text-slate-700">
@@ -145,14 +154,16 @@ export function AssignmentsSection({
 
                   <div className="mt-3">
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                      Certificate topics
+                      {t("admin.assignments.certificate_topics")}
                     </p>
                     <p className="text-sm text-slate-700">
-                      {selectedTitles.length > 0 ? selectedTitles.join(", ") : "None selected"}
+                      {selectedTitles.length > 0
+                        ? selectedTitles.join(", ")
+                        : t("admin.assignments.none_selected")}
                     </p>
                     <details className="mt-2">
                       <summary className="cursor-pointer text-xs text-brand-700 hover:underline">
-                        Edit certificate topics
+                        {t("admin.assignments.edit_topics")}
                       </summary>
                       <div className="mt-2 rounded-md border border-slate-100 p-3">
                         <AssignmentTopicsForm
@@ -166,7 +177,7 @@ export function AssignmentsSection({
 
                   <div className="mt-3">
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                      Certificate
+                      {t("admin.assignments.certificate_label")}
                     </p>
                     {(() => {
                       const cert = certificateByAssignment.get(assignment.id);
@@ -177,7 +188,9 @@ export function AssignmentsSection({
                               {cert.certificate_number}
                             </span>
                             <Badge tone={cert.status === "valid" ? "success" : "danger"}>
-                              {cert.status === "valid" ? "Valid" : "Revoked"}
+                              {cert.status === "valid"
+                                ? t("common.valid")
+                                : t("common.revoked")}
                             </Badge>
                             <a
                               href={verificationUrl(cert.verification_token)}
@@ -185,20 +198,22 @@ export function AssignmentsSection({
                               rel="noopener noreferrer"
                               className="text-brand-700 hover:underline"
                             >
-                              Verify
+                              {t("admin.assignments.verify")}
                             </a>
                           </div>
                         );
                       }
                       if (assignment.status === "passed") {
                         return (
-                          <p className="text-sm text-slate-500">Certificate pending…</p>
+                          <p className="text-sm text-slate-500">
+                            {t("admin.assignments.certificate_pending")}
+                          </p>
                         );
                       }
                       return (
                         <details>
                           <summary className="cursor-pointer text-sm text-brand-700 hover:underline">
-                            Manually mark as passed
+                            {t("admin.assignments.manual_pass")}
                           </summary>
                           <div className="mt-2 rounded-md border border-slate-100 p-3">
                             <ManualPassForm assignmentId={assignment.id} />
@@ -212,9 +227,9 @@ export function AssignmentsSection({
                     <ActionButton
                       action={regenerateAccessLink}
                       hidden={{ id: assignment.id, participant_id: participantId }}
-                      confirm="Regenerate the access link? The old link will stop working."
+                      confirm={t("admin.assignments.regenerate_confirm")}
                     >
-                      Regenerate link
+                      {t("admin.assignments.regenerate_link")}
                     </ActionButton>
                     <ActionButton
                       action={toggleAssignmentActive}
@@ -226,11 +241,13 @@ export function AssignmentsSection({
                       variant={assignment.active ? "danger" : "outline"}
                       confirm={
                         assignment.active
-                          ? "Deactivate this assignment? The candidate's link stops working."
+                          ? t("admin.assignments.deactivate_confirm")
                           : undefined
                       }
                     >
-                      {assignment.active ? "Deactivate" : "Reactivate"}
+                      {assignment.active
+                        ? t("admin.assignments.deactivate")
+                        : t("admin.assignments.reactivate")}
                     </ActionButton>
                   </div>
                 </div>

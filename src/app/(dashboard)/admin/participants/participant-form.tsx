@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import type { Participant } from "@/types/database";
 import { emptyFormState } from "@/lib/form";
+import { useT } from "@/lib/i18n/client";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { FormMessage } from "@/components/ui/form-message";
@@ -12,6 +13,7 @@ import { createParticipant, updateParticipant } from "./actions";
 
 export function ParticipantForm({ participant }: { participant?: Participant }) {
   const isEdit = Boolean(participant);
+  const t = useT();
   const [state, formAction] = useActionState(
     isEdit ? updateParticipant : createParticipant,
     emptyFormState,
@@ -21,7 +23,12 @@ export function ParticipantForm({ participant }: { participant?: Participant }) 
     <form action={formAction} className="space-y-4">
       {isEdit && <input type="hidden" name="id" value={participant!.id} />}
 
-      <Field label="Full name" htmlFor="full_name" required error={state.fieldErrors?.full_name}>
+      <Field
+        label={t("admin.forms.field.full_name")}
+        htmlFor="full_name"
+        required
+        error={state.fieldErrors?.full_name}
+      >
         <Input
           id="full_name"
           name="full_name"
@@ -32,9 +39,9 @@ export function ParticipantForm({ participant }: { participant?: Participant }) 
       </Field>
 
       <Field
-        label="Certificate display name"
+        label={t("admin.forms.field.display_name")}
         htmlFor="certificate_display_name"
-        hint="Optional — used on the certificate if the full name is too long."
+        hint={t("admin.forms.field.display_name_hint")}
         error={state.fieldErrors?.certificate_display_name}
       >
         <Input
@@ -46,9 +53,9 @@ export function ParticipantForm({ participant }: { participant?: Participant }) 
       </Field>
 
       <Field
-        label="Email"
+        label={t("common.email")}
         htmlFor="email"
-        hint="Optional. Candidates confirm their email before their first attempt."
+        hint={t("admin.forms.field.email_hint")}
         error={state.fieldErrors?.email}
       >
         <Input
@@ -65,8 +72,10 @@ export function ParticipantForm({ participant }: { participant?: Participant }) 
         </FormMessage>
       )}
 
-      <SubmitButton pendingText="Saving…">
-        {isEdit ? "Save participant" : "Create participant"}
+      <SubmitButton pendingText={t("common.saving")}>
+        {isEdit
+          ? t("admin.participants.save_button")
+          : t("admin.participants.create_button")}
       </SubmitButton>
     </form>
   );

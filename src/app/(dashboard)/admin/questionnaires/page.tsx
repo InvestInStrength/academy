@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import { getActiveLanguage } from "@/lib/i18n";
+import { getServerT } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import type { Questionnaire } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
@@ -13,7 +13,7 @@ import { toggleQuestionnaireActive } from "./actions";
 
 export default async function QuestionnairesPage() {
   const { supabase } = await requireAdmin();
-  const locale = await getActiveLanguage();
+  const { locale, t } = await getServerT();
 
   const [{ data: qData }, { data: courseData }, { data: qqData }] =
     await Promise.all([
@@ -44,25 +44,27 @@ export default async function QuestionnairesPage() {
   return (
     <div>
       <PageHeader
-        title="Questionnaires"
-        description="Configured assessments. Passing threshold and shuffle behaviour are per questionnaire."
+        title={t("admin.questionnaires.title")}
+        description={t("admin.questionnaires.description")}
         actions={
           <ButtonLink href="/admin/questionnaires/new">
-            New questionnaire
+            {t("admin.questionnaires.new_button")}
           </ButtonLink>
         }
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>All questionnaires ({questionnaires.length})</CardTitle>
+          <CardTitle>
+            {t("admin.questionnaires.list_title", { count: questionnaires.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {questionnaires.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-slate-500">
-              No questionnaires yet.{" "}
+              {t("admin.questionnaires.empty")}{" "}
               <Link href="/admin/questionnaires/new" className="text-brand-700 hover:underline">
-                Create one
+                {t("admin.questionnaires.empty_link")}
               </Link>
               .
             </p>
@@ -70,12 +72,12 @@ export default async function QuestionnairesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-2 font-medium">Title</th>
-                  <th className="px-5 py-2 font-medium">Course</th>
-                  <th className="px-5 py-2 font-medium">Pass</th>
-                  <th className="px-5 py-2 font-medium">Questions</th>
-                  <th className="px-5 py-2 font-medium">Shuffle</th>
-                  <th className="px-5 py-2 font-medium">Status</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questionnaires.col_title")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questionnaires.col_course")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questionnaires.col_pass")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questionnaires.col_questions")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questionnaires.col_shuffle")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questionnaires.col_status")}</th>
                   <th className="px-5 py-2" />
                 </tr>
               </thead>
@@ -116,7 +118,7 @@ export default async function QuestionnairesPage() {
                     </td>
                     <td className="px-5 py-3">
                       <Badge tone={questionnaire.active ? "success" : "neutral"}>
-                        {questionnaire.active ? "Active" : "Inactive"}
+                        {questionnaire.active ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </td>
                     <td className="px-5 py-3">
@@ -128,7 +130,7 @@ export default async function QuestionnairesPage() {
                             active: String(!questionnaire.active),
                           }}
                         >
-                          {questionnaire.active ? "Deactivate" : "Activate"}
+                          {questionnaire.active ? t("common.deactivate") : t("common.activate")}
                         </ActionButton>
                       </div>
                     </td>

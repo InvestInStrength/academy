@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
 import { verificationUrl } from "@/lib/public-url";
 import type { CertificateStatus } from "@/types/database";
@@ -22,6 +23,7 @@ type CertificateRow = {
 
 export default async function CertificatesPage() {
   const { supabase } = await requireAdmin();
+  const { locale, t } = await getServerT();
 
   const { data: certData } = await supabase
     .from("certificates")
@@ -36,10 +38,10 @@ export default async function CertificatesPage() {
     return (
       <div>
         <PageHeader
-          title="Certificates"
-          description="Issued certificates, verification, and revocation."
+          title={t("admin.certificates.title")}
+          description={t("admin.certificates.description")}
         />
-        <PlaceholderPanel note="No certificates issued yet. They are generated automatically when a candidate passes, or when an admin manually passes a candidate." />
+        <PlaceholderPanel note={t("admin.certificates.empty")} />
       </div>
     );
   }
@@ -67,23 +69,25 @@ export default async function CertificatesPage() {
   return (
     <div>
       <PageHeader
-        title="Certificates"
-        description="Issued certificates, verification, and revocation."
+        title={t("admin.certificates.title")}
+        description={t("admin.certificates.description")}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Issued certificates ({certificates.length})</CardTitle>
+          <CardTitle>
+            {t("admin.certificates.list_title", { count: certificates.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                <th className="px-5 py-2 font-medium">Certificate</th>
-                <th className="px-5 py-2 font-medium">Candidate</th>
-                <th className="px-5 py-2 font-medium">Assessment</th>
-                <th className="px-5 py-2 font-medium">Issued</th>
-                <th className="px-5 py-2 font-medium">Status</th>
+                <th className="px-5 py-2 font-medium">{t("admin.certificates.col_certificate")}</th>
+                <th className="px-5 py-2 font-medium">{t("admin.certificates.col_candidate")}</th>
+                <th className="px-5 py-2 font-medium">{t("admin.certificates.col_assessment")}</th>
+                <th className="px-5 py-2 font-medium">{t("admin.certificates.col_issued")}</th>
+                <th className="px-5 py-2 font-medium">{t("admin.certificates.col_status")}</th>
                 <th className="px-5 py-2" />
               </tr>
             </thead>
@@ -102,11 +106,13 @@ export default async function CertificatesPage() {
                       {assignment ? (questionnaireTitle.get(assignment.questionnaire_id) ?? "—") : "—"}
                     </td>
                     <td className="px-5 py-3 text-slate-500">
-                      {formatDate(certificate.generated_at)}
+                      {formatDate(certificate.generated_at, locale)}
                     </td>
                     <td className="px-5 py-3">
                       <Badge tone={certificate.status === "valid" ? "success" : "danger"}>
-                        {certificate.status === "valid" ? "Valid" : "Revoked"}
+                        {certificate.status === "valid"
+                          ? t("common.valid")
+                          : t("common.revoked")}
                       </Badge>
                     </td>
                     <td className="px-5 py-3">
@@ -117,14 +123,14 @@ export default async function CertificatesPage() {
                           rel="noopener noreferrer"
                           className="text-xs text-brand-700 hover:underline"
                         >
-                          Verification page
+                          {t("admin.certificates.verification_page")}
                         </a>
                         {certificate.status === "valid" ? (
                           <>
                             <SendCertificateEmailButton certificateId={certificate.id} />
                             <details>
                               <summary className="cursor-pointer text-xs text-red-700 hover:underline">
-                                Revoke
+                                {t("admin.certificates.revoke")}
                               </summary>
                               <div className="mt-2 w-64 rounded-md border border-slate-100 p-3">
                                 <RevokeCertificateForm certificateId={certificate.id} />
@@ -136,7 +142,7 @@ export default async function CertificatesPage() {
                             action={reinstateCertificate}
                             hidden={{ id: certificate.id }}
                           >
-                            Reinstate
+                            {t("admin.certificates.reinstate")}
                           </ActionButton>
                         )}
                       </div>

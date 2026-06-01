@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { getServerT, isEnglishEnabled } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,8 +9,8 @@ import { QuestionForm } from "../question-form";
 
 export default async function NewQuestionPage() {
   const { supabase } = await requireAdmin();
-  const [locale, showEnglish] = await Promise.all([
-    getActiveLanguage(),
+  const [{ locale, t }, showEnglish] = await Promise.all([
+    getServerT(),
     isEnglishEnabled(),
   ]);
 
@@ -41,16 +41,16 @@ export default async function NewQuestionPage() {
         href="/admin/questions"
         className="text-sm text-slate-500 hover:text-slate-900"
       >
-        ← Back to question bank
+        {t("admin.questions.back")}
       </Link>
       <div className="mt-3">
-        <PageHeader title="New question" />
+        <PageHeader title={t("admin.questions.new_page_title")} />
       </div>
 
       {courses.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-sm text-slate-500">
-            Create a course first before adding questions.
+            {t("admin.questions.no_courses_yet")}
           </CardContent>
         </Card>
       ) : (

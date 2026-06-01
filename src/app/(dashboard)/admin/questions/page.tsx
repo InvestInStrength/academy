@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import { getActiveLanguage } from "@/lib/i18n";
+import { getServerT } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import type { Question } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
@@ -19,7 +19,7 @@ export default async function QuestionsPage({
 }) {
   const { course: courseFilter } = await searchParams;
   const { supabase } = await requireAdmin();
-  const locale = await getActiveLanguage();
+  const { locale, t } = await getServerT();
 
   const [{ data: courseData }, { data: topicData }] = await Promise.all([
     supabase
@@ -55,19 +55,19 @@ export default async function QuestionsPage({
   return (
     <div>
       <PageHeader
-        title="Question Bank"
-        description="Reusable questions. Each belongs to a course and (optionally) a topic."
+        title={t("admin.questions.title")}
+        description={t("admin.questions.description")}
         actions={
-          <ButtonLink href="/admin/questions/new">New question</ButtonLink>
+          <ButtonLink href="/admin/questions/new">{t("admin.questions.new_button")}</ButtonLink>
         }
       />
 
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle>Questions ({questions.length})</CardTitle>
+          <CardTitle>{t("admin.questions.list_title", { count: questions.length })}</CardTitle>
           <form method="get" className="flex items-center gap-2">
             <Select name="course" defaultValue={courseFilter ?? ""} className="w-56">
-              <option value="">All courses</option>
+              <option value="">{t("admin.questions.all_courses")}</option>
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
                   {course.title}
@@ -78,16 +78,16 @@ export default async function QuestionsPage({
               type="submit"
               className="cursor-pointer rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
-              Filter
+              {t("common.filter")}
             </button>
           </form>
         </CardHeader>
         <CardContent className="p-0">
           {questions.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-slate-500">
-              No questions yet.{" "}
+              {t("admin.questions.empty")}{" "}
               <Link href="/admin/questions/new" className="text-brand-700 hover:underline">
-                Create your first question
+                {t("admin.questions.empty_link")}
               </Link>
               .
             </p>
@@ -95,10 +95,10 @@ export default async function QuestionsPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-2 font-medium">Question</th>
-                  <th className="px-5 py-2 font-medium">Course / Topic</th>
-                  <th className="px-5 py-2 font-medium">Type</th>
-                  <th className="px-5 py-2 font-medium">Status</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questions.col_question")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questions.col_course_topic")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questions.col_type")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.questions.col_status")}</th>
                   <th className="px-5 py-2" />
                 </tr>
               </thead>
@@ -129,12 +129,12 @@ export default async function QuestionsPage({
                     </td>
                     <td className="px-5 py-3 text-slate-600">
                       {question.question_type === "single_choice"
-                        ? "Single"
-                        : "Multiple"}
+                        ? t("admin.questions.type_single")
+                        : t("admin.questions.type_multiple")}
                     </td>
                     <td className="px-5 py-3">
                       <Badge tone={question.active ? "success" : "neutral"}>
-                        {question.active ? "Active" : "Inactive"}
+                        {question.active ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </td>
                     <td className="px-5 py-3">
@@ -143,7 +143,7 @@ export default async function QuestionsPage({
                           action={toggleQuestionActive}
                           hidden={{ id: question.id, active: String(!question.active) }}
                         >
-                          {question.active ? "Deactivate" : "Activate"}
+                          {question.active ? t("common.deactivate") : t("common.activate")}
                         </ActionButton>
                       </div>
                     </td>

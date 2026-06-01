@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { getServerT, isEnglishEnabled } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import type { Question, QuestionOption } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
@@ -18,8 +18,8 @@ export default async function EditQuestionPage({
 }) {
   const { questionId } = await params;
   const { supabase } = await requireAdmin();
-  const [locale, showEnglish] = await Promise.all([
-    getActiveLanguage(),
+  const [{ locale, t }, showEnglish] = await Promise.all([
+    getServerT(),
     isEnglishEnabled(),
   ]);
 
@@ -67,10 +67,10 @@ export default async function EditQuestionPage({
         href="/admin/questions"
         className="text-sm text-slate-500 hover:text-slate-900"
       >
-        ← Back to question bank
+        {t("admin.questions.back")}
       </Link>
       <div className="mt-3">
-        <PageHeader title="Edit question" />
+        <PageHeader title={t("admin.questions.edit_page_title")} />
       </div>
 
       <Card className="max-w-3xl">
@@ -87,19 +87,18 @@ export default async function EditQuestionPage({
 
       <Card className="mt-6 max-w-3xl border-red-100">
         <CardHeader>
-          <CardTitle className="text-red-700">Danger zone</CardTitle>
+          <CardTitle className="text-red-700">{t("common.danger_zone")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-slate-600">
-            Delete is only allowed when the question is not used in any
-            questionnaire. Otherwise deactivate it.
+            {t("admin.questions.delete_warning")}
           </p>
           <GuardedDeleteButton
             action={deleteQuestion}
             hidden={{ id: question.id }}
-            confirm="Delete this question and its options?"
+            confirm={t("admin.questions.delete_confirm")}
           >
-            Delete question
+            {t("admin.questions.delete_button")}
           </GuardedDeleteButton>
         </CardContent>
       </Card>

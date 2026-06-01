@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import type { Course } from "@/types/database";
 import { emptyFormState } from "@/lib/form";
+import { useT } from "@/lib/i18n/client";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +20,7 @@ export function CourseForm({
   showEnglish?: boolean;
 }) {
   const isEdit = Boolean(course);
+  const t = useT();
   const [state, formAction] = useActionState(
     isEdit ? updateCourse : createCourse,
     emptyFormState,
@@ -29,7 +31,11 @@ export function CourseForm({
       {isEdit && <input type="hidden" name="id" value={course!.id} />}
 
       <Field
-        label={showEnglish ? "Title (Deutsch)" : "Title"}
+        label={
+          showEnglish
+            ? t("admin.forms.field.title_de")
+            : t("admin.forms.field.title")
+        }
         htmlFor="title"
         required
         error={state.fieldErrors?.title}
@@ -45,7 +51,7 @@ export function CourseForm({
 
       {showEnglish && (
         <Field
-          label="Title (English)"
+          label={t("admin.forms.field.title_en")}
           htmlFor="title_en"
           error={state.fieldErrors?.title_en}
         >
@@ -59,7 +65,11 @@ export function CourseForm({
       )}
 
       <Field
-        label={showEnglish ? "Description (Deutsch)" : "Description"}
+        label={
+          showEnglish
+            ? t("admin.forms.field.description_de")
+            : t("admin.forms.field.description")
+        }
         htmlFor="description"
         error={state.fieldErrors?.description}
       >
@@ -73,7 +83,7 @@ export function CourseForm({
 
       {showEnglish && (
         <Field
-          label="Description (English)"
+          label={t("admin.forms.field.description_en")}
           htmlFor="description_en"
           error={state.fieldErrors?.description_en}
         >
@@ -93,7 +103,7 @@ export function CourseForm({
           defaultChecked={course?.active ?? true}
           className="h-4 w-4 accent-brand-600"
         />
-        Active
+        {t("common.active")}
       </label>
 
       {state.message && (
@@ -102,8 +112,8 @@ export function CourseForm({
         </FormMessage>
       )}
 
-      <SubmitButton pendingText="Saving…">
-        {isEdit ? "Save changes" : "Create course"}
+      <SubmitButton pendingText={t("common.saving")}>
+        {isEdit ? t("common.save_changes") : t("admin.courses.create_button")}
       </SubmitButton>
     </form>
   );

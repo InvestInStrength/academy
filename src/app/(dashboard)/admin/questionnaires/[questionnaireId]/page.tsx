@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { getServerT, isEnglishEnabled } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import type { Question, Questionnaire } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
@@ -18,8 +18,8 @@ export default async function EditQuestionnairePage({
 }) {
   const { questionnaireId } = await params;
   const { supabase } = await requireAdmin();
-  const [locale, showEnglish] = await Promise.all([
-    getActiveLanguage(),
+  const [{ locale, t }, showEnglish] = await Promise.all([
+    getServerT(),
     isEnglishEnabled(),
   ]);
 
@@ -73,10 +73,13 @@ export default async function EditQuestionnairePage({
         href="/admin/questionnaires"
         className="text-sm text-slate-500 hover:text-slate-900"
       >
-        ← Back to questionnaires
+        {t("admin.questionnaires.back")}
       </Link>
       <div className="mt-3">
-        <PageHeader title={localizedQTitle} description="Edit questionnaire settings and questions." />
+        <PageHeader
+          title={localizedQTitle}
+          description={t("admin.questionnaires.edit_description")}
+        />
       </div>
 
       <Card className="max-w-3xl">
@@ -93,19 +96,18 @@ export default async function EditQuestionnairePage({
 
       <Card className="mt-6 max-w-3xl border-red-100">
         <CardHeader>
-          <CardTitle className="text-red-700">Danger zone</CardTitle>
+          <CardTitle className="text-red-700">{t("common.danger_zone")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-slate-600">
-            Delete is only allowed when the questionnaire has no certification
-            assignments. Otherwise deactivate it.
+            {t("admin.questionnaires.delete_warning")}
           </p>
           <GuardedDeleteButton
             action={deleteQuestionnaire}
             hidden={{ id: questionnaire.id }}
-            confirm={`Delete "${localizedQTitle}"?`}
+            confirm={t("admin.questionnaires.delete_confirm", { title: localizedQTitle })}
           >
-            Delete questionnaire
+            {t("admin.questionnaires.delete_button")}
           </GuardedDeleteButton>
         </CardContent>
       </Card>

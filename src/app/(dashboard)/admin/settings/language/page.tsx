@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireSuperadmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { PageHeader } from "@/components/admin/page-header";
 import { ActionButton } from "@/components/admin/action-button";
 import { Badge } from "@/components/ui/badge";
@@ -9,13 +10,14 @@ import type { Locale } from "@/types/database";
 
 import { disableEnglish, enableEnglish, setActiveLanguage } from "./actions";
 
-const LABELS: Record<Locale, string> = {
-  de: "Deutsch",
-  en: "English",
-};
-
 export default async function LanguageSettingsPage() {
   const { supabase } = await requireSuperadmin();
+  const { t } = await getServerT();
+
+  const LABELS: Record<Locale, string> = {
+    de: t("admin.settings.language.deutsch"),
+    en: t("admin.settings.language.english"),
+  };
 
   const { data } = await supabase
     .from("platform_settings")
@@ -30,16 +32,20 @@ export default async function LanguageSettingsPage() {
           href="/admin/settings"
           className="text-sm text-slate-500 hover:text-slate-900"
         >
-          ← Back to settings
+          {t("admin.settings.language.back_to_settings")}
         </Link>
         <div className="mt-3">
-          <PageHeader title="Language" description="Multilanguage feature flag." />
+          <PageHeader
+            title={t("admin.settings.language_card")}
+            description={t("admin.settings.language_description")}
+          />
         </div>
         <Card>
           <CardContent className="py-10">
             <p className="text-sm text-slate-600">
-              Platform settings row is missing. Apply migration{" "}
-              <code>0002_platform_settings_and_attempt_language.sql</code>.
+              {t("admin.settings.language.missing_settings", {
+                migration: "0002_platform_settings_and_attempt_language.sql",
+              })}
             </p>
           </CardContent>
         </Card>
@@ -57,27 +63,33 @@ export default async function LanguageSettingsPage() {
         href="/admin/settings"
         className="text-sm text-slate-500 hover:text-slate-900"
       >
-        ← Back to settings
+        {t("admin.settings.language.back_to_settings")}
       </Link>
       <div className="mt-3">
         <PageHeader
-          title="Language"
-          description="Superadmin-only multilanguage feature flag. The active language drives every candidate-facing surface. In-progress attempts keep the language they started in."
+          title={t("admin.settings.language_card")}
+          description={t("admin.settings.language.page_description")}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Current state</CardTitle>
+            <CardTitle>
+              {t("admin.settings.language.current_state_card")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center gap-2">
-              <span className="text-slate-500">Active:</span>
+              <span className="text-slate-500">
+                {t("admin.settings.language.active_label")}
+              </span>
               <Badge tone="success">{LABELS[active]}</Badge>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-slate-500">Enabled:</span>
+              <span className="text-slate-500">
+                {t("admin.settings.language.enabled_label")}
+              </span>
               <div className="flex flex-wrap gap-1">
                 {enabled.map((l) => (
                   <Badge key={l} tone="neutral">
@@ -91,47 +103,45 @@ export default async function LanguageSettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Actions</CardTitle>
+            <CardTitle>{t("admin.settings.language.actions_card")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <p className="mb-1 text-sm font-medium text-slate-900">
-                English (second language)
+                {t("admin.settings.language.english_section")}
               </p>
               <p className="mb-3 text-xs text-slate-500">
                 {enEnabled
-                  ? "English is enabled. Slice 7b will surface a second input alongside DE in admin content forms."
-                  : "English is dormant. Enabling it unlocks dual-language inputs and allows switching the active language to English."}
+                  ? t("admin.settings.language.english_enabled")
+                  : t("admin.settings.language.english_dormant")}
               </p>
               {!enEnabled && (
                 <ActionButton action={enableEnglish} variant="outline">
-                  Enable English
+                  {t("admin.settings.language.enable_english")}
                 </ActionButton>
               )}
               {enEnabled && active === "en" && (
                 <p className="text-xs text-slate-400">
-                  English is the active language. Switch to Deutsch first to
-                  disable it.
+                  {t("admin.settings.language.english_is_active")}
                 </p>
               )}
               {enEnabled && active !== "en" && (
                 <ActionButton
                   action={disableEnglish}
                   variant="outline"
-                  confirm="Disable English? Admin forms hide the EN input, but any EN text already stored on records stays in the database."
+                  confirm={t("admin.settings.language.disable_english_confirm")}
                 >
-                  Disable English
+                  {t("admin.settings.language.disable_english")}
                 </ActionButton>
               )}
             </div>
 
             <div className="border-t border-slate-100 pt-4">
               <p className="mb-1 text-sm font-medium text-slate-900">
-                Active language
+                {t("admin.settings.language.active_section")}
               </p>
               <p className="mb-3 text-xs text-slate-500">
-                Drives every candidate-facing page. In-progress attempts keep
-                the language they started in.
+                {t("admin.settings.language.active_description")}
               </p>
               <div className="flex flex-wrap gap-2">
                 <ActionButton
@@ -139,7 +149,9 @@ export default async function LanguageSettingsPage() {
                   hidden={{ language: "de" }}
                   variant={active === "de" ? "ghost" : "outline"}
                 >
-                  {active === "de" ? "Deutsch (active)" : "Switch to Deutsch"}
+                  {active === "de"
+                    ? t("admin.settings.language.de_active")
+                    : t("admin.settings.language.switch_to_de")}
                 </ActionButton>
                 {enEnabled && (
                   <ActionButton
@@ -149,10 +161,12 @@ export default async function LanguageSettingsPage() {
                     confirm={
                       active === "en"
                         ? undefined
-                        : "Switch the entire platform to English? Changes the candidate-facing language for everyone immediately."
+                        : t("admin.settings.language.switch_en_confirm")
                     }
                   >
-                    {active === "en" ? "English (active)" : "Switch to English"}
+                    {active === "en"
+                      ? t("admin.settings.language.en_active")
+                      : t("admin.settings.language.switch_to_en")}
                   </ActionButton>
                 )}
               </div>

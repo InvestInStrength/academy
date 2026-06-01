@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { formatDate } from "@/lib/utils";
-import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { getServerT, isEnglishEnabled } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import type { Course } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
@@ -14,8 +14,8 @@ import { toggleCourseActive } from "./actions";
 
 export default async function CoursesPage() {
   const { supabase } = await requireAdmin();
-  const [locale, showEnglish] = await Promise.all([
-    getActiveLanguage(),
+  const [{ locale, t }, showEnglish] = await Promise.all([
+    getServerT(),
     isEnglishEnabled(),
   ]);
 
@@ -29,27 +29,29 @@ export default async function CoursesPage() {
   return (
     <div>
       <PageHeader
-        title="Courses"
-        description="Top-level courses. Topics and questions live inside each course."
+        title={t("admin.courses.title")}
+        description={t("admin.courses.description")}
       />
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>All courses ({courses.length})</CardTitle>
+            <CardTitle>
+              {t("admin.courses.list_title", { count: courses.length })}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {courses.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-slate-500">
-                No courses yet. Create your first course on the right.
+                {t("admin.courses.empty")}
               </p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <th className="px-5 py-2 font-medium">Title</th>
-                    <th className="px-5 py-2 font-medium">Status</th>
-                    <th className="px-5 py-2 font-medium">Created</th>
+                    <th className="px-5 py-2 font-medium">{t("admin.courses.col_title")}</th>
+                    <th className="px-5 py-2 font-medium">{t("admin.courses.col_status")}</th>
+                    <th className="px-5 py-2 font-medium">{t("admin.courses.col_created")}</th>
                     <th className="px-5 py-2" />
                   </tr>
                 </thead>
@@ -69,11 +71,11 @@ export default async function CoursesPage() {
                       </td>
                       <td className="px-5 py-3">
                         <Badge tone={course.active ? "success" : "neutral"}>
-                          {course.active ? "Active" : "Inactive"}
+                          {course.active ? t("common.active") : t("common.inactive")}
                         </Badge>
                       </td>
                       <td className="px-5 py-3 text-slate-500">
-                        {formatDate(course.created_at)}
+                        {formatDate(course.created_at, locale)}
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center justify-end gap-2">
@@ -81,7 +83,7 @@ export default async function CoursesPage() {
                             action={toggleCourseActive}
                             hidden={{ id: course.id, active: String(!course.active) }}
                           >
-                            {course.active ? "Deactivate" : "Activate"}
+                            {course.active ? t("common.deactivate") : t("common.activate")}
                           </ActionButton>
                         </div>
                       </td>
@@ -95,7 +97,7 @@ export default async function CoursesPage() {
 
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle>Create a course</CardTitle>
+            <CardTitle>{t("admin.courses.create_card_title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <CourseForm showEnglish={showEnglish} />

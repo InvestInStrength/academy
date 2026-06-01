@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 
 import { emptyFormState } from "@/lib/form";
+import { useT } from "@/lib/i18n/client";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -11,6 +12,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { createAdmin } from "./actions";
 
 export function AdminCreateForm() {
+  const t = useT();
   const [state, formAction] = useActionState(createAdmin, emptyFormState);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -20,15 +22,20 @@ export function AdminCreateForm() {
 
   return (
     <form ref={formRef} action={formAction} className="space-y-4">
-      <Field label="Email" htmlFor="admin-email" required error={state.fieldErrors?.email}>
+      <Field
+        label={t("admin.admins.email_label")}
+        htmlFor="admin-email"
+        required
+        error={state.fieldErrors?.email}
+      >
         <Input id="admin-email" name="email" type="email" autoComplete="off" required />
       </Field>
 
       <Field
-        label="Temporary password"
+        label={t("admin.admins.password_label")}
         htmlFor="admin-password"
         required
-        hint="At least 8 characters. The admin can change it later."
+        hint={t("admin.admins.password_hint")}
         error={state.fieldErrors?.password}
       >
         <Input
@@ -41,10 +48,14 @@ export function AdminCreateForm() {
         />
       </Field>
 
-      <Field label="Role" htmlFor="admin-role" error={state.fieldErrors?.role}>
+      <Field
+        label={t("admin.admins.role_label")}
+        htmlFor="admin-role"
+        error={state.fieldErrors?.role}
+      >
         <Select id="admin-role" name="role" defaultValue="admin">
-          <option value="admin">Admin</option>
-          <option value="superadmin">Superadmin</option>
+          <option value="admin">{t("admin.admins.role_admin")}</option>
+          <option value="superadmin">{t("admin.admins.role_superadmin")}</option>
         </Select>
       </Field>
 
@@ -54,7 +65,9 @@ export function AdminCreateForm() {
         </FormMessage>
       )}
 
-      <SubmitButton pendingText="Creating…">Create admin</SubmitButton>
+      <SubmitButton pendingText={t("admin.admins.creating")}>
+        {t("admin.admins.create_button")}
+      </SubmitButton>
     </form>
   );
 }

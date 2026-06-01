@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 
 import type { Course, Question, Questionnaire } from "@/types/database";
 import { emptyFormState } from "@/lib/form";
+import { useT } from "@/lib/i18n/client";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,7 @@ export function QuestionnaireForm({
   showEnglish = false,
 }: Props) {
   const isEdit = Boolean(questionnaire);
+  const t = useT();
   const [state, formAction] = useActionState(
     isEdit ? updateQuestionnaire : createQuestionnaire,
     emptyFormState,
@@ -91,7 +93,11 @@ export function QuestionnaireForm({
       <input type="hidden" name="question_ids" value={JSON.stringify(selectedOrder)} />
 
       <Field
-        label={showEnglish ? "Title (Deutsch)" : "Title"}
+        label={
+          showEnglish
+            ? t("admin.forms.field.title_de")
+            : t("admin.forms.field.title")
+        }
         htmlFor="title"
         required
         error={state.fieldErrors?.title}
@@ -101,7 +107,7 @@ export function QuestionnaireForm({
 
       {showEnglish && (
         <Field
-          label="Title (English)"
+          label={t("admin.forms.field.title_en")}
           htmlFor="title_en"
           error={state.fieldErrors?.title_en}
         >
@@ -115,7 +121,11 @@ export function QuestionnaireForm({
       )}
 
       <Field
-        label={showEnglish ? "Description (Deutsch)" : "Description"}
+        label={
+          showEnglish
+            ? t("admin.forms.field.description_de")
+            : t("admin.forms.field.description")
+        }
         htmlFor="description"
         error={state.fieldErrors?.description}
       >
@@ -124,7 +134,7 @@ export function QuestionnaireForm({
 
       {showEnglish && (
         <Field
-          label="Description (English)"
+          label={t("admin.forms.field.description_en")}
           htmlFor="description_en"
           error={state.fieldErrors?.description_en}
         >
@@ -139,11 +149,11 @@ export function QuestionnaireForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
-          label="Course"
+          label={t("admin.forms.field.course")}
           htmlFor="course_select"
           required
           error={state.fieldErrors?.course_id}
-          hint={isEdit ? "Course can't be changed after creation." : undefined}
+          hint={isEdit ? t("admin.forms.field.course_locked_hint") : undefined}
         >
           <Select
             id="course_select"
@@ -155,7 +165,7 @@ export function QuestionnaireForm({
             disabled={isEdit}
             required
           >
-            <option value="">Select a course…</option>
+            <option value="">{t("admin.forms.field.select_course")}</option>
             {courses.map((course) => (
               <option key={course.id} value={course.id}>
                 {course.title}
@@ -165,11 +175,11 @@ export function QuestionnaireForm({
         </Field>
 
         <Field
-          label="Passing percentage"
+          label={t("admin.forms.field.passing_percentage")}
           htmlFor="passing_percentage"
           required
           error={state.fieldErrors?.passing_percentage}
-          hint="Default 80%."
+          hint={t("admin.forms.field.passing_percentage_hint")}
         >
           <Input
             id="passing_percentage"
@@ -186,24 +196,26 @@ export function QuestionnaireForm({
       <div className="space-y-2">
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="randomize_question_order" defaultChecked={questionnaire?.randomize_question_order ?? false} className="h-4 w-4 accent-brand-600" />
-          Shuffle question order for each attempt
+          {t("admin.forms.field.shuffle_questions")}
         </label>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="randomize_answer_order" defaultChecked={questionnaire?.randomize_answer_order ?? false} className="h-4 w-4 accent-brand-600" />
-          Shuffle answer order for each attempt
+          {t("admin.forms.field.shuffle_answers")}
         </label>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="active" defaultChecked={questionnaire?.active ?? true} className="h-4 w-4 accent-brand-600" />
-          Active (an active questionnaire needs at least one question)
+          {t("admin.forms.field.active_questionnaire")}
         </label>
       </div>
 
       {/* Selected questions, in order */}
       <div className="space-y-2">
-        <Label>Selected questions ({selectedOrder.length})</Label>
+        <Label>
+          {t("admin.forms.field.selected_questions", { count: selectedOrder.length })}
+        </Label>
         {selectedOrder.length === 0 ? (
           <p className="rounded-md border border-dashed border-slate-300 px-3 py-4 text-center text-sm text-slate-500">
-            No questions selected yet. Add them from the list below.
+            {t("admin.forms.field.no_selected_questions")}
           </p>
         ) : (
           <ol className="space-y-1 rounded-md border border-slate-200 p-2">
@@ -213,14 +225,16 @@ export function QuestionnaireForm({
                 <li key={id} className="flex items-center gap-2 rounded-md px-2 py-1.5">
                   <span className="w-5 text-right text-xs text-slate-400">{index + 1}.</span>
                   <span className="flex-1 text-sm text-slate-700">
-                    {question ? truncate(question.question_text) : "(unknown question)"}
+                    {question
+                      ? truncate(question.question_text)
+                      : t("admin.forms.field.unknown_question")}
                     {question && !question.active && (
-                      <Badge tone="neutral" className="ml-2">Inactive</Badge>
+                      <Badge tone="neutral" className="ml-2">{t("common.inactive")}</Badge>
                     )}
                   </span>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => move(index, -1)} disabled={index === 0} aria-label="Move up">↑</Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => move(index, 1)} disabled={index === selectedOrder.length - 1} aria-label="Move down">↓</Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => toggle(id)} aria-label="Remove">Remove</Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => move(index, -1)} disabled={index === 0} aria-label={t("common.move_up")}>↑</Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => move(index, 1)} disabled={index === selectedOrder.length - 1} aria-label={t("common.move_down")}>↓</Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => toggle(id)} aria-label={t("common.remove")}>{t("common.remove")}</Button>
                 </li>
               );
             })}
@@ -233,21 +247,19 @@ export function QuestionnaireForm({
 
       {/* Available questions for the course */}
       <div className="space-y-2">
-        <Label>Available questions</Label>
+        <Label>{t("admin.forms.field.available_questions")}</Label>
         {!courseId ? (
           <p className="rounded-md border border-dashed border-slate-300 px-3 py-4 text-center text-sm text-slate-500">
-            Select a course to choose its questions.
+            {t("admin.forms.field.select_course_first")}
           </p>
         ) : courseQuestions.length === 0 ? (
           <p className="rounded-md border border-dashed border-slate-300 px-3 py-4 text-center text-sm text-slate-500">
-            This course has no questions yet.
+            {t("admin.forms.field.no_questions_in_course")}
           </p>
         ) : (
           <ul className="max-h-72 space-y-1 overflow-y-auto rounded-md border border-slate-200 p-2">
             {courseQuestions.map((question) => {
               const checked = selectedSet.has(question.id);
-              // Inactive questions can only be selected if they were already
-              // linked when the form loaded.
               const locked = !question.active && !initiallySelected.has(question.id);
               return (
                 <li key={question.id}>
@@ -267,7 +279,7 @@ export function QuestionnaireForm({
                     <span className="text-sm text-slate-700">
                       {truncate(question.question_text)}
                       {!question.active && (
-                        <Badge tone="neutral" className="ml-2">Inactive</Badge>
+                        <Badge tone="neutral" className="ml-2">{t("common.inactive")}</Badge>
                       )}
                     </span>
                   </label>
@@ -282,8 +294,10 @@ export function QuestionnaireForm({
         <FormMessage tone={state.ok ? "success" : "error"}>{state.message}</FormMessage>
       )}
 
-      <SubmitButton pendingText="Saving…">
-        {isEdit ? "Save questionnaire" : "Create questionnaire"}
+      <SubmitButton pendingText={t("common.saving")}>
+        {isEdit
+          ? t("admin.questionnaires.save_button")
+          : t("admin.questionnaires.create_button")}
       </SubmitButton>
     </form>
   );

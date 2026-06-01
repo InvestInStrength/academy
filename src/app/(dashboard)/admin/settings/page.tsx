@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { PageHeader } from "@/components/admin/page-header";
 import { PlaceholderPanel } from "@/components/admin/placeholder-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,26 +7,27 @@ import { ButtonLink } from "@/components/ui/button";
 
 export default async function SettingsPage() {
   const { profile } = await requireAdmin();
+  const { t } = await getServerT();
   const isSuperadmin = profile.role === "superadmin";
 
   return (
     <div>
       <PageHeader
-        title="Settings"
-        description="Platform configuration and certificate templates."
+        title={t("admin.settings.title")}
+        description={t("admin.settings.description")}
       />
 
       {isSuperadmin && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Administrators</CardTitle>
+            <CardTitle>{t("admin.settings.admins_card")}</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-3">
             <p className="text-sm text-slate-600">
-              Manage who can access the admin area.
+              {t("admin.settings.admins_description")}
             </p>
             <ButtonLink href="/admin/settings/admins" size="sm" variant="outline">
-              Manage admins
+              {t("admin.settings.manage_admins")}
             </ButtonLink>
           </CardContent>
         </Card>
@@ -34,25 +36,24 @@ export default async function SettingsPage() {
       {isSuperadmin && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Language</CardTitle>
+            <CardTitle>{t("admin.settings.language_card")}</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-3">
             <p className="text-sm text-slate-600">
-              Multilanguage feature flag. Toggle the active platform language
-              (DE/EN) and enable the dormant second language.
+              {t("admin.settings.language_description")}
             </p>
             <ButtonLink
               href="/admin/settings/language"
               size="sm"
               variant="outline"
             >
-              Manage language
+              {t("admin.settings.manage_language")}
             </ButtonLink>
           </CardContent>
         </Card>
       )}
 
-      <PlaceholderPanel note="Certificate template management and other settings arrive in a later slice." />
+      <PlaceholderPanel note={t("admin.settings.placeholder")} />
     </div>
   );
 }

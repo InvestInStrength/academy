@@ -1,3 +1,4 @@
+import { getDictionary, t as rawT } from "@/lib/i18n/dict";
 import { pickLocalized } from "@/lib/i18n/content";
 import type { CourseTopic, Locale } from "@/types/database";
 import { Badge } from "@/components/ui/badge";
@@ -20,11 +21,15 @@ export function TopicsSection({
   locale,
   showEnglish = false,
 }: Props) {
+  const dict = getDictionary(locale);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    rawT(dict, key, params);
+
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Add a topic</CardTitle>
+          <CardTitle>{t("admin.topics.add_card")}</CardTitle>
         </CardHeader>
         <CardContent>
           <TopicForm courseId={courseId} showEnglish={showEnglish} />
@@ -33,13 +38,12 @@ export function TopicsSection({
 
       <Card>
         <CardHeader>
-          <CardTitle>Topics ({topics.length})</CardTitle>
+          <CardTitle>{t("admin.topics.list_title", { count: topics.length })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {topics.length === 0 ? (
             <p className="py-4 text-center text-sm text-slate-500">
-              No topics yet. Add one above. Topics drive the learning
-              recommendations shown to candidates who do not pass.
+              {t("admin.topics.empty")}
             </p>
           ) : (
             topics.map((topic) => {
@@ -52,7 +56,7 @@ export function TopicsSection({
                 >
                   <div className="mb-3 flex items-center gap-2">
                     <Badge tone={topic.active ? "success" : "neutral"}>
-                      {topic.active ? "Active" : "Inactive"}
+                      {topic.active ? t("common.active") : t("common.inactive")}
                     </Badge>
                     {topic.code && (
                       <span className="text-xs font-medium text-slate-400">
@@ -76,14 +80,14 @@ export function TopicsSection({
                         active: String(!topic.active),
                       }}
                     >
-                      {topic.active ? "Deactivate" : "Activate"}
+                      {topic.active ? t("common.deactivate") : t("common.activate")}
                     </ActionButton>
                     <GuardedDeleteButton
                       action={deleteTopic}
                       hidden={{ id: topic.id, course_id: courseId }}
-                      confirm={`Delete topic "${localizedTopicTitle}"?`}
+                      confirm={t("admin.topics.delete_confirm", { title: localizedTopicTitle })}
                     >
-                      Delete
+                      {t("common.delete")}
                     </GuardedDeleteButton>
                   </div>
                 </div>

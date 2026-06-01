@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireSuperadmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
 import type { AdminProfile } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
@@ -12,6 +13,7 @@ import { setAdminActive, setAdminRole } from "./actions";
 
 export default async function AdminsPage() {
   const { supabase, user } = await requireSuperadmin();
+  const { locale, t } = await getServerT();
 
   const { data } = await supabase
     .from("admin_profiles")
@@ -26,28 +28,28 @@ export default async function AdminsPage() {
         href="/admin/settings"
         className="text-sm text-slate-500 hover:text-slate-900"
       >
-        ← Back to settings
+        {t("admin.admins.back_to_settings")}
       </Link>
       <div className="mt-3">
         <PageHeader
-          title="Administrators"
-          description="Superadmins manage who can access the admin area."
+          title={t("admin.admins.page_title")}
+          description={t("admin.admins.page_description")}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Admins ({admins.length})</CardTitle>
+            <CardTitle>{t("admin.admins.list_title", { count: admins.length })}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-2 font-medium">Email</th>
-                  <th className="px-5 py-2 font-medium">Role</th>
-                  <th className="px-5 py-2 font-medium">Status</th>
-                  <th className="px-5 py-2 font-medium">Added</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.admins.col_email")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.admins.col_role")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.admins.col_status")}</th>
+                  <th className="px-5 py-2 font-medium">{t("admin.admins.col_added")}</th>
                   <th className="px-5 py-2" />
                 </tr>
               </thead>
@@ -59,21 +61,27 @@ export default async function AdminsPage() {
                       <td className="px-5 py-3">
                         {admin.email ?? "—"}
                         {isSelf && (
-                          <span className="ml-2 text-xs text-slate-400">(you)</span>
+                          <span className="ml-2 text-xs text-slate-400">
+                            {t("common.you")}
+                          </span>
                         )}
                       </td>
                       <td className="px-5 py-3">
                         <Badge tone={admin.role === "superadmin" ? "warning" : "neutral"}>
-                          {admin.role}
+                          {admin.role === "superadmin"
+                            ? t("admin.admins.role_superadmin")
+                            : t("admin.admins.role_admin")}
                         </Badge>
                       </td>
                       <td className="px-5 py-3">
                         <Badge tone={admin.active ? "success" : "neutral"}>
-                          {admin.active ? "Active" : "Disabled"}
+                          {admin.active
+                            ? t("common.active")
+                            : t("admin.admins.disabled_status")}
                         </Badge>
                       </td>
                       <td className="px-5 py-3 text-slate-500">
-                        {formatDate(admin.created_at)}
+                        {formatDate(admin.created_at, locale)}
                       </td>
                       <td className="px-5 py-3">
                         {isSelf ? (
@@ -89,7 +97,9 @@ export default async function AdminsPage() {
                                 role: admin.role === "superadmin" ? "admin" : "superadmin",
                               }}
                             >
-                              {admin.role === "superadmin" ? "Make admin" : "Make superadmin"}
+                              {admin.role === "superadmin"
+                                ? t("admin.admins.make_admin")
+                                : t("admin.admins.make_superadmin")}
                             </ActionButton>
                             <ActionButton
                               action={setAdminActive}
@@ -97,11 +107,13 @@ export default async function AdminsPage() {
                               variant={admin.active ? "danger" : "outline"}
                               confirm={
                                 admin.active
-                                  ? `Disable ${admin.email}? They lose admin access immediately.`
+                                  ? t("admin.admins.disable_confirm", { email: admin.email ?? "" })
                                   : undefined
                               }
                             >
-                              {admin.active ? "Disable" : "Enable"}
+                              {admin.active
+                                ? t("common.disable")
+                                : t("common.enable")}
                             </ActionButton>
                           </div>
                         )}
@@ -116,7 +128,7 @@ export default async function AdminsPage() {
 
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle>Add an admin</CardTitle>
+            <CardTitle>{t("admin.admins.add_card_title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <AdminCreateForm />

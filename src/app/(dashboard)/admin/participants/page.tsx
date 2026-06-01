@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
 import type { Participant } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
@@ -9,6 +10,7 @@ import { ParticipantForm } from "./participant-form";
 
 export default async function ParticipantsPage() {
   const { supabase } = await requireAdmin();
+  const { locale, t } = await getServerT();
 
   const { data } = await supabase
     .from("participants")
@@ -20,27 +22,29 @@ export default async function ParticipantsPage() {
   return (
     <div>
       <PageHeader
-        title="Participants"
-        description="Candidates being certified. Each can hold one active assignment per questionnaire."
+        title={t("admin.participants.title")}
+        description={t("admin.participants.description")}
       />
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>All participants ({participants.length})</CardTitle>
+            <CardTitle>
+              {t("admin.participants.list_title", { count: participants.length })}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {participants.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-slate-500">
-                No participants yet. Create your first one on the right.
+                {t("admin.participants.empty")}
               </p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <th className="px-5 py-2 font-medium">Name</th>
-                    <th className="px-5 py-2 font-medium">Email</th>
-                    <th className="px-5 py-2 font-medium">Added</th>
+                    <th className="px-5 py-2 font-medium">{t("admin.participants.col_name")}</th>
+                    <th className="px-5 py-2 font-medium">{t("admin.participants.col_email")}</th>
+                    <th className="px-5 py-2 font-medium">{t("admin.participants.col_added")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -63,7 +67,7 @@ export default async function ParticipantsPage() {
                         )}
                       </td>
                       <td className="px-5 py-3 text-slate-500">
-                        {formatDate(participant.created_at)}
+                        {formatDate(participant.created_at, locale)}
                       </td>
                     </tr>
                   ))}
@@ -75,7 +79,7 @@ export default async function ParticipantsPage() {
 
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle>Create a participant</CardTitle>
+            <CardTitle>{t("admin.participants.create_card_title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ParticipantForm />

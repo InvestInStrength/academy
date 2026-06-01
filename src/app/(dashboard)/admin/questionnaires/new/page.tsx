@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { getServerT, isEnglishEnabled } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import type { Question } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
@@ -10,8 +10,8 @@ import { QuestionnaireForm } from "../questionnaire-form";
 
 export default async function NewQuestionnairePage() {
   const { supabase } = await requireAdmin();
-  const [locale, showEnglish] = await Promise.all([
-    getActiveLanguage(),
+  const [{ locale, t }, showEnglish] = await Promise.all([
+    getServerT(),
     isEnglishEnabled(),
   ]);
 
@@ -46,16 +46,16 @@ export default async function NewQuestionnairePage() {
         href="/admin/questionnaires"
         className="text-sm text-slate-500 hover:text-slate-900"
       >
-        ← Back to questionnaires
+        {t("admin.questionnaires.back")}
       </Link>
       <div className="mt-3">
-        <PageHeader title="New questionnaire" />
+        <PageHeader title={t("admin.questionnaires.new_page_title")} />
       </div>
 
       {courses.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-sm text-slate-500">
-            Create a course and some questions first.
+            {t("admin.questionnaires.no_courses_yet")}
           </CardContent>
         </Card>
       ) : (

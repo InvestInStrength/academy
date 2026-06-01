@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import { getActiveLanguage } from "@/lib/i18n";
+import { getServerT } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import type {
   AccountHistoryEvent,
@@ -25,7 +25,7 @@ export default async function ParticipantDetailPage({
 }) {
   const { participantId } = await params;
   const { supabase } = await requireAdmin();
-  const locale = await getActiveLanguage();
+  const { locale, t } = await getServerT();
 
   const { data: participant } = await supabase
     .from("participants")
@@ -98,12 +98,12 @@ export default async function ParticipantDetailPage({
         href="/admin/participants"
         className="text-sm text-slate-500 hover:text-slate-900"
       >
-        ← Back to participants
+        {t("admin.participants.back")}
       </Link>
       <div className="mt-3">
         <PageHeader
           title={participant.full_name}
-          description={participant.email ?? "No email on file yet."}
+          description={participant.email ?? t("admin.participants.no_email_yet")}
         />
       </div>
 
@@ -111,29 +111,33 @@ export default async function ParticipantDetailPage({
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Participant details</CardTitle>
+              <CardTitle>{t("admin.participants.details_card")}</CardTitle>
             </CardHeader>
             <CardContent>
               <ParticipantForm participant={participant} />
             </CardContent>
           </Card>
 
-          <HistorySection events={history} adminEmailById={adminEmailById} />
+          <HistorySection
+            events={history}
+            adminEmailById={adminEmailById}
+            locale={locale}
+          />
 
           <Card className="border-red-100">
             <CardHeader>
-              <CardTitle className="text-red-700">Danger zone</CardTitle>
+              <CardTitle className="text-red-700">{t("common.danger_zone")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-slate-600">
-                Delete is only allowed when the participant has no assignments.
+                {t("admin.participants.delete_warning")}
               </p>
               <GuardedDeleteButton
                 action={deleteParticipant}
                 hidden={{ id: participant.id }}
-                confirm={`Delete "${participant.full_name}"?`}
+                confirm={t("admin.participants.delete_confirm", { name: participant.full_name })}
               >
-                Delete participant
+                {t("admin.participants.delete_button")}
               </GuardedDeleteButton>
             </CardContent>
           </Card>
@@ -141,6 +145,7 @@ export default async function ParticipantDetailPage({
 
         <AssignmentsSection
           participantId={participant.id}
+          locale={locale}
           assignments={assignments}
           questionnaires={(questionnaireData ?? []).map((q) => ({
             id: q.id,

@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef } from "react";
 
 import type { CourseTopic } from "@/types/database";
 import { emptyFormState } from "@/lib/form";
+import { useT } from "@/lib/i18n/client";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { FormMessage } from "@/components/ui/form-message";
@@ -18,6 +19,7 @@ type Props = {
 
 export function TopicForm({ courseId, topic, showEnglish = false }: Props) {
   const isEdit = Boolean(topic);
+  const t = useT();
   const [state, formAction] = useActionState(
     isEdit ? updateTopic : createTopic,
     emptyFormState,
@@ -39,7 +41,11 @@ export function TopicForm({ courseId, topic, showEnglish = false }: Props) {
 
       <div className="grid gap-3 sm:grid-cols-[1fr_140px_90px]">
         <Field
-          label={showEnglish ? "Topic title (DE)" : "Topic title"}
+          label={
+            showEnglish
+              ? t("admin.forms.field.topic_title_de")
+              : t("admin.forms.field.topic_title")
+          }
           htmlFor={`title-${idSuffix}`}
           required
           error={state.fieldErrors?.title}
@@ -53,7 +59,7 @@ export function TopicForm({ courseId, topic, showEnglish = false }: Props) {
           />
         </Field>
         <Field
-          label="Code"
+          label={t("admin.forms.field.code")}
           htmlFor={`code-${idSuffix}`}
           error={state.fieldErrors?.code}
         >
@@ -66,7 +72,7 @@ export function TopicForm({ courseId, topic, showEnglish = false }: Props) {
           />
         </Field>
         <Field
-          label="Order"
+          label={t("admin.forms.field.order")}
           htmlFor={`order-${idSuffix}`}
           error={state.fieldErrors?.sort_order}
         >
@@ -82,7 +88,7 @@ export function TopicForm({ courseId, topic, showEnglish = false }: Props) {
 
       {showEnglish && (
         <Field
-          label="Topic title (EN)"
+          label={t("admin.forms.field.topic_title_en")}
           htmlFor={`title-en-${idSuffix}`}
           error={state.fieldErrors?.title_en}
         >
@@ -103,10 +109,10 @@ export function TopicForm({ courseId, topic, showEnglish = false }: Props) {
             defaultChecked={topic?.active ?? true}
             className="h-4 w-4 accent-brand-600"
           />
-          Active
+          {t("common.active")}
         </label>
-        <SubmitButton size="sm" pendingText="Saving…">
-          {isEdit ? "Save" : "Add topic"}
+        <SubmitButton size="sm" pendingText={t("common.saving")}>
+          {isEdit ? t("common.save") : t("admin.topics.add_button")}
         </SubmitButton>
       </div>
 

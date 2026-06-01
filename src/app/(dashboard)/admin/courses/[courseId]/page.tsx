@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import { getActiveLanguage, isEnglishEnabled } from "@/lib/i18n";
+import { getServerT, isEnglishEnabled } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import type { Course, CourseTopic } from "@/types/database";
 import { PageHeader } from "@/components/admin/page-header";
@@ -19,8 +19,8 @@ export default async function CourseDetailPage({
 }) {
   const { courseId } = await params;
   const { supabase } = await requireAdmin();
-  const [locale, showEnglish] = await Promise.all([
-    getActiveLanguage(),
+  const [{ locale, t }, showEnglish] = await Promise.all([
+    getServerT(),
     isEnglishEnabled(),
   ]);
 
@@ -50,17 +50,20 @@ export default async function CourseDetailPage({
         href="/admin/courses"
         className="text-sm text-slate-500 hover:text-slate-900"
       >
-        ← Back to courses
+        {t("admin.courses.detail_back")}
       </Link>
 
       <div className="mt-3">
-        <PageHeader title={localizedTitle} description="Edit course and manage topics." />
+        <PageHeader
+          title={localizedTitle}
+          description={t("admin.courses.detail_description")}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle>Course details</CardTitle>
+            <CardTitle>{t("admin.courses.details_card")}</CardTitle>
           </CardHeader>
           <CardContent>
             <CourseForm course={course} showEnglish={showEnglish} />
@@ -77,19 +80,18 @@ export default async function CourseDetailPage({
 
       <Card className="mt-6 border-red-100">
         <CardHeader>
-          <CardTitle className="text-red-700">Danger zone</CardTitle>
+          <CardTitle className="text-red-700">{t("common.danger_zone")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-slate-600">
-            Deleting is permanent and only allowed when the course has no
-            questions or questionnaires. Otherwise deactivate it.
+            {t("admin.courses.delete_warning")}
           </p>
           <GuardedDeleteButton
             action={deleteCourse}
             hidden={{ id: course.id }}
-            confirm={`Delete "${localizedTitle}"?`}
+            confirm={t("admin.courses.delete_confirm", { title: localizedTitle })}
           >
-            Delete course
+            {t("admin.courses.delete_button")}
           </GuardedDeleteButton>
         </CardContent>
       </Card>

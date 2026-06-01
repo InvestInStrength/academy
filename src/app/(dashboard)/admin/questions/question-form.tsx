@@ -10,6 +10,7 @@ import type {
   QuestionType,
 } from "@/types/database";
 import { emptyFormState } from "@/lib/form";
+import { useT } from "@/lib/i18n/client";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +55,7 @@ export function QuestionForm({
   showEnglish = false,
 }: Props) {
   const isEdit = Boolean(question);
+  const t = useT();
   const [state, formAction] = useActionState(
     isEdit ? updateQuestion : createQuestion,
     emptyFormState,
@@ -152,7 +154,12 @@ export function QuestionForm({
       <input type="hidden" name="options" value={serializedOptions} />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Course" htmlFor="course_id" required error={state.fieldErrors?.course_id}>
+        <Field
+          label={t("admin.forms.field.course")}
+          htmlFor="course_id"
+          required
+          error={state.fieldErrors?.course_id}
+        >
           <Select
             id="course_id"
             name="course_id"
@@ -163,7 +170,7 @@ export function QuestionForm({
             }}
             required
           >
-            <option value="">Select a course…</option>
+            <option value="">{t("admin.forms.field.select_course")}</option>
             {courses.map((course) => (
               <option key={course.id} value={course.id}>
                 {course.title}
@@ -172,7 +179,12 @@ export function QuestionForm({
           </Select>
         </Field>
 
-        <Field label="Topic" htmlFor="topic_id" hint="Optional — drives learning recommendations." error={state.fieldErrors?.topic_id}>
+        <Field
+          label={t("admin.forms.field.topic")}
+          htmlFor="topic_id"
+          hint={t("admin.forms.field.topic_hint")}
+          error={state.fieldErrors?.topic_id}
+        >
           <Select
             id="topic_id"
             name="topic_id"
@@ -180,7 +192,7 @@ export function QuestionForm({
             onChange={(event) => setTopicId(event.target.value)}
             disabled={!courseId}
           >
-            <option value="">No topic</option>
+            <option value="">{t("admin.forms.field.no_topic")}</option>
             {availableTopics.map((topic) => (
               <option key={topic.id} value={topic.id}>
                 {topic.title}
@@ -191,7 +203,11 @@ export function QuestionForm({
       </div>
 
       <Field
-        label={showEnglish ? "Question (Deutsch)" : "Question"}
+        label={
+          showEnglish
+            ? t("admin.forms.field.question_de")
+            : t("admin.forms.field.question")
+        }
         htmlFor="question_text"
         required
         error={state.fieldErrors?.question_text}
@@ -207,7 +223,7 @@ export function QuestionForm({
 
       {showEnglish && (
         <Field
-          label="Question (English)"
+          label={t("admin.forms.field.question_en")}
           htmlFor="question_text_en"
           error={state.fieldErrors?.question_text_en}
         >
@@ -221,15 +237,19 @@ export function QuestionForm({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Answer type" htmlFor="question_type" error={state.fieldErrors?.question_type}>
+        <Field
+          label={t("admin.forms.field.answer_type")}
+          htmlFor="question_type"
+          error={state.fieldErrors?.question_type}
+        >
           <Select
             id="question_type"
             name="question_type"
             value={questionType}
             onChange={(event) => onTypeChange(event.target.value as QuestionType)}
           >
-            <option value="single_choice">Single choice (one correct)</option>
-            <option value="multiple_choice">Multiple choice (one or more correct)</option>
+            <option value="single_choice">{t("admin.forms.field.answer_type_single")}</option>
+            <option value="multiple_choice">{t("admin.forms.field.answer_type_multiple")}</option>
           </Select>
         </Field>
 
@@ -240,29 +260,42 @@ export function QuestionForm({
             defaultChecked={question?.active ?? true}
             className="h-4 w-4 accent-brand-600"
           />
-          Active (available for questionnaires)
+          {t("admin.forms.field.active_question")}
         </label>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>{showEnglish ? "Answer options (Deutsch + English)" : "Answer options"}</Label>
+          <Label>
+            {showEnglish
+              ? t("admin.forms.field.options_de_en")
+              : t("admin.forms.field.options")}
+          </Label>
           <Button type="button" variant="outline" size="sm" onClick={addOption}>
-            + Add option
+            {t("admin.forms.field.add_option")}
           </Button>
         </div>
         <p className="text-xs text-slate-500">
           {questionType === "single_choice"
-            ? "Select the one correct option."
-            : "Tick every correct option."}
+            ? t("admin.forms.field.options_hint_single")
+            : t("admin.forms.field.options_hint_multiple")}
         </p>
 
         <div className="space-y-2">
           {options.map((option, index) => {
             const optionError = state.fieldErrors?.[`options.${index}.option_text`];
+            const dePlaceholder = showEnglish
+              ? t("admin.forms.field.option_placeholder_de", { n: index + 1 })
+              : t("admin.forms.field.option_placeholder", { n: index + 1 });
+            const enPlaceholder = t("admin.forms.field.option_placeholder_en", {
+              n: index + 1,
+            });
             return (
               <div key={option.key} className="flex items-start gap-2">
-                <label className="mt-2 flex h-9 items-center" title="Mark correct">
+                <label
+                  className="mt-2 flex h-9 items-center"
+                  title={t("admin.forms.field.mark_correct")}
+                >
                   <input
                     type={questionType === "single_choice" ? "radio" : "checkbox"}
                     name="correct-toggle"
@@ -275,10 +308,8 @@ export function QuestionForm({
                   <Input
                     value={option.option_text}
                     onChange={(event) => setOptionText(option.key, event.target.value)}
-                    placeholder={
-                      showEnglish ? `Option ${index + 1} (DE)` : `Option ${index + 1}`
-                    }
-                    aria-label={`Option ${index + 1} text`}
+                    placeholder={dePlaceholder}
+                    aria-label={t("admin.forms.field.option_aria", { n: index + 1 })}
                   />
                   {showEnglish && (
                     <Input
@@ -286,8 +317,8 @@ export function QuestionForm({
                       onChange={(event) =>
                         setOptionTextEn(option.key, event.target.value)
                       }
-                      placeholder={`Option ${index + 1} (EN)`}
-                      aria-label={`Option ${index + 1} text (English)`}
+                      placeholder={enPlaceholder}
+                      aria-label={t("admin.forms.field.option_aria_en", { n: index + 1 })}
                     />
                   )}
                   {optionError && (
@@ -300,9 +331,9 @@ export function QuestionForm({
                   size="sm"
                   onClick={() => removeOption(option.key)}
                   disabled={options.length <= 2}
-                  aria-label={`Remove option ${index + 1}`}
+                  aria-label={t("admin.forms.field.remove_option", { n: index + 1 })}
                 >
-                  Remove
+                  {t("common.remove")}
                 </Button>
               </div>
             );
@@ -314,9 +345,9 @@ export function QuestionForm({
       </div>
 
       <Field
-        label="Explanation"
+        label={t("admin.forms.field.explanation")}
         htmlFor="explanation"
-        hint="Internal note shown in admin attempt insights."
+        hint={t("admin.forms.field.explanation_hint")}
         error={state.fieldErrors?.explanation}
       >
         <Textarea
@@ -329,7 +360,7 @@ export function QuestionForm({
 
       {showEnglish && (
         <Field
-          label="Explanation (English)"
+          label={t("admin.forms.field.explanation_en")}
           htmlFor="explanation_en"
           error={state.fieldErrors?.explanation_en}
         >
@@ -343,9 +374,13 @@ export function QuestionForm({
       )}
 
       <Field
-        label={showEnglish ? "Recommendation text (Deutsch)" : "Recommendation text"}
+        label={
+          showEnglish
+            ? t("admin.forms.field.recommendation_de")
+            : t("admin.forms.field.recommendation")
+        }
         htmlFor="recommendation_text"
-        hint="Shown to candidates who get this topic wrong."
+        hint={t("admin.forms.field.recommendation_hint")}
         error={state.fieldErrors?.recommendation_text}
       >
         <Textarea
@@ -358,7 +393,7 @@ export function QuestionForm({
 
       {showEnglish && (
         <Field
-          label="Recommendation text (English)"
+          label={t("admin.forms.field.recommendation_en")}
           htmlFor="recommendation_text_en"
           error={state.fieldErrors?.recommendation_text_en}
         >
@@ -377,8 +412,8 @@ export function QuestionForm({
         </FormMessage>
       )}
 
-      <SubmitButton pendingText="Saving…">
-        {isEdit ? "Save question" : "Create question"}
+      <SubmitButton pendingText={t("common.saving")}>
+        {isEdit ? t("common.save_changes") : t("admin.questions.new_button")}
       </SubmitButton>
     </form>
   );
