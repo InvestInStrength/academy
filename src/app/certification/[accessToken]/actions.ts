@@ -7,6 +7,7 @@ import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { sendCertificateEmail } from "@/lib/email/certificate-email";
+import { getDictionary, t } from "@/lib/i18n";
 import { getInProgressAttempt } from "@/lib/certification/attempt-lifecycle";
 import {
   confirmParticipantEmail,
@@ -194,7 +195,11 @@ export async function submitAttempt(formData: FormData): Promise<void> {
   });
 
   const score = gradeAttempt(gradable, context.questionnaire.passing_percentage);
-  const recommendations = buildRecommendations(score.graded);
+  const fallbackTopicLabel = t(
+    getDictionary(inProgress.language),
+    "scoring.general_topic",
+  );
+  const recommendations = buildRecommendations(score.graded, fallbackTopicLabel);
 
   await recordAttempt({
     context,

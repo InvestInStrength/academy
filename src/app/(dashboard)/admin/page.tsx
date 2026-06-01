@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
@@ -15,6 +16,7 @@ async function countRows(
 
 export default async function AdminDashboardPage() {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const [courses, questions, questionnaires, participants] = await Promise.all([
     countRows(supabase, "courses"),
@@ -24,17 +26,21 @@ export default async function AdminDashboardPage() {
   ]);
 
   const stats = [
-    { label: "Courses", value: courses, href: "/admin/courses" },
-    { label: "Questions", value: questions, href: "/admin/questions" },
-    { label: "Questionnaires", value: questionnaires, href: "/admin/questionnaires" },
-    { label: "Participants", value: participants, href: "/admin/participants" },
+    { label: t("nav.courses"), value: courses, href: "/admin/courses" },
+    { label: t("nav.questions"), value: questions, href: "/admin/questions" },
+    {
+      label: t("nav.questionnaires"),
+      value: questionnaires,
+      href: "/admin/questionnaires",
+    },
+    { label: t("nav.participants"), value: participants, href: "/admin/participants" },
   ];
 
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        description="Overview of your certification content."
+        title={t("admin.dashboard.title")}
+        description={t("admin.dashboard.description")}
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -53,16 +59,16 @@ export default async function AdminDashboardPage() {
       <Card className="mt-6">
         <CardContent className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium text-slate-700">
-            Get started:
+            {t("admin.dashboard.get_started")}
           </span>
           <ButtonLink href="/admin/courses" size="sm" variant="outline">
-            Manage courses
+            {t("admin.dashboard.manage_courses")}
           </ButtonLink>
           <ButtonLink href="/admin/questions" size="sm" variant="outline">
-            Build the question bank
+            {t("admin.dashboard.build_questions")}
           </ButtonLink>
           <ButtonLink href="/admin/questionnaires" size="sm" variant="outline">
-            Create a questionnaire
+            {t("admin.dashboard.create_questionnaire")}
           </ButtonLink>
         </CardContent>
       </Card>

@@ -2,6 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 
 type Props = React.ComponentProps<typeof Button> & {
@@ -12,10 +13,11 @@ type Props = React.ComponentProps<typeof Button> & {
  * enclosing form's Server Action is in flight. */
 export function SubmitButton({ children, pendingText, ...props }: Props) {
   const { pending } = useFormStatus();
+  const t = useT();
 
   return (
     <Button type="submit" disabled={pending} aria-busy={pending} {...props}>
-      {pending ? (pendingText ?? "Saving…") : children}
+      {pending ? (pendingText ?? t("common.saving")) : children}
     </Button>
   );
 }

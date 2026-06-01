@@ -6,7 +6,7 @@ import {
   getLatestResult,
   localizedQuestionnaireTitle,
 } from "@/lib/certification/data";
-import { getActiveLanguage } from "@/lib/i18n";
+import { getServerT } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,16 +20,17 @@ export default async function ResultPage({
 }) {
   const { accessToken } = await params;
   const context = await getCandidateContext(accessToken);
+  const { locale, t } = await getServerT();
 
   if (!context) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Link unavailable</CardTitle>
+          <CardTitle>{t("candidate.link_unavailable_title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-600">
-            This certification link isn&apos;t available.
+            {t("candidate.link_unavailable_body")}
           </p>
         </CardContent>
       </Card>
@@ -40,7 +41,6 @@ export default async function ResultPage({
   }
 
   const latest = await getLatestResult(context.assignment.id);
-  const locale = await getActiveLanguage();
   const title = localizedQuestionnaireTitle(context.questionnaire, locale);
 
   if (!latest || latest.score_percentage === null) {
@@ -50,11 +50,9 @@ export default async function ResultPage({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-slate-600">
-            You haven&apos;t completed an attempt yet.
-          </p>
+          <p className="text-sm text-slate-600">{t("candidate.result.no_attempt")}</p>
           <ButtonLink href={`/certification/${accessToken}/attempt`}>
-            Start assessment
+            {t("candidate.start_assessment")}
           </ButtonLink>
         </CardContent>
       </Card>
@@ -67,7 +65,7 @@ export default async function ResultPage({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Your result</CardTitle>
+          <CardTitle>{t("candidate.result.title")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-3">
@@ -75,11 +73,13 @@ export default async function ResultPage({
               {latest.score_percentage}%
             </span>
             <Badge tone={passed ? "success" : "danger"}>
-              {passed ? "Passed" : "Not passed"}
+              {passed ? t("common.passed") : t("common.not_passed")}
             </Badge>
           </div>
           <p className="text-sm text-slate-600">
-            Passing score: {context.questionnaire.passing_percentage}%.
+            {t("candidate.result.passing_line", {
+              percent: context.questionnaire.passing_percentage,
+            })}
           </p>
         </CardContent>
       </Card>
@@ -87,26 +87,33 @@ export default async function ResultPage({
       {passed ? (
         <Card>
           <CardHeader>
-            <CardTitle>Congratulations, {context.participant.full_name}</CardTitle>
+            <CardTitle>
+              {t("candidate.result.congratulations", {
+                name: context.participant.full_name,
+              })}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-slate-600">
-              You passed the <strong>{title}</strong> assessment.
-            </p>
+            <p
+              className="text-sm text-slate-600"
+              dangerouslySetInnerHTML={{
+                __html: t("candidate.result.passed_body", { title }),
+              }}
+            />
             <ButtonLink href={`/certification/${accessToken}/certificate`}>
-              View your certificate
+              {t("candidate.result.view_certificate")}
             </ButtonLink>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Where to focus next</CardTitle>
+            <CardTitle>{t("candidate.result.focus_next")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {latest.recommendations.length === 0 ? (
               <p className="text-sm text-slate-600">
-                Review the course material and try again.
+                {t("candidate.result.review_default")}
               </p>
             ) : (
               <ul className="space-y-3">
@@ -127,7 +134,7 @@ export default async function ResultPage({
               </ul>
             )}
             <ButtonLink href={`/certification/${accessToken}/attempt`}>
-              Retake assessment
+              {t("candidate.retake_assessment")}
             </ButtonLink>
           </CardContent>
         </Card>
@@ -137,7 +144,7 @@ export default async function ResultPage({
         href={`/certification/${accessToken}`}
         className="block text-sm text-slate-500 hover:text-slate-900"
       >
-        ← Back
+        {t("common.back")}
       </Link>
     </div>
   );

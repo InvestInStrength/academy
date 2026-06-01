@@ -3,36 +3,39 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
-const baseLinks = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/courses", label: "Courses" },
-  { href: "/admin/questions", label: "Question Bank" },
-  { href: "/admin/questionnaires", label: "Questionnaires" },
-  { href: "/admin/participants", label: "Participants" },
-  { href: "/admin/certificates", label: "Certificates" },
-  { href: "/admin/settings", label: "Settings" },
-] as const;
+type NavLink = { href: string; labelKey: string };
 
-const superadminLinks = [
-  { href: "/admin/settings/admins", label: "Administrators" },
-  { href: "/admin/settings/language", label: "Language" },
-] as const;
+const baseLinks: NavLink[] = [
+  { href: "/admin", labelKey: "nav.dashboard" },
+  { href: "/admin/courses", labelKey: "nav.courses" },
+  { href: "/admin/questions", labelKey: "nav.questions" },
+  { href: "/admin/questionnaires", labelKey: "nav.questionnaires" },
+  { href: "/admin/participants", labelKey: "nav.participants" },
+  { href: "/admin/certificates", labelKey: "nav.certificates" },
+  { href: "/admin/settings", labelKey: "nav.settings" },
+];
+
+const superadminLinks: NavLink[] = [
+  { href: "/admin/settings/admins", labelKey: "nav.administrators" },
+  { href: "/admin/settings/language", labelKey: "nav.language" },
+];
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/admin") return pathname === "/admin";
-  // /admin/settings should not light up while on /admin/settings/admins.
   if (href === "/admin/settings") return pathname === "/admin/settings";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function Sidebar({ isSuperadmin = false }: { isSuperadmin?: boolean }) {
   const pathname = usePathname();
+  const t = useT();
   const links = isSuperadmin ? [...baseLinks, ...superadminLinks] : baseLinks;
 
   return (
-    <nav className="space-y-1" aria-label="Admin sections">
+    <nav className="space-y-1" aria-label={t("admin.sections_label")}>
       {links.map((link) => {
         const active = isActive(pathname, link.href);
         return (
@@ -47,7 +50,7 @@ export function Sidebar({ isSuperadmin = false }: { isSuperadmin?: boolean }) {
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
-            {link.label}
+            {t(link.labelKey)}
           </Link>
         );
       })}

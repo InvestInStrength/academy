@@ -97,16 +97,20 @@ export function gradeAttempt(
  * Builds topic-level learning recommendations from the questions answered
  * incorrectly. This is the ONLY guidance a failed candidate sees — never the
  * specific wrong questions or correct answers.
+ *
+ * `fallbackTopicLabel` is used when a question has no topic — caller supplies
+ * the locale-resolved string (e.g. "General" / "Allgemein").
  */
 export function buildRecommendations(
   graded: GradedQuestion[],
+  fallbackTopicLabel = "General",
 ): TopicRecommendation[] {
   const byTopic = new Map<string, TopicRecommendation>();
 
   for (const question of graded) {
     if (question.is_correct) continue;
     const key = question.topic_id ?? "__no_topic__";
-    const title = question.topic_title ?? "General";
+    const title = question.topic_title ?? fallbackTopicLabel;
     const existing = byTopic.get(key) ?? {
       topic_id: question.topic_id,
       topic_title: title,

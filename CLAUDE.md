@@ -74,7 +74,7 @@ the questionnaire — do not treat this as a generic quiz app.**
 - Hand-maintained types in `src/types/database.ts` — **keep in sync with the
   migration**. Can be replaced with `supabase gen types` output later.
 
-## Multilanguage (Slice 7a + 7a-plus + 7b + 7c shipped)
+## Multilanguage (Slice 7a + 7a-plus + 7b + 7c + 7d shipped)
 Superadmin-only feature flag. Single global active language (default `de`);
 English is dormant until the superadmin enables it. **Locked rules**: the
 capability stays invisible to every surface except the superadmin; in-progress
