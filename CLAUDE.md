@@ -66,20 +66,39 @@ the questionnaire — do not treat this as a generic quiz app.**
   - `0002_platform_settings_and_attempt_language.sql` — Slice 7a multilanguage
     foundation (typed `platform_settings` single-row table; `attempts.language`
     frozen at attempt-start).
+  - `0003_localized_content_columns.sql` — Slice 7b. Adds `_de`/`_en` text
+    columns to `courses`, `course_topics`, `questions`, `question_options`,
+    `questionnaires`. Backfills `_de` from the legacy column. Updates
+    `guard_questions_update` to include the new localized columns in the
+    locked-content check. Old single-language columns kept (no-op).
 - Hand-maintained types in `src/types/database.ts` — **keep in sync with the
   migration**. Can be replaced with `supabase gen types` output later.
 
-## Multilanguage (Slice 7a, in progress)
+## Multilanguage (Slice 7a + 7a-plus + 7b shipped)
 Superadmin-only feature flag. Single global active language (default `de`);
 English is dormant until the superadmin enables it. **Locked rules**: the
 capability stays invisible to every surface except the superadmin; in-progress
 attempts freeze their language at attempt-start (read from `attempts.language`,
-not the live `platform_settings`); frozen snapshots remain immutable. i18n
-runtime: `src/lib/i18n/` (`getActiveLanguage` cached per-request via React
-`cache()`; pure helpers in `dict.ts` for tests). Attempt lifecycle:
-`src/lib/certification/attempt-lifecycle.ts` (`startOrResumeAttempt` materializes
-the in-progress row at the moment the candidate hits `/attempt`). Plan + audit:
-`docs/slice-7a-plan.md`, `docs/codex-audit-multilanguage.md`.
+not the live `platform_settings`); frozen snapshots remain immutable.
+
+- **i18n runtime**: `src/lib/i18n/` — `getActiveLanguage` cached per-request via
+  React `cache()`; pure helpers in `dict.ts` (`t`, `getDictionary`) for tests.
+- **Content fallback**: `src/lib/i18n/content.ts` — `pickLocalized(row, base, locale)`.
+  For `'de'` returns the legacy column directly (safer until admin writes
+  dual-write); for other locales: `_${locale}` → `_de` → legacy.
+- **Attempt lifecycle**: `src/lib/certification/attempt-lifecycle.ts` —
+  `startOrResumeAttempt` materializes the in-progress row when the candidate
+  hits `/attempt`. Pure core split into `attempt-lifecycle-core.ts` for tests.
+- **Superadmin UI**: `/admin/settings/language` — enable EN, switch active
+  language. Hidden from non-superadmin sidebar + settings hub.
+
+Schema is bilingual-ready (`_de`/`_en` columns on every translatable field
+except cert-template — those land with Slice 6 per Codex's sequencing call).
+Read/write paths still use legacy columns. The next slice (call it 7c) wires
+admin-form dual-write + conditional dual-input UI when EN is enabled.
+
+Plan + audit: `docs/slice-7a-plan.md`, `docs/codex-brief-multilanguage.md`,
+`docs/codex-audit-multilanguage.md`.
 
 ## Commands
 - `pnpm dev` — dev server

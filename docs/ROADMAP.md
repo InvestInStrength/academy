@@ -117,13 +117,15 @@ migrations** (no in-place edits to `0001`).
 Migration numbering (live):
 - `0002_platform_settings_and_attempt_language.sql` — **Slice 7a — Multilanguage
   foundation** (2026-06-01). See `docs/slice-7a-plan.md`.
-- `0003+` — reserved for **Slice 6 Certificate Output System** (was originally
-  planned as 0002; renumbered after Codex sequencing review — see
-  `docs/codex-audit-multilanguage.md` §1.9). Slice 6 ships with multilanguage
-  hooks built in (cert snapshot includes `language`, renderer + email accept
-  locale, verification renders from snapshot language).
-- Later: Slice 7b `content_localized_columns.sql` adds `_de`/`_en` to content
-  tables. Slice 7a is dormant for non-superadmin surfaces by design.
+- `0003_localized_content_columns.sql` — **Slice 7b — Multilanguage content
+  schema** (2026-06-01). Adds `_de`/`_en` text columns to courses, topics,
+  questions, options, questionnaires; backfills `_de` from the legacy
+  column; updates `guard_questions_update` to include the new columns in
+  the locked-content check.
+- `0004+` — reserved for **Slice 6 Certificate Output System**. Slice 6
+  ships with multilanguage hooks built in (cert snapshot includes
+  `language`, renderer + email accept locale, verification renders from
+  snapshot language) — see `docs/codex-audit-multilanguage.md` §1.9.
 
 ---
 

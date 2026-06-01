@@ -84,7 +84,11 @@ export type Database = {
         Row: {
           id: string;
           title: string;
+          title_de: string | null;
+          title_en: string | null;
           description: string | null;
+          description_de: string | null;
+          description_en: string | null;
           active: boolean;
           created_at: string;
           updated_at: string;
@@ -92,7 +96,11 @@ export type Database = {
         Insert: {
           id?: string;
           title: string;
+          title_de?: string | null;
+          title_en?: string | null;
           description?: string | null;
+          description_de?: string | null;
+          description_en?: string | null;
           active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -100,7 +108,11 @@ export type Database = {
         Update: {
           id?: string;
           title?: string;
+          title_de?: string | null;
+          title_en?: string | null;
           description?: string | null;
+          description_de?: string | null;
+          description_en?: string | null;
           active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -111,6 +123,8 @@ export type Database = {
           id: string;
           course_id: string;
           title: string;
+          title_de: string | null;
+          title_en: string | null;
           code: string | null;
           sort_order: number;
           active: boolean;
@@ -121,6 +135,8 @@ export type Database = {
           id?: string;
           course_id: string;
           title: string;
+          title_de?: string | null;
+          title_en?: string | null;
           code?: string | null;
           sort_order?: number;
           active?: boolean;
@@ -131,6 +147,8 @@ export type Database = {
           id?: string;
           course_id?: string;
           title?: string;
+          title_de?: string | null;
+          title_en?: string | null;
           code?: string | null;
           sort_order?: number;
           active?: boolean;
@@ -144,9 +162,15 @@ export type Database = {
           course_id: string;
           topic_id: string | null;
           question_text: string;
+          question_text_de: string | null;
+          question_text_en: string | null;
           question_type: QuestionType;
           explanation: string | null;
+          explanation_de: string | null;
+          explanation_en: string | null;
           recommendation_text: string | null;
+          recommendation_text_de: string | null;
+          recommendation_text_en: string | null;
           active: boolean;
           created_at: string;
           updated_at: string;
@@ -156,9 +180,15 @@ export type Database = {
           course_id: string;
           topic_id?: string | null;
           question_text: string;
+          question_text_de?: string | null;
+          question_text_en?: string | null;
           question_type?: QuestionType;
           explanation?: string | null;
+          explanation_de?: string | null;
+          explanation_en?: string | null;
           recommendation_text?: string | null;
+          recommendation_text_de?: string | null;
+          recommendation_text_en?: string | null;
           active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -168,9 +198,15 @@ export type Database = {
           course_id?: string;
           topic_id?: string | null;
           question_text?: string;
+          question_text_de?: string | null;
+          question_text_en?: string | null;
           question_type?: QuestionType;
           explanation?: string | null;
+          explanation_de?: string | null;
+          explanation_en?: string | null;
           recommendation_text?: string | null;
+          recommendation_text_de?: string | null;
+          recommendation_text_en?: string | null;
           active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -181,6 +217,8 @@ export type Database = {
           id: string;
           question_id: string;
           option_text: string;
+          option_text_de: string | null;
+          option_text_en: string | null;
           is_correct: boolean;
           sort_order: number;
           created_at: string;
@@ -190,6 +228,8 @@ export type Database = {
           id?: string;
           question_id: string;
           option_text: string;
+          option_text_de?: string | null;
+          option_text_en?: string | null;
           is_correct?: boolean;
           sort_order?: number;
           created_at?: string;
@@ -199,6 +239,8 @@ export type Database = {
           id?: string;
           question_id?: string;
           option_text?: string;
+          option_text_de?: string | null;
+          option_text_en?: string | null;
           is_correct?: boolean;
           sort_order?: number;
           created_at?: string;
@@ -236,7 +278,11 @@ export type Database = {
           id: string;
           course_id: string;
           title: string;
+          title_de: string | null;
+          title_en: string | null;
           description: string | null;
+          description_de: string | null;
+          description_en: string | null;
           passing_percentage: number;
           randomize_question_order: boolean;
           randomize_answer_order: boolean;
@@ -249,7 +295,11 @@ export type Database = {
           id?: string;
           course_id: string;
           title: string;
+          title_de?: string | null;
+          title_en?: string | null;
           description?: string | null;
+          description_de?: string | null;
+          description_en?: string | null;
           passing_percentage?: number;
           randomize_question_order?: boolean;
           randomize_answer_order?: boolean;
@@ -262,7 +312,11 @@ export type Database = {
           id?: string;
           course_id?: string;
           title?: string;
+          title_de?: string | null;
+          title_en?: string | null;
           description?: string | null;
+          description_de?: string | null;
+          description_en?: string | null;
           passing_percentage?: number;
           randomize_question_order?: boolean;
           randomize_answer_order?: boolean;
