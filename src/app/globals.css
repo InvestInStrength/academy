@@ -52,6 +52,11 @@ button:not(:disabled),
 /*
  * Subtle topographic brand pattern. Add `topo-surface` to a container and the
  * pattern sits behind its content at low opacity ("subtle, not too strong").
+ *
+ * The pattern tiles horizontally so it fills any viewport width, and is masked
+ * with a horizontal linear-gradient so it fades to transparent at the left
+ * and right edges — keeps brand presence centered without a hard cut against
+ * the page background.
  */
 .topo-surface {
   position: relative;
@@ -63,10 +68,24 @@ button:not(:disabled),
   inset: 0;
   z-index: -1;
   background-image: url("/brand/topo.svg");
-  background-repeat: no-repeat;
+  background-repeat: repeat-x;
   background-position: center;
-  background-size: 1100px;
+  background-size: 1100px auto;
   opacity: 0.4;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 
