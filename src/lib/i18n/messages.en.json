@@ -404,6 +404,8 @@
 
   "attempt.no_questions": "This assessment doesn't have any questions yet. Please check back later or contact whoever issued your link.",
   "attempt.multiple_choice_hint": "(select all that apply)",
+  "attempt.next_question": "Next question →",
+  "attempt.previous_question": "← Previous question",
   "attempt.submit": "Submit assessment",
   "attempt.submitting": "Submitting…",
 

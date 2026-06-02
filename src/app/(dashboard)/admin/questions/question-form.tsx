@@ -301,7 +301,7 @@ export function QuestionForm({
                     name="correct-toggle"
                     checked={option.is_correct}
                     onChange={() => setCorrect(option.key)}
-                    className="h-4 w-4 accent-brand-600"
+                    className="h-5 w-5 accent-brand-600"
                   />
                 </label>
                 <div className="flex-1 space-y-1">

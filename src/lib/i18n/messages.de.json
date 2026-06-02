@@ -404,6 +404,8 @@
 
   "attempt.no_questions": "Dieser Test enthält noch keine Fragen. Bitte später erneut versuchen oder die Person kontaktieren, die den Link ausgestellt hat.",
   "attempt.multiple_choice_hint": "(alle zutreffenden Antworten auswählen)",
+  "attempt.next_question": "Nächste Frage →",
+  "attempt.previous_question": "← Vorherige Frage",
   "attempt.submit": "Test abschicken",
   "attempt.submitting": "Wird gesendet…",
 

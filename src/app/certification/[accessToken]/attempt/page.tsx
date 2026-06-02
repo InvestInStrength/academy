@@ -9,8 +9,8 @@ import {
 import { startOrResumeAttempt } from "@/lib/certification/attempt-lifecycle";
 import { getDictionary, t } from "@/lib/i18n/dict";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SubmitButton } from "@/components/ui/submit-button";
-import { submitAttempt } from "../actions";
+
+import { AttemptForm } from "./attempt-form";
 
 export const dynamic = "force-dynamic";
 
@@ -70,10 +70,16 @@ export default async function AttemptPage({
     ? shuffle(loaded)
     : loaded;
   const displayedQuestions = questions.map((question) => ({
-    ...question,
-    options: context.questionnaire.randomize_answer_order
+    question_id: question.question_id,
+    question_text: question.question_text,
+    question_type: question.question_type,
+    options: (context.questionnaire.randomize_answer_order
       ? shuffle(question.options)
-      : question.options,
+      : question.options
+    ).map((option) => ({
+      id: option.id,
+      option_text: option.option_text,
+    })),
   }));
 
   const questionOrder = displayedQuestions.map((q) => q.question_id);
@@ -87,48 +93,12 @@ export default async function AttemptPage({
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={submitAttempt} className="space-y-6">
-          <input type="hidden" name="access_token" value={accessToken} />
-          <input type="hidden" name="question_order" value={JSON.stringify(questionOrder)} />
-          <input type="hidden" name="option_order" value={JSON.stringify(optionOrder)} />
-
-          {displayedQuestions.map((question, index) => {
-            const inputType =
-              question.question_type === "single_choice" ? "radio" : "checkbox";
-            return (
-              <fieldset key={question.question_id} className="space-y-2">
-                <legend className="text-sm font-medium text-slate-900">
-                  {index + 1}. {question.question_text}
-                  {question.question_type === "multiple_choice" && (
-                    <span className="ml-1 text-xs font-normal text-slate-400">
-                      {tr("attempt.multiple_choice_hint")}
-                    </span>
-                  )}
-                </legend>
-                <div className="space-y-1.5">
-                  {question.options.map((option) => (
-                    <label
-                      key={option.id}
-                      className="flex cursor-pointer items-start gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                    >
-                      <input
-                        type={inputType}
-                        name={`q_${question.question_id}`}
-                        value={option.id}
-                        className="mt-0.5 h-4 w-4 accent-brand-600"
-                      />
-                      <span>{option.option_text}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            );
-          })}
-
-          <SubmitButton pendingText={tr("attempt.submitting")}>
-            {tr("attempt.submit")}
-          </SubmitButton>
-        </form>
+        <AttemptForm
+          accessToken={accessToken}
+          questions={displayedQuestions}
+          questionOrder={questionOrder}
+          optionOrder={optionOrder}
+        />
       </CardContent>
     </Card>
   );
