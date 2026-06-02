@@ -48,12 +48,13 @@ function inlineQr(qrSvg: string): string {
 }
 
 /** Generates an olive-on-cream QR pointing at the verification URL, sized to
- * fit the default template's 36mm QR area. */
+ * fit the default template's QR slot (63pt ≈ 22mm at the A4-landscape pt
+ * scale used by the designer's SVG). */
 async function qrSvgFor(url: string): Promise<string> {
   const svg = await QRCode.toString(url, {
     type: "svg",
     margin: 0,
-    width: 36,
+    width: 63,
     errorCorrectionLevel: "M",
     color: { dark: "#3a4039", light: "#fafafa" },
   });
