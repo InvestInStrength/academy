@@ -109,6 +109,17 @@ Other remaining cross-cutting hardening items (not new slices):
 - Candidate email verification (currently trust-on-submit).
 - End-to-end QA against a real Supabase project (everything so far is verified at
   the type/build/route level only).
+- **Persist partial attempt progress** (added 2026-06-02). After
+  pagination shipped (`feat(candidate): paginated attempt …`,
+  `157c667`), reload mid-attempt still loses in-page answer state —
+  state is held client-side in the AttemptForm component, so a refresh
+  resets it. Fix shape: add `attempts.answers jsonb` (e.g.
+  `{[questionId]: optionId[]}`), persist on every answer-toggle via a
+  small `saveAttemptProgress` server action (rate-limited like the
+  attempt action), hydrate state from the row on render. Snapshot at
+  submit-time is unchanged. Migration is append-only (single nullable
+  column). Worth landing before the platform goes live to real
+  candidates so a connection blip doesn't void 30 minutes of work.
 
 Migration note: `0001_core_schema.sql` **is now applied to the live Supabase
 project (2026-05-30)**. From here, all schema changes are **append-only
