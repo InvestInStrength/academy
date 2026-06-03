@@ -24,6 +24,17 @@ export function HistorySection({ events, adminEmailById, locale }: Props) {
   const t = (key: string, params?: Record<string, string | number>) =>
     rawT(dict, key, params);
 
+  /** Localize from the event_type discriminator (dict-driven), falling back to
+   * the stored English event_label — which is never rewritten (append-only
+   * audit). attempt_submitted carries its number in event_data. */
+  function eventLabel(event: AccountHistoryEvent): string {
+    const key = `history.event.${event.event_type}`;
+    if (!(key in dict)) return event.event_label ?? event.event_type;
+    const number = (event.event_data as { attempt_number?: number } | null)
+      ?.attempt_number;
+    return t(key, number != null ? { number } : undefined);
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -41,7 +52,7 @@ export function HistorySection({ events, adminEmailById, locale }: Props) {
                 <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
                 <div>
                   <p className="font-medium text-slate-800">
-                    {event.event_label ?? event.event_type}
+                    {eventLabel(event)}
                   </p>
                   <p className="text-xs text-slate-400">
                     {formatDateTime(event.created_at, locale)}
