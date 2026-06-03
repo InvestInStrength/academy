@@ -9,6 +9,10 @@
   "home.verify_cta": "Verify a certificate",
   "home.admin_cta": "Admin sign in",
 
+  "legal.impressum": "Imprint",
+  "legal.agb": "Terms",
+  "legal.back_home": "← Back to home",
+
   "common.save": "Save",
   "common.save_changes": "Save changes",
   "common.saving": "Saving…",
