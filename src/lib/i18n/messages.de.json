@@ -9,6 +9,10 @@
   "home.verify_cta": "Zertifikat überprüfen",
   "home.admin_cta": "Admin-Anmeldung",
 
+  "legal.impressum": "Impressum",
+  "legal.agb": "AGB",
+  "legal.back_home": "← Zurück zur Startseite",
+
   "common.save": "Speichern",
   "common.save_changes": "Änderungen speichern",
   "common.saving": "Wird gespeichert…",
