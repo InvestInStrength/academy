@@ -21,7 +21,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
       <Field
         label={t("auth.login.email")}
         htmlFor="email"
-        error={state.fieldErrors?.email}
+        error={state.fieldErrors?.email ? t(state.fieldErrors.email) : undefined}
       >
         <Input
           id="email"
@@ -35,7 +35,9 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
       <Field
         label={t("auth.login.password")}
         htmlFor="password"
-        error={state.fieldErrors?.password}
+        error={
+          state.fieldErrors?.password ? t(state.fieldErrors.password) : undefined
+        }
       >
         <Input
           id="password"

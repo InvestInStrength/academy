@@ -47,6 +47,7 @@
   "validation.email_invalid": "Enter a valid email address.",
   "validation.too_many_attempts": "Too many attempts. Please wait a moment and try again.",
   "validation.field_errors": "Please correct the highlighted fields.",
+  "validation.password_required": "Enter your password.",
 
   "nav.dashboard": "Dashboard",
   "nav.courses": "Courses",
@@ -390,6 +391,12 @@
   "candidate.email.submitting": "Confirming…",
   "candidate.email.no_link": "This certification link is no longer available.",
 
+  "candidate.actions.no_certificate_yet": "There's no certificate to send yet.",
+  "candidate.actions.no_email_on_file": "There's no email on file for this candidate.",
+  "candidate.actions.certificate_unavailable": "This certificate isn't available.",
+  "candidate.actions.email_send_failed": "Could not send the email.",
+  "candidate.actions.email_sent": "Sent to {email}.",
+
   "candidate.result.title": "Your result",
   "candidate.result.no_attempt": "You haven't completed an attempt yet.",
   "candidate.result.congratulations": "Congratulations, {name}",
@@ -418,6 +425,8 @@
   "verify.lookup_placeholder": "e.g. IIS-2026-AB12CD34",
   "verify.lookup_submit": "Verify",
   "verify.lookup_checking": "Checking…",
+  "verify.lookup_enter_id": "Enter a certificate ID.",
+  "verify.lookup_not_found": "No certificate found with that ID.",
   "verify.not_found_title": "Certificate not found",
   "verify.not_found_body": "We couldn't verify a certificate for this link. Please check the code or QR you scanned.",
   "verify.certificate_label": "Certificate",

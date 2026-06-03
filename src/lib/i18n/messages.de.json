@@ -47,6 +47,7 @@
   "validation.email_invalid": "Bitte eine gültige E-Mail eingeben.",
   "validation.too_many_attempts": "Zu viele Versuche. Bitte einen Moment warten und erneut versuchen.",
   "validation.field_errors": "Bitte korrigieren Sie die markierten Felder.",
+  "validation.password_required": "Bitte geben Sie Ihr Passwort ein.",
 
   "nav.dashboard": "Dashboard",
   "nav.courses": "Kurse",
@@ -390,6 +391,12 @@
   "candidate.email.submitting": "Bestätige…",
   "candidate.email.no_link": "Dieser Zertifizierungs-Link ist nicht mehr verfügbar.",
 
+  "candidate.actions.no_certificate_yet": "Es gibt noch kein Zertifikat zum Versenden.",
+  "candidate.actions.no_email_on_file": "Für diese:n Kandidat:in ist keine E-Mail hinterlegt.",
+  "candidate.actions.certificate_unavailable": "Dieses Zertifikat ist nicht verfügbar.",
+  "candidate.actions.email_send_failed": "Die E-Mail konnte nicht gesendet werden.",
+  "candidate.actions.email_sent": "An {email} gesendet.",
+
   "candidate.result.title": "Ihr Ergebnis",
   "candidate.result.no_attempt": "Sie haben noch keinen Versuch abgeschlossen.",
   "candidate.result.congratulations": "Glückwunsch, {name}",
@@ -418,6 +425,8 @@
   "verify.lookup_placeholder": "z. B. IIS-2026-AB12CD34",
   "verify.lookup_submit": "Prüfen",
   "verify.lookup_checking": "Wird geprüft…",
+  "verify.lookup_enter_id": "Bitte eine Zertifikats-ID eingeben.",
+  "verify.lookup_not_found": "Kein Zertifikat mit dieser ID gefunden.",
   "verify.not_found_title": "Zertifikat nicht gefunden",
   "verify.not_found_body": "Für diesen Link konnten wir kein Zertifikat überprüfen. Bitte den Code oder QR erneut prüfen.",
   "verify.certificate_label": "Zertifikat",

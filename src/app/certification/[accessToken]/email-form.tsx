@@ -24,7 +24,7 @@ export function EmailForm({ accessToken, defaultEmail }: Props) {
         label={t("candidate.email.label")}
         htmlFor="email"
         required
-        error={state.fieldErrors?.email}
+        error={state.fieldErrors?.email ? t(state.fieldErrors.email) : undefined}
       >
         <Input
           id="email"

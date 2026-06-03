@@ -7,7 +7,7 @@ import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { sendCertificateEmail } from "@/lib/email/certificate-email";
-import { getDictionary, t } from "@/lib/i18n";
+import { getDictionary, getServerT, t } from "@/lib/i18n";
 import { getInProgressAttempt } from "@/lib/certification/attempt-lifecycle";
 import {
   confirmParticipantEmail,
@@ -24,7 +24,7 @@ import {
 } from "@/lib/certification/scoring";
 
 const emailSchema = z.object({
-  email: z.string().trim().email({ message: "Enter a valid email address." }),
+  email: z.string().trim().email({ message: "validation.email_invalid" }),
 });
 
 async function clientKey(token: string): Promise<string> {
@@ -62,22 +62,23 @@ export async function submitEmail(
   formData: FormData,
 ): Promise<FormState> {
   const accessToken = String(formData.get("access_token") ?? "");
+  const { t: tr } = await getServerT();
 
   if (!rateLimit(`email:${await clientKey(accessToken)}`, 10, 60_000)) {
-    return { message: "Too many attempts. Please wait a moment and try again." };
+    return { message: tr("validation.too_many_attempts") };
   }
 
   const parsed = emailSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) {
     return {
-      message: "Please enter a valid email.",
+      message: tr("validation.email_invalid"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
 
   const context = await getCandidateContext(accessToken);
   if (!context) {
-    return { message: "This certification link is no longer available." };
+    return { message: tr("candidate.email.no_link") };
   }
 
   await confirmParticipantEmail(context, parsed.data.email);
@@ -89,23 +90,24 @@ export async function emailMyCertificate(
   formData: FormData,
 ): Promise<FormState> {
   const accessToken = String(formData.get("access_token") ?? "");
+  const { t: tr } = await getServerT();
 
   if (!rateLimit(`certemail:${await clientKey(accessToken)}`, 5, 300_000)) {
-    return { message: "Too many requests. Please wait a few minutes." };
+    return { message: tr("validation.too_many_attempts") };
   }
 
   const context = await getCandidateContext(accessToken);
-  if (!context) return { message: "This certification link is no longer available." };
+  if (!context) return { message: tr("candidate.email.no_link") };
   if (context.assignment.status !== "passed") {
-    return { message: "There's no certificate to send yet." };
+    return { message: tr("candidate.actions.no_certificate_yet") };
   }
   if (!context.participant.email) {
-    return { message: "There's no email on file for this candidate." };
+    return { message: tr("candidate.actions.no_email_on_file") };
   }
 
   const certificate = await getCertificateForAssignment(context.assignment.id);
   if (!certificate || certificate.status !== "valid") {
-    return { message: "This certificate isn't available." };
+    return { message: tr("candidate.actions.certificate_unavailable") };
   }
 
   const sent = await sendCertificateEmail({
@@ -113,7 +115,7 @@ export async function emailMyCertificate(
     snapshot: certificate.snapshot,
   });
   if (!sent.ok) {
-    return { message: sent.error ?? "Could not send the email." };
+    return { message: tr("candidate.actions.email_send_failed") };
   }
 
   await markCertificateEmailed(
@@ -122,7 +124,12 @@ export async function emailMyCertificate(
     context.participant.email,
   );
 
-  return { ok: true, message: `Sent to ${context.participant.email}.` };
+  return {
+    ok: true,
+    message: tr("candidate.actions.email_sent", {
+      email: context.participant.email,
+    }),
+  };
 }
 
 export async function submitAttempt(formData: FormData): Promise<void> {
