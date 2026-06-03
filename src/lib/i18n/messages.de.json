@@ -340,6 +340,10 @@
   "admin.assignments.assignment_gone": "Diese Zuweisung existiert nicht mehr.",
   "admin.assignments.already_active_duplicate": "Diese:r Teilnehmer:in hat bereits eine aktive Zuweisung für diesen Test.",
   "admin.assignments.reason_min": "Bitte einen Grund eingeben (mindestens 3 Zeichen).",
+  "admin.assignments.download_pdf": "PDF herunterladen",
+  "admin.assignments.download_preview": "Vorschau (PNG)",
+  "admin.assignments.assets_pending": "Dateien noch nicht erzeugt.",
+  "admin.assignments.regenerate_assets": "Dateien neu erzeugen",
 
   "admin.history.title": "Verlauf ({count})",
   "admin.history.empty": "Noch keine Ereignisse aufgezeichnet.",
@@ -353,6 +357,8 @@
   "history.event.certificate_revoked": "Zertifikat widerrufen",
   "history.event.certificate_reinstated": "Zertifikat wieder gültig gesetzt",
   "history.event.certificate_emailed": "Zertifikat per E-Mail gesendet",
+  "history.event.certificate_assets_generated": "Zertifikatsdateien erzeugt",
+  "history.event.certificate_generation_failed": "Erzeugung der Zertifikatsdateien fehlgeschlagen",
   "history.event.email_submitted": "E-Mail übermittelt",
   "history.event.attempt_submitted": "Versuch {number} eingereicht",
   "history.event.attempt_passed": "Versuch bestanden",
@@ -478,6 +484,8 @@
   "candidate.certificate.revoked_overlay": "Widerrufen",
   "candidate.certificate.email_button": "Zertifikat per E-Mail senden",
   "candidate.certificate.emailing": "Wird gesendet…",
+  "candidate.certificate.download_pdf": "Zertifikat als PDF herunterladen",
+  "candidate.certificate.assets_pending": "Ihre Download-Dateien werden noch vorbereitet. Bitte laden Sie die Seite in Kürze neu.",
 
   "verify.title": "Zertifikatsprüfung",
   "verify.lookup_card_title": "Zertifikat überprüfen",

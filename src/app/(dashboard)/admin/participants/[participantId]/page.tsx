@@ -81,10 +81,37 @@ export default async function ParticipantDetailPage({
     ? await supabase
         .from("certificates")
         .select(
-          "certification_assignment_id, certificate_number, status, verification_token",
+          "id, certification_assignment_id, certificate_number, status, verification_token",
         )
         .in("certification_assignment_id", assignmentIds)
     : { data: [] };
+
+  // Rendered asset URLs (official PDF + PNG preview) per certificate.
+  const certificateIds = (certificateData ?? []).map((c) => c.id);
+  const { data: assetData } = certificateIds.length
+    ? await supabase
+        .from("certificate_assets")
+        .select("certificate_id, asset_type, file_url")
+        .in("certificate_id", certificateIds)
+    : { data: [] };
+  const assetsByCertificate = new Map<
+    string,
+    { pdf_url: string | null; preview_url: string | null }
+  >();
+  for (const a of assetData ?? []) {
+    const entry = assetsByCertificate.get(a.certificate_id) ?? {
+      pdf_url: null,
+      preview_url: null,
+    };
+    if (a.asset_type === "official_pdf") entry.pdf_url = a.file_url;
+    if (a.asset_type === "official_png_preview") entry.preview_url = a.file_url;
+    assetsByCertificate.set(a.certificate_id, entry);
+  }
+  const certificatesWithAssets = (certificateData ?? []).map((c) => ({
+    ...c,
+    pdf_url: assetsByCertificate.get(c.id)?.pdf_url ?? null,
+    preview_url: assetsByCertificate.get(c.id)?.preview_url ?? null,
+  }));
 
   const history = (historyData ?? []) as AccountHistoryEvent[];
   const admins = (adminData ?? []) as Pick<AdminProfile, "id" | "email">[];
@@ -165,11 +192,14 @@ export default async function ParticipantDetailPage({
             }[]
           }
           certificates={
-            (certificateData ?? []) as {
+            certificatesWithAssets as {
+              id: string;
               certification_assignment_id: string;
               certificate_number: string;
               status: "valid" | "revoked";
               verification_token: string;
+              pdf_url: string | null;
+              preview_url: string | null;
             }[]
           }
         />

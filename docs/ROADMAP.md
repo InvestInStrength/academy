@@ -317,6 +317,20 @@ Define the JSON shapes **first**: `attempt_snapshot`, `recommendation_snapshot`,
 
 ## Slice 6 — Certificate Output System
 
+**Status: MVP built 2026-06-03** on `feat/slice-6-certificate-output` (not yet
+deployed — needs the two manual Supabase steps in
+`docs/slice-6-apply-checklist.md`). Shipped: official **PDF** + matching **PNG
+preview**, server-rendered (resvg + pdf-lib) from the frozen snapshot SVG,
+stored in the Supabase `certificates` bucket via `certificate_assets`
+(migration 0004); surfaced on the candidate certificate page + public
+verification page; admin **regenerate** + asset links on participant detail;
+graceful fallback to the client SVG/PNG when assets are pending/failed; bundled
+Barlow fonts for resvg. **Deferred:** the Instagram-story 1080x1920 graphic
+(part C) until the client provides the social SVG design — schema + type unions
+already accommodate it. Steps 7-13 below (official PDF, PNG preview, Storage,
+success page, verification image, admin regenerate) are done; step 4/9 (IG
+story) is the deferred remainder.
+
 Full spec: **`docs/CERTIFICATE-OUTPUT.md`**. Upgrades the existing (working)
 certificate from a single SVG/client-PNG to three server-rendered, stored assets:
 **official PDF**, **official PNG preview**, **Instagram Story PNG (1080×1920)**.

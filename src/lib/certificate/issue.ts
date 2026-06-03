@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/types/database";
 import { verificationUrl } from "@/lib/public-url";
 import { renderCertificateSvg } from "@/lib/certificate/render";
+import { generateCertificateAssets } from "@/lib/certificate/generate";
 
 type Client = SupabaseClient<Database>;
 
@@ -160,6 +161,11 @@ export async function issueCertificate(
       event_data: { certificate_number: certificateNumber },
       created_by_admin_id: options.adminId ?? null,
     });
+
+    // Render + store the official PDF and PNG preview. Best-effort: a render or
+    // upload failure never blocks issuing — the certificate is already valid and
+    // the failure is logged for regeneration from the admin UI.
+    await generateCertificateAssets(inserted.id);
 
     return inserted.id;
   }

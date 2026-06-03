@@ -31,6 +31,7 @@ export default async function VerifyPage({
 
   const { snapshot, status } = certificate;
   const revoked = status === "revoked";
+  const preview = certificate.assets.official_png_preview;
 
   return (
     <div className="space-y-6">
@@ -81,11 +82,29 @@ export default async function VerifyPage({
         </CardContent>
       </Card>
 
-      <CertificateView
-        svg={snapshot.svg}
-        revoked={revoked}
-        revokedLabel={t("common.revoked")}
-      />
+      {preview ? (
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={preview}
+            alt={snapshot.course_title}
+            className="block w-full rounded-lg border border-slate-200 shadow-sm"
+          />
+          {revoked && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <span className="-rotate-12 rounded bg-red-600/90 px-6 py-2 text-2xl font-bold uppercase tracking-widest text-white shadow">
+                {t("common.revoked")}
+              </span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <CertificateView
+          svg={snapshot.svg}
+          revoked={revoked}
+          revokedLabel={t("common.revoked")}
+        />
+      )}
     </div>
   );
 }

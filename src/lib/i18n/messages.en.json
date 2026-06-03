@@ -340,6 +340,10 @@
   "admin.assignments.assignment_gone": "That assignment no longer exists.",
   "admin.assignments.already_active_duplicate": "This participant already has an active assignment for that questionnaire.",
   "admin.assignments.reason_min": "Enter a reason (at least 3 characters).",
+  "admin.assignments.download_pdf": "Download PDF",
+  "admin.assignments.download_preview": "Preview (PNG)",
+  "admin.assignments.assets_pending": "Files not generated yet.",
+  "admin.assignments.regenerate_assets": "Regenerate files",
 
   "admin.history.title": "Account history ({count})",
   "admin.history.empty": "No events recorded yet.",
@@ -353,6 +357,8 @@
   "history.event.certificate_revoked": "Certificate revoked",
   "history.event.certificate_reinstated": "Certificate reinstated",
   "history.event.certificate_emailed": "Certificate emailed",
+  "history.event.certificate_assets_generated": "Certificate files generated",
+  "history.event.certificate_generation_failed": "Certificate file generation failed",
   "history.event.email_submitted": "Email submitted",
   "history.event.attempt_submitted": "Attempt {number} submitted",
   "history.event.attempt_passed": "Attempt passed",
@@ -478,6 +484,8 @@
   "candidate.certificate.revoked_overlay": "Revoked",
   "candidate.certificate.email_button": "Email me my certificate",
   "candidate.certificate.emailing": "Sending…",
+  "candidate.certificate.download_pdf": "Download certificate (PDF)",
+  "candidate.certificate.assets_pending": "Your download files are still being prepared. Please reload shortly.",
 
   "verify.title": "Certificate verification",
   "verify.lookup_card_title": "Verify a certificate",

@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
 import { issueCertificate } from "@/lib/certificate/issue";
+import { generateCertificateAssets } from "@/lib/certificate/generate";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import type { Json } from "@/types/database";
 import {
@@ -394,6 +395,28 @@ export async function manualPass(
 
   revalidatePath(`/admin/participants/${assignment.participant_id}`);
   return { ok: true, message: t("admin.assignments.marked_passed") };
+}
+
+/** Re-renders + re-uploads the certificate's official PDF + PNG preview.
+ * Preserves the certificate number/token (identity unchanged). Best-effort. */
+export async function regenerateCertificateAssets(
+  formData: FormData,
+): Promise<void> {
+  const { supabase } = await requireAdmin();
+  const certificateId = String(formData.get("certificate_id") ?? "");
+  const participantId = String(formData.get("participant_id") ?? "");
+  if (!certificateId) return;
+
+  // Authorization: confirm the admin's RLS-scoped client can see this cert.
+  const { data: cert } = await supabase
+    .from("certificates")
+    .select("id")
+    .eq("id", certificateId)
+    .maybeSingle();
+  if (!cert) return;
+
+  await generateCertificateAssets(certificateId);
+  if (participantId) revalidatePath(`/admin/participants/${participantId}`);
 }
 
 export async function updateAssignmentTopics(

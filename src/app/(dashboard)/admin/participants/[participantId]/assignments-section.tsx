@@ -9,7 +9,11 @@ import { AssignmentCreateForm } from "./assignment-create-form";
 import { AssignmentTopicsForm } from "./assignment-topics-form";
 import { ManualPassForm } from "./manual-pass-form";
 import { CopyLinkButton } from "./copy-link-button";
-import { regenerateAccessLink, toggleAssignmentActive } from "../actions";
+import {
+  regenerateAccessLink,
+  regenerateCertificateAssets,
+  toggleAssignmentActive,
+} from "../actions";
 
 type Assignment = {
   id: string;
@@ -24,10 +28,13 @@ type Questionnaire = { id: string; title: string; course_id: string; active: boo
 type Topic = { id: string; title: string; course_id: string };
 type AssignmentTopic = { certification_assignment_id: string; topic_id: string };
 type CertificateInfo = {
+  id: string;
   certification_assignment_id: string;
   certificate_number: string;
   status: CertificateStatus;
   verification_token: string;
+  pdf_url: string | null;
+  preview_url: string | null;
 };
 
 type Props = {
@@ -183,23 +190,62 @@ export function AssignmentsSection({
                       const cert = certificateByAssignment.get(assignment.id);
                       if (cert) {
                         return (
-                          <div className="flex flex-wrap items-center gap-2 text-sm">
-                            <span className="font-medium text-slate-800">
-                              {cert.certificate_number}
-                            </span>
-                            <Badge tone={cert.status === "valid" ? "success" : "danger"}>
-                              {cert.status === "valid"
-                                ? t("common.valid")
-                                : t("common.revoked")}
-                            </Badge>
-                            <a
-                              href={verificationUrl(cert.verification_token)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-brand-700 hover:underline"
-                            >
-                              {t("admin.assignments.verify")}
-                            </a>
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2 text-sm">
+                              <span className="font-medium text-slate-800">
+                                {cert.certificate_number}
+                              </span>
+                              <Badge tone={cert.status === "valid" ? "success" : "danger"}>
+                                {cert.status === "valid"
+                                  ? t("common.valid")
+                                  : t("common.revoked")}
+                              </Badge>
+                              <a
+                                href={verificationUrl(cert.verification_token)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-brand-700 hover:underline"
+                              >
+                                {t("admin.assignments.verify")}
+                              </a>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-xs">
+                              {cert.pdf_url ? (
+                                <a
+                                  href={cert.pdf_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-brand-700 hover:underline"
+                                >
+                                  {t("admin.assignments.download_pdf")}
+                                </a>
+                              ) : null}
+                              {cert.preview_url ? (
+                                <a
+                                  href={cert.preview_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-brand-700 hover:underline"
+                                >
+                                  {t("admin.assignments.download_preview")}
+                                </a>
+                              ) : null}
+                              {!cert.pdf_url && !cert.preview_url && (
+                                <span className="text-slate-400">
+                                  {t("admin.assignments.assets_pending")}
+                                </span>
+                              )}
+                              <ActionButton
+                                action={regenerateCertificateAssets}
+                                hidden={{
+                                  certificate_id: cert.id,
+                                  participant_id: participantId,
+                                }}
+                                variant="outline"
+                              >
+                                {t("admin.assignments.regenerate_assets")}
+                              </ActionButton>
+                            </div>
                           </div>
                         );
                       }

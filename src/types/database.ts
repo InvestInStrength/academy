@@ -18,6 +18,19 @@ export type Json =
 export type QuestionType = "single_choice" | "multiple_choice";
 export type AssignmentStatus = "not_started" | "in_progress" | "passed" | "failed";
 export type CertificateStatus = "valid" | "revoked";
+
+export type CertificateAssetType =
+  | "official_pdf"
+  | "official_png_preview"
+  | "instagram_story_png"
+  | "instagram_feed_png"
+  | "instagram_square_png";
+
+export type CertificateTemplateType =
+  | "official_certificate"
+  | "instagram_story"
+  | "instagram_feed"
+  | "instagram_square";
 export type AdminRole = "admin" | "superadmin";
 export type Locale = "de" | "en";
 
@@ -252,6 +265,9 @@ export type Database = {
           id: string;
           name: string;
           svg_template: string | null;
+          template_type: CertificateTemplateType;
+          width: number | null;
+          height: number | null;
           active: boolean;
           created_at: string;
           updated_at: string;
@@ -260,6 +276,9 @@ export type Database = {
           id?: string;
           name: string;
           svg_template?: string | null;
+          template_type?: CertificateTemplateType;
+          width?: number | null;
+          height?: number | null;
           active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -268,9 +287,50 @@ export type Database = {
           id?: string;
           name?: string;
           svg_template?: string | null;
+          template_type?: CertificateTemplateType;
+          width?: number | null;
+          height?: number | null;
           active?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      certificate_assets: {
+        Row: {
+          id: string;
+          certificate_id: string;
+          asset_type: CertificateAssetType;
+          file_url: string;
+          mime_type: string;
+          width: number | null;
+          height: number | null;
+          file_size: number | null;
+          generated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          certificate_id: string;
+          asset_type: CertificateAssetType;
+          file_url: string;
+          mime_type: string;
+          width?: number | null;
+          height?: number | null;
+          file_size?: number | null;
+          generated_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          certificate_id?: string;
+          asset_type?: CertificateAssetType;
+          file_url?: string;
+          mime_type?: string;
+          width?: number | null;
+          height?: number | null;
+          file_size?: number | null;
+          generated_at?: string;
+          created_at?: string;
         };
       };
       questionnaires: {
@@ -635,6 +695,7 @@ export type CourseTopic = Tables["course_topics"]["Row"];
 export type Question = Tables["questions"]["Row"];
 export type QuestionOption = Tables["question_options"]["Row"];
 export type CertificateTemplate = Tables["certificate_templates"]["Row"];
+export type CertificateAsset = Tables["certificate_assets"]["Row"];
 export type Questionnaire = Tables["questionnaires"]["Row"];
 export type QuestionnaireQuestion = Tables["questionnaire_questions"]["Row"];
 export type CertificationAssignment = Tables["certification_assignments"]["Row"];

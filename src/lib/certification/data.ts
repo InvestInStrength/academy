@@ -91,10 +91,17 @@ export type CertificateSnapshot = {
   svg: string;
 };
 
+export type CertificateAssetUrls = {
+  official_pdf: string | null;
+  official_png_preview: string | null;
+};
+
 export type PublicCertificate = {
+  id: string;
   status: "valid" | "revoked";
   certificate_number: string;
   snapshot: CertificateSnapshot;
+  assets: CertificateAssetUrls;
 };
 
 /**
@@ -403,16 +410,38 @@ export async function getLatestResult(
   };
 }
 
-function toPublicCertificate(row: {
-  status: "valid" | "revoked";
-  certificate_number: string;
-  certificate_public_snapshot: unknown;
-} | null): PublicCertificate | null {
+/** Reads the stored asset public URLs for a certificate (one per type). */
+async function certificateAssetUrls(
+  service: ReturnType<typeof createSupabaseServiceRoleClient>,
+  certificateId: string,
+): Promise<CertificateAssetUrls> {
+  const { data } = await service
+    .from("certificate_assets")
+    .select("asset_type, file_url")
+    .eq("certificate_id", certificateId);
+  const byType = new Map((data ?? []).map((a) => [a.asset_type, a.file_url]));
+  return {
+    official_pdf: byType.get("official_pdf") ?? null,
+    official_png_preview: byType.get("official_png_preview") ?? null,
+  };
+}
+
+async function toPublicCertificate(
+  service: ReturnType<typeof createSupabaseServiceRoleClient>,
+  row: {
+    id: string;
+    status: "valid" | "revoked";
+    certificate_number: string;
+    certificate_public_snapshot: unknown;
+  } | null,
+): Promise<PublicCertificate | null> {
   if (!row || !row.certificate_public_snapshot) return null;
   return {
+    id: row.id,
     status: row.status,
     certificate_number: row.certificate_number,
     snapshot: row.certificate_public_snapshot as CertificateSnapshot,
+    assets: await certificateAssetUrls(service, row.id),
   };
 }
 
@@ -423,10 +452,10 @@ export async function getCertificateForAssignment(
   const service = createSupabaseServiceRoleClient();
   const { data } = await service
     .from("certificates")
-    .select("status, certificate_number, certificate_public_snapshot")
+    .select("id, status, certificate_number, certificate_public_snapshot")
     .eq("certification_assignment_id", assignmentId)
     .maybeSingle();
-  return toPublicCertificate(data);
+  return toPublicCertificate(service, data);
 }
 
 /** Records that a candidate emailed their own certificate (candidate flow). */
@@ -459,8 +488,8 @@ export async function getCertificateByVerificationToken(
   const service = createSupabaseServiceRoleClient();
   const { data } = await service
     .from("certificates")
-    .select("status, certificate_number, certificate_public_snapshot")
+    .select("id, status, certificate_number, certificate_public_snapshot")
     .eq("verification_token", token)
     .maybeSingle();
-  return toPublicCertificate(data);
+  return toPublicCertificate(service, data);
 }

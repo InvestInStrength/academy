@@ -7,6 +7,7 @@ import {
 } from "@/lib/certification/data";
 import { getServerT } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonClasses } from "@/components/ui/button";
 import { CertificateView } from "@/components/certificate/certificate-view";
 import { CertificateDownloads } from "@/components/certificate/certificate-downloads";
 import { EmailCertificateButton } from "../email-certificate-button";
@@ -61,6 +62,8 @@ export default async function CandidateCertificatePage({
   }
 
   const revoked = certificate.status === "revoked";
+  const { official_pdf, official_png_preview } = certificate.assets;
+  const hasServerAssets = Boolean(official_pdf || official_png_preview);
 
   return (
     <div className="space-y-4">
@@ -74,20 +77,76 @@ export default async function CandidateCertificatePage({
               {t("candidate.certificate.revoked_notice")}
             </p>
           )}
-          <CertificateView
-            svg={certificate.snapshot.svg}
-            revoked={revoked}
-            revokedLabel={t("candidate.certificate.revoked_overlay")}
-          />
+
+          {/* Prefer the server-rendered PNG preview; fall back to the inline SVG
+            * if assets are still pending/failed (graceful degradation). */}
+          {official_png_preview ? (
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={official_png_preview}
+                alt={certificate.snapshot.course_title}
+                className="block w-full rounded-lg border border-slate-200 shadow-sm"
+              />
+              {revoked && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <span className="-rotate-12 rounded bg-red-600/90 px-6 py-2 text-2xl font-bold uppercase tracking-widest text-white shadow">
+                    {t("candidate.certificate.revoked_overlay")}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <CertificateView
+              svg={certificate.snapshot.svg}
+              revoked={revoked}
+              revokedLabel={t("candidate.certificate.revoked_overlay")}
+            />
+          )}
+
           {!revoked && (
             <>
-              <CertificateDownloads
-                svg={certificate.snapshot.svg}
-                certificateNumber={certificate.certificate_number}
-              />
+              <div className="flex flex-wrap gap-2">
+                {official_pdf && (
+                  <a
+                    href={official_pdf}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={buttonClasses("primary", "md")}
+                  >
+                    {t("candidate.certificate.download_pdf")}
+                  </a>
+                )}
+                {official_png_preview && (
+                  <a
+                    href={official_png_preview}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={buttonClasses("outline", "md")}
+                  >
+                    {t("candidate.certificate.download_png")}
+                  </a>
+                )}
+              </div>
+
+              {/* Fallback: client-side SVG/PNG download while server assets are
+                * being prepared (or if rendering failed). */}
+              {!hasServerAssets && (
+                <>
+                  <p className="text-sm text-slate-500">
+                    {t("candidate.certificate.assets_pending")}
+                  </p>
+                  <CertificateDownloads
+                    svg={certificate.snapshot.svg}
+                    certificateNumber={certificate.certificate_number}
+                  />
+                </>
+              )}
+
               <EmailCertificateButton accessToken={accessToken} />
             </>
           )}
+
           <p className="text-sm text-slate-500">
             {t("candidate.certificate.verify_at")}{" "}
             <a
