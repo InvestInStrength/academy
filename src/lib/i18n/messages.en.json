@@ -13,6 +13,7 @@
   "common.save_changes": "Save changes",
   "common.saving": "Saving…",
   "common.cancel": "Cancel",
+  "common.close": "Close",
   "common.back": "← Back",
   "common.active": "Active",
   "common.inactive": "Inactive",
@@ -58,6 +59,7 @@
   "nav.language": "Language",
 
   "admin.sections_label": "Admin sections",
+  "admin.open_menu": "Open menu",
 
   "admin.dashboard.title": "Dashboard",
   "admin.dashboard.description": "Overview of your certification content.",
@@ -186,7 +188,7 @@
   "admin.settings.language_card": "Language",
   "admin.settings.language_description": "Multilanguage feature flag. Toggle the active platform language (DE/EN) and enable the dormant second language.",
   "admin.settings.manage_language": "Manage language",
-  "admin.settings.placeholder": "Certificate template management and other settings arrive in a later slice.",
+  "admin.settings.placeholder": "Certificate template management and other settings will appear here.",
 
   "admin.placeholder.note": "This feature arrives in a later slice.",
 

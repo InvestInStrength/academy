@@ -13,6 +13,7 @@
   "common.save_changes": "Änderungen speichern",
   "common.saving": "Wird gespeichert…",
   "common.cancel": "Abbrechen",
+  "common.close": "Schließen",
   "common.back": "← Zurück",
   "common.active": "Aktiv",
   "common.inactive": "Inaktiv",
@@ -58,6 +59,7 @@
   "nav.language": "Sprache",
 
   "admin.sections_label": "Admin-Bereiche",
+  "admin.open_menu": "Menü öffnen",
 
   "admin.dashboard.title": "Dashboard",
   "admin.dashboard.description": "Überblick über Ihre Zertifizierungsinhalte.",
@@ -186,7 +188,7 @@
   "admin.settings.language_card": "Sprache",
   "admin.settings.language_description": "Mehrsprachen-Feature-Flag. Aktive Plattformsprache umschalten (DE/EN) und die ruhende Zweitsprache aktivieren.",
   "admin.settings.manage_language": "Sprache verwalten",
-  "admin.settings.placeholder": "Verwaltung der Zertifikatsvorlagen und weitere Einstellungen folgen in einer späteren Phase.",
+  "admin.settings.placeholder": "Verwaltung der Zertifikatsvorlagen und weitere Einstellungen werden hier verfügbar sein.",
 
   "admin.placeholder.note": "Diese Funktion folgt in einer späteren Phase.",
 

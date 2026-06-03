@@ -15,7 +15,7 @@ export function FormMessage({ tone = "error", children, className }: Props) {
     <p
       role={tone === "error" ? "alert" : "status"}
       className={cn(
-        "rounded-md px-3 py-2 text-sm",
+        "rounded-xl px-3 py-2 text-sm",
         tone === "error"
           ? "bg-red-50 text-red-700"
           : "bg-green-50 text-green-700",

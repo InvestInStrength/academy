@@ -5,6 +5,7 @@ import { getServerT } from "@/lib/i18n";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { Sidebar } from "@/components/admin/sidebar";
 import { SignOutButton } from "@/components/admin/sign-out-button";
+import { MobileNav } from "@/components/admin/mobile-nav";
 import { Emblem } from "@/components/brand/logo";
 
 export default async function AdminLayout({
@@ -44,14 +45,18 @@ export default async function AdminLayout({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3 md:hidden">
+          <header className="flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-3 md:hidden">
+            <MobileNav
+              isSuperadmin={isSuperadmin}
+              userEmail={user.email ?? ""}
+              brand={t("meta.brand")}
+            />
             <Link href="/admin" className="flex items-center gap-2">
               <Emblem className="h-7 w-7" />
               <span className="text-sm font-bold text-slate-900">
                 {t("meta.brand")}
               </span>
             </Link>
-            <SignOutButton />
           </header>
           <main className="flex-1 px-5 py-6 md:px-8">{children}</main>
         </div>
