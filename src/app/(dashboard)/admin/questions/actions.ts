@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { questionSchema } from "./schema";
 
@@ -54,11 +55,12 @@ export async function createQuestion(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const parsed = parseQuestionForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -66,8 +68,8 @@ export async function createQuestion(
   const data = parsed.data;
   if (data.topic_id && !(await topicBelongsToCourse(supabase, data.topic_id, data.course_id))) {
     return {
-      message: "The selected topic does not belong to the selected course.",
-      fieldErrors: { topic_id: "Choose a topic from this course." },
+      message: t("admin.questions.topic_not_in_course"),
+      fieldErrors: { topic_id: t("admin.questions.choose_topic_from_course") },
     };
   }
 
@@ -94,7 +96,7 @@ export async function createQuestion(
     .single();
 
   if (error || !inserted) {
-    return { message: "Could not create the question. Please try again." };
+    return { message: t("admin.questions.could_not_create") };
   }
 
   const { error: optionsError } = await supabase.from("question_options").insert(
@@ -111,7 +113,7 @@ export async function createQuestion(
   if (optionsError) {
     // Roll back the orphaned question so the bank stays consistent.
     await supabase.from("questions").delete().eq("id", inserted.id);
-    return { message: "Could not save the answer options. Please try again." };
+    return { message: t("admin.questions.could_not_save_options") };
   }
 
   revalidatePath("/admin/questions");
@@ -123,14 +125,15 @@ export async function updateQuestion(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { message: "Missing question id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const parsed = parseQuestionForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -138,8 +141,8 @@ export async function updateQuestion(
   const data = parsed.data;
   if (data.topic_id && !(await topicBelongsToCourse(supabase, data.topic_id, data.course_id))) {
     return {
-      message: "The selected topic does not belong to the selected course.",
-      fieldErrors: { topic_id: "Choose a topic from this course." },
+      message: t("admin.questions.topic_not_in_course"),
+      fieldErrors: { topic_id: t("admin.questions.choose_topic_from_course") },
     };
   }
 
@@ -165,7 +168,7 @@ export async function updateQuestion(
     .eq("id", id);
 
   if (error) {
-    return { message: "Could not save the question. Please try again." };
+    return { message: t("admin.questions.could_not_save") };
   }
 
   // Options have no external references in Slice 1, and every attempt stores its
@@ -183,12 +186,12 @@ export async function updateQuestion(
   );
 
   if (optionsError) {
-    return { message: "The question was saved but options failed. Re-save the options." };
+    return { message: t("admin.questions.options_failed") };
   }
 
   revalidatePath("/admin/questions");
   revalidatePath(`/admin/questions/${id}`);
-  return { ok: true, message: "Question saved." };
+  return { ok: true, message: t("admin.questions.saved") };
 }
 
 export async function toggleQuestionActive(formData: FormData): Promise<void> {
@@ -208,9 +211,10 @@ export async function deleteQuestion(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { message: "Missing question id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const { count: usageCount } = await supabase
     .from("questionnaire_questions")
@@ -218,15 +222,12 @@ export async function deleteQuestion(
     .eq("question_id", id);
 
   if ((usageCount ?? 0) > 0) {
-    return {
-      message:
-        "Cannot delete: this question is used in a questionnaire. Remove it there first, or deactivate it.",
-    };
+    return { message: t("admin.questions.cannot_delete_in_use") };
   }
 
   const { error } = await supabase.from("questions").delete().eq("id", id);
   if (error) {
-    return { message: "Could not delete the question. Please try again." };
+    return { message: t("admin.questions.could_not_delete") };
   }
 
   revalidatePath("/admin/questions");

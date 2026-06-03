@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { questionnaireSchema } from "./schema";
 
@@ -86,11 +87,12 @@ export async function createQuestionnaire(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const parsed = parseQuestionnaireForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -116,7 +118,7 @@ export async function createQuestionnaire(
     .single();
 
   if (error || !inserted) {
-    return { message: "Could not create the questionnaire. Please try again." };
+    return { message: t("admin.questionnaires.could_not_create") };
   }
 
   const ids = await allowedQuestionIds(
@@ -129,8 +131,8 @@ export async function createQuestionnaire(
     // questionnaire with no valid questions.
     await supabase.from("questionnaires").delete().eq("id", inserted.id);
     return {
-      message: "An active questionnaire needs at least one active question.",
-      fieldErrors: { question_ids: "Select at least one active question." },
+      message: t("admin.questionnaires.needs_active_question"),
+      fieldErrors: { question_ids: t("admin.questionnaires.select_active_question") },
     };
   }
   await replaceQuestionnaireQuestions(supabase, inserted.id, ids);
@@ -144,14 +146,15 @@ export async function updateQuestionnaire(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { message: "Missing questionnaire id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const parsed = parseQuestionnaireForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -181,15 +184,11 @@ export async function updateQuestionnaire(
       })
       .eq("id", id);
     if (error) {
-      return { message: "Could not save the questionnaire. Please try again." };
+      return { message: t("admin.questionnaires.could_not_save") };
     }
     revalidatePath("/admin/questionnaires");
     revalidatePath(`/admin/questionnaires/${id}`);
-    return {
-      ok: true,
-      message:
-        "Saved. This questionnaire is locked (it has assignments), so questions and scoring can't change.",
-    };
+    return { ok: true, message: t("admin.questionnaires.locked_save_notice") };
   }
 
   // Course is fixed after creation, so selected questions cannot be orphaned.
@@ -211,7 +210,7 @@ export async function updateQuestionnaire(
     .eq("id", id);
 
   if (error) {
-    return { message: "Could not save the questionnaire. Please try again." };
+    return { message: t("admin.questionnaires.could_not_save") };
   }
 
   const { data: existingLinks } = await supabase
@@ -228,8 +227,8 @@ export async function updateQuestionnaire(
   );
   if (data.active && ids.length === 0) {
     return {
-      message: "An active questionnaire needs at least one active question.",
-      fieldErrors: { question_ids: "Select at least one active question." },
+      message: t("admin.questionnaires.needs_active_question"),
+      fieldErrors: { question_ids: t("admin.questionnaires.select_active_question") },
     };
   }
   const ok = await replaceQuestionnaireQuestions(supabase, id, ids);
@@ -237,8 +236,8 @@ export async function updateQuestionnaire(
   revalidatePath("/admin/questionnaires");
   revalidatePath(`/admin/questionnaires/${id}`);
   return ok
-    ? { ok: true, message: "Questionnaire saved." }
-    : { message: "Saved the questionnaire, but updating questions failed." };
+    ? { ok: true, message: t("admin.questionnaires.saved") }
+    : { message: t("admin.questionnaires.could_not_save_questions") };
 }
 
 export async function toggleQuestionnaireActive(formData: FormData): Promise<void> {
@@ -258,9 +257,10 @@ export async function deleteQuestionnaire(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { message: "Missing questionnaire id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const { count: assignmentCount } = await supabase
     .from("certification_assignments")
@@ -268,15 +268,12 @@ export async function deleteQuestionnaire(
     .eq("questionnaire_id", id);
 
   if ((assignmentCount ?? 0) > 0) {
-    return {
-      message:
-        "Cannot delete: this questionnaire has certification assignments. Deactivate it instead.",
-    };
+    return { message: t("admin.questionnaires.cannot_delete_in_use") };
   }
 
   const { error } = await supabase.from("questionnaires").delete().eq("id", id);
   if (error) {
-    return { message: "Could not delete the questionnaire. Please try again." };
+    return { message: t("admin.questionnaires.could_not_delete") };
   }
 
   revalidatePath("/admin/questionnaires");

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { courseSchema } from "./schema";
 
@@ -26,11 +27,12 @@ export async function createCourse(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const parsed = parseCourseForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -52,7 +54,7 @@ export async function createCourse(
     .single();
 
   if (error || !data) {
-    return { message: "Could not create the course. Please try again." };
+    return { message: t("admin.courses.could_not_create") };
   }
 
   revalidatePath("/admin/courses");
@@ -64,16 +66,17 @@ export async function updateCourse(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   if (!id) {
-    return { message: "Missing course id." };
+    return { message: t("validation.generic_error") };
   }
 
   const parsed = parseCourseForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -94,12 +97,12 @@ export async function updateCourse(
     .eq("id", id);
 
   if (error) {
-    return { message: "Could not save changes. Please try again." };
+    return { message: t("admin.courses.could_not_save") };
   }
 
   revalidatePath("/admin/courses");
   revalidatePath(`/admin/courses/${id}`);
-  return { ok: true, message: "Course saved." };
+  return { ok: true, message: t("admin.courses.saved") };
 }
 
 export async function toggleCourseActive(formData: FormData): Promise<void> {
@@ -119,9 +122,10 @@ export async function deleteCourse(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { message: "Missing course id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   // Only unused courses may be hard-deleted; otherwise deactivate.
   const [{ count: questionCount }, { count: questionnaireCount }] =
@@ -137,15 +141,12 @@ export async function deleteCourse(
     ]);
 
   if ((questionCount ?? 0) > 0 || (questionnaireCount ?? 0) > 0) {
-    return {
-      message:
-        "Cannot delete: this course has questions or questionnaires. Deactivate it instead.",
-    };
+    return { message: t("admin.courses.cannot_delete_with_questions") };
   }
 
   const { error } = await supabase.from("courses").delete().eq("id", id);
   if (error) {
-    return { message: "Could not delete the course. Please try again." };
+    return { message: t("admin.courses.could_not_delete") };
   }
 
   revalidatePath("/admin/courses");

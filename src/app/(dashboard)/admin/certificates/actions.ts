@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import type { FormState } from "@/lib/form";
 import { sendCertificateEmail } from "@/lib/email/certificate-email";
 import type { CertificateSnapshot } from "@/lib/certification/data";
@@ -36,13 +37,14 @@ export async function revokeCertificate(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const reason = String(formData.get("reason") ?? "").trim();
-  if (!id) return { message: "Missing certificate id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const refs = await participantPathFor(supabase, id);
-  if (!refs) return { message: "That certificate no longer exists." };
+  if (!refs) return { message: t("admin.certificates.cert_gone") };
 
   const { error } = await supabase
     .from("certificates")
@@ -54,7 +56,7 @@ export async function revokeCertificate(
     })
     .eq("id", id);
 
-  if (error) return { message: "Could not revoke the certificate." };
+  if (error) return { message: t("admin.certificates.could_not_revoke") };
 
   // Revocation reason is backend-only.
   await supabase.from("account_history").insert({
@@ -68,7 +70,7 @@ export async function revokeCertificate(
 
   revalidatePath("/admin/certificates");
   revalidatePath(`/admin/participants/${refs.participantId}`);
-  return { ok: true, message: "Certificate revoked." };
+  return { ok: true, message: t("admin.certificates.revoked_done") };
 }
 
 export async function sendCertificateEmailAction(
@@ -76,9 +78,10 @@ export async function sendCertificateEmailAction(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { message: "Missing certificate id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const { data: certificate } = await supabase
     .from("certificates")
@@ -86,9 +89,9 @@ export async function sendCertificateEmailAction(
     .eq("id", id)
     .maybeSingle();
 
-  if (!certificate) return { message: "That certificate no longer exists." };
+  if (!certificate) return { message: t("admin.certificates.cert_gone") };
   if (certificate.status !== "valid") {
-    return { message: "A revoked certificate cannot be emailed." };
+    return { message: t("admin.certificates.cannot_email_revoked") };
   }
 
   const { data: assignment } = await supabase
@@ -96,7 +99,7 @@ export async function sendCertificateEmailAction(
     .select("participant_id")
     .eq("id", certificate.certification_assignment_id)
     .maybeSingle();
-  if (!assignment) return { message: "That assignment no longer exists." };
+  if (!assignment) return { message: t("admin.certificates.assignment_gone") };
 
   const { data: participant } = await supabase
     .from("participants")
@@ -104,13 +107,13 @@ export async function sendCertificateEmailAction(
     .eq("id", assignment.participant_id)
     .maybeSingle();
   if (!participant?.email) {
-    return { message: "This candidate has no email on file." };
+    return { message: t("admin.certificates.no_email_on_file") };
   }
 
   const snapshot = certificate.certificate_public_snapshot as unknown as CertificateSnapshot;
   const sent = await sendCertificateEmail({ toEmail: participant.email, snapshot });
   if (!sent.ok) {
-    return { message: sent.error ?? "Could not send the email." };
+    return { message: t("admin.certificates.could_not_send") };
   }
 
   await supabase
@@ -128,7 +131,10 @@ export async function sendCertificateEmailAction(
 
   revalidatePath("/admin/certificates");
   revalidatePath(`/admin/participants/${assignment.participant_id}`);
-  return { ok: true, message: `Emailed to ${participant.email}.` };
+  return {
+    ok: true,
+    message: t("admin.certificates.emailed", { email: participant.email }),
+  };
 }
 
 export async function reinstateCertificate(formData: FormData): Promise<void> {

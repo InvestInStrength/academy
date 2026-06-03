@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireSuperadmin } from "@/lib/auth/admin";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
+import { getServerT } from "@/lib/i18n";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { createAdminSchema } from "./schema";
 
@@ -15,6 +16,7 @@ export async function createAdmin(
   formData: FormData,
 ): Promise<FormState> {
   await requireSuperadmin();
+  const { t } = await getServerT();
 
   const parsed = createAdminSchema.safeParse({
     email: formData.get("email"),
@@ -24,7 +26,7 @@ export async function createAdmin(
 
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -40,7 +42,7 @@ export async function createAdmin(
   });
 
   if (createError || !created.user) {
-    return { message: createError?.message ?? "Could not create the auth user." };
+    return { message: t("admin.admins.could_not_create_user") };
   }
 
   const { error: profileError } = await service.from("admin_profiles").insert({
@@ -52,11 +54,14 @@ export async function createAdmin(
   if (profileError) {
     // Roll back the orphaned auth user so a retry is clean.
     await service.auth.admin.deleteUser(created.user.id);
-    return { message: "Could not create the admin profile. Please try again." };
+    return { message: t("admin.admins.could_not_create_profile") };
   }
 
   revalidatePath(ADMINS_PATH);
-  return { ok: true, message: `Admin ${parsed.data.email} created.` };
+  return {
+    ok: true,
+    message: t("admin.admins.created", { email: parsed.data.email }),
+  };
 }
 
 export async function setAdminActive(formData: FormData): Promise<void> {

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { topicSchema } from "./topic-schema";
 
@@ -26,11 +27,12 @@ export async function createTopic(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const parsed = parseTopicForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -46,11 +48,11 @@ export async function createTopic(
   });
 
   if (error) {
-    return { message: "Could not create the topic. Please try again." };
+    return { message: t("admin.topics.could_not_create") };
   }
 
   revalidatePath(`/admin/courses/${parsed.data.course_id}`);
-  return { ok: true, message: "Topic added." };
+  return { ok: true, message: t("admin.topics.added") };
 }
 
 export async function updateTopic(
@@ -58,14 +60,15 @@ export async function updateTopic(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { message: "Missing topic id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const parsed = parseTopicForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -83,11 +86,11 @@ export async function updateTopic(
     .eq("id", id);
 
   if (error) {
-    return { message: "Could not save the topic. Please try again." };
+    return { message: t("admin.topics.could_not_save") };
   }
 
   revalidatePath(`/admin/courses/${parsed.data.course_id}`);
-  return { ok: true, message: "Topic saved." };
+  return { ok: true, message: t("admin.topics.saved") };
 }
 
 export async function toggleTopicActive(formData: FormData): Promise<void> {
@@ -107,10 +110,11 @@ export async function deleteTopic(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const courseId = String(formData.get("course_id") ?? "");
-  if (!id) return { message: "Missing topic id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const { count: questionCount } = await supabase
     .from("questions")
@@ -118,17 +122,14 @@ export async function deleteTopic(
     .eq("topic_id", id);
 
   if ((questionCount ?? 0) > 0) {
-    return {
-      message:
-        "Cannot delete: questions are assigned to this topic. Reassign them or deactivate the topic.",
-    };
+    return { message: t("admin.topics.cannot_delete_with_questions") };
   }
 
   const { error } = await supabase.from("course_topics").delete().eq("id", id);
   if (error) {
-    return { message: "Could not delete the topic. Please try again." };
+    return { message: t("admin.topics.could_not_delete") };
   }
 
   if (courseId) revalidatePath(`/admin/courses/${courseId}`);
-  return { ok: true, message: "Topic deleted." };
+  return { ok: true, message: t("admin.topics.deleted") };
 }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { getServerT } from "@/lib/i18n";
 import { issueCertificate } from "@/lib/certificate/issue";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import type { Json } from "@/types/database";
@@ -65,11 +66,12 @@ export async function createParticipant(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
+  const { t } = await getServerT();
 
   const parsed = parseParticipantForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -85,7 +87,7 @@ export async function createParticipant(
     .single();
 
   if (error || !data) {
-    return { message: "Could not create the participant. Please try again." };
+    return { message: t("admin.participants.could_not_create") };
   }
 
   await logAccountEvent(supabase, user.id, {
@@ -103,14 +105,15 @@ export async function updateParticipant(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { message: "Missing participant id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const parsed = parseParticipantForm(formData);
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -125,12 +128,12 @@ export async function updateParticipant(
     .eq("id", id);
 
   if (error) {
-    return { message: "Could not save the participant. Please try again." };
+    return { message: t("admin.participants.could_not_save") };
   }
 
   revalidatePath(`/admin/participants/${id}`);
   revalidatePath("/admin/participants");
-  return { ok: true, message: "Participant saved." };
+  return { ok: true, message: t("admin.participants.saved_msg") };
 }
 
 export async function deleteParticipant(
@@ -138,9 +141,10 @@ export async function deleteParticipant(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { message: "Missing participant id." };
+  if (!id) return { message: t("validation.generic_error") };
 
   const { count } = await supabase
     .from("certification_assignments")
@@ -148,15 +152,12 @@ export async function deleteParticipant(
     .eq("participant_id", id);
 
   if ((count ?? 0) > 0) {
-    return {
-      message:
-        "Cannot delete: this participant has certification assignments. Deactivate those instead.",
-    };
+    return { message: t("admin.participants.cannot_delete_with_assignments") };
   }
 
   const { error } = await supabase.from("participants").delete().eq("id", id);
   if (error) {
-    return { message: "Could not delete the participant. Please try again." };
+    return { message: t("admin.participants.could_not_delete") };
   }
 
   revalidatePath("/admin/participants");
@@ -187,9 +188,10 @@ export async function createAssignment(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
+  const { t } = await getServerT();
 
   const participantId = String(formData.get("participant_id") ?? "");
-  if (!participantId) return { message: "Missing participant id." };
+  if (!participantId) return { message: t("validation.generic_error") };
 
   const parsed = assignmentCreateSchema.safeParse({
     questionnaire_id: formData.get("questionnaire_id"),
@@ -197,7 +199,7 @@ export async function createAssignment(
   });
   if (!parsed.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("validation.field_errors"),
       fieldErrors: fieldErrorsFromZod(parsed.error),
     };
   }
@@ -209,10 +211,10 @@ export async function createAssignment(
     .maybeSingle();
 
   if (!questionnaire) {
-    return { message: "That questionnaire no longer exists." };
+    return { message: t("admin.assignments.questionnaire_gone") };
   }
   if (!questionnaire.active) {
-    return { message: "That questionnaire is inactive. Activate it first." };
+    return { message: t("admin.assignments.questionnaire_inactive") };
   }
 
   const { count: activeDuplicate } = await supabase
@@ -223,10 +225,7 @@ export async function createAssignment(
     .eq("active", true);
 
   if ((activeDuplicate ?? 0) > 0) {
-    return {
-      message:
-        "This participant already has an active assignment for that questionnaire.",
-    };
+    return { message: t("admin.assignments.already_active_duplicate") };
   }
 
   const { data: assignment, error } = await supabase
@@ -239,7 +238,7 @@ export async function createAssignment(
     .single();
 
   if (error || !assignment) {
-    return { message: "Could not create the assignment. Please try again." };
+    return { message: t("admin.assignments.could_not_create_msg") };
   }
 
   const topicIds = await topicIdsForCourse(
@@ -266,7 +265,7 @@ export async function createAssignment(
   });
 
   revalidatePath(`/admin/participants/${participantId}`);
-  return { ok: true, message: "Assignment created." };
+  return { ok: true, message: t("admin.assignments.created_msg") };
 }
 
 export async function toggleAssignmentActive(formData: FormData): Promise<void> {
@@ -343,14 +342,15 @@ export async function manualPass(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
+  const { t } = await getServerT();
 
   const assignmentId = String(formData.get("assignment_id") ?? "");
   const reason = String(formData.get("reason") ?? "").trim();
-  if (!assignmentId) return { message: "Missing assignment id." };
+  if (!assignmentId) return { message: t("validation.generic_error") };
   if (reason.length < 3) {
     return {
-      message: "A reason is required to manually pass a candidate.",
-      fieldErrors: { reason: "Enter a reason (at least 3 characters)." },
+      message: t("admin.assignments.reason_required"),
+      fieldErrors: { reason: t("admin.assignments.reason_min") },
     };
   }
 
@@ -360,9 +360,9 @@ export async function manualPass(
     .eq("id", assignmentId)
     .maybeSingle();
 
-  if (!assignment) return { message: "That assignment no longer exists." };
+  if (!assignment) return { message: t("admin.assignments.assignment_gone") };
   if (assignment.status === "passed") {
-    return { message: "This assignment is already marked as passed." };
+    return { message: t("admin.assignments.already_passed") };
   }
 
   const { error } = await supabase
@@ -376,7 +376,7 @@ export async function manualPass(
     .eq("id", assignmentId);
 
   if (error) {
-    return { message: "Could not mark as passed. Please try again." };
+    return { message: t("admin.assignments.could_not_mark_passed") };
   }
 
   // Reason is backend-only — stored on the assignment and in history, never shown
@@ -393,7 +393,7 @@ export async function manualPass(
   await issueCertificate(supabase, assignmentId, { adminId: user.id });
 
   revalidatePath(`/admin/participants/${assignment.participant_id}`);
-  return { ok: true, message: "Candidate marked as passed; certificate issued." };
+  return { ok: true, message: t("admin.assignments.marked_passed") };
 }
 
 export async function updateAssignmentTopics(
@@ -401,13 +401,14 @@ export async function updateAssignmentTopics(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const parsed = assignmentTopicsSchema.safeParse({
     assignment_id: formData.get("assignment_id"),
     topic_ids: parseJsonIds(formData.get("topic_ids")),
   });
   if (!parsed.success) {
-    return { message: "Could not update topics." };
+    return { message: t("admin.assignments.could_not_update_topics") };
   }
 
   const { data: assignment } = await supabase
@@ -417,7 +418,7 @@ export async function updateAssignmentTopics(
     .maybeSingle();
 
   if (!assignment) {
-    return { message: "That assignment no longer exists." };
+    return { message: t("admin.assignments.assignment_gone") };
   }
 
   const { data: questionnaire } = await supabase
@@ -448,10 +449,10 @@ export async function updateAssignmentTopics(
         })),
       );
     if (error) {
-      return { message: "Could not save the certificate topics." };
+      return { message: t("admin.assignments.could_not_save_topics") };
     }
   }
 
   revalidatePath(`/admin/participants/${assignment.participant_id}`);
-  return { ok: true, message: "Certificate topics updated." };
+  return { ok: true, message: t("admin.assignments.topics_updated") };
 }
