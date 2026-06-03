@@ -61,7 +61,7 @@ export async function createQuestion(
   if (!parsed.success) {
     return {
       message: t("validation.field_errors"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, t),
     };
   }
 
@@ -134,7 +134,7 @@ export async function updateQuestion(
   if (!parsed.success) {
     return {
       message: t("validation.field_errors"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, t),
     };
   }
 

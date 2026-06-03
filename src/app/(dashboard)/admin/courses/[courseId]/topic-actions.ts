@@ -33,7 +33,7 @@ export async function createTopic(
   if (!parsed.success) {
     return {
       message: t("validation.field_errors"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, t),
     };
   }
 
@@ -69,7 +69,7 @@ export async function updateTopic(
   if (!parsed.success) {
     return {
       message: t("validation.field_errors"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, t),
     };
   }
 

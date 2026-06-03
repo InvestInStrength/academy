@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 export const createAdminSchema = z.object({
-  email: z.string().email({ message: "Enter a valid email." }),
+  email: z.string().email({ message: "validation.email_invalid" }),
   password: z
     .string()
-    .min(8, { message: "Password must be at least 8 characters." })
+    .min(8, { message: "validation.password_min" })
     .max(72),
   role: z.enum(["admin", "superadmin"]),
 });

@@ -72,7 +72,7 @@ export async function createParticipant(
   if (!parsed.success) {
     return {
       message: t("validation.field_errors"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, t),
     };
   }
 
@@ -114,7 +114,7 @@ export async function updateParticipant(
   if (!parsed.success) {
     return {
       message: t("validation.field_errors"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, t),
     };
   }
 
@@ -200,7 +200,7 @@ export async function createAssignment(
   if (!parsed.success) {
     return {
       message: t("validation.field_errors"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, t),
     };
   }
 

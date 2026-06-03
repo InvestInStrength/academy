@@ -42,6 +42,20 @@ describe("fieldErrorsFromZod", () => {
     }
   });
 
+  it("translates messages through the provided translator (dict-key messages)", () => {
+    const schema = z.object({
+      title: z.string().min(1, { message: "validation.title_required" }),
+    });
+    const result = schema.safeParse({ title: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const translate = (key: string) =>
+        key === "validation.title_required" ? "Titel ist erforderlich." : key;
+      const errors = fieldErrorsFromZod(result.error, translate);
+      expect(errors.title).toBe("Titel ist erforderlich.");
+    }
+  });
+
   it("uses the 'form' key when the error path is empty (top-level refine)", () => {
     const schema = z.object({ a: z.number() }).refine(() => false, {
       message: "Always fails.",

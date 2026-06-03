@@ -72,7 +72,7 @@ export async function submitEmail(
   if (!parsed.success) {
     return {
       message: tr("validation.email_invalid"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, tr),
     };
   }
 

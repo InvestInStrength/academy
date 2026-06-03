@@ -2,23 +2,23 @@ import { z } from "zod";
 
 export const questionnaireSchema = z
   .object({
-    course_id: z.string().uuid({ message: "Select a course." }),
-    title: z.string().trim().min(1, { message: "Title is required." }).max(200),
+    course_id: z.string().uuid({ message: "validation.select_course" }),
+    title: z.string().trim().min(1, { message: "validation.title_required" }).max(200),
     title_en: z.string().trim().max(200).optional(),
     description: z.string().trim().max(2000).optional(),
     description_en: z.string().trim().max(2000).optional(),
     passing_percentage: z.coerce
-      .number({ invalid_type_error: "Passing percentage must be a number." })
+      .number({ invalid_type_error: "validation.passing_number" })
       .int()
-      .min(0, { message: "Must be between 0 and 100." })
-      .max(100, { message: "Must be between 0 and 100." }),
+      .min(0, { message: "validation.passing_range" })
+      .max(100, { message: "validation.passing_range" }),
     randomize_question_order: z.boolean(),
     randomize_answer_order: z.boolean(),
     active: z.boolean(),
     question_ids: z.array(z.string().uuid()),
   })
   .refine((data) => !data.active || data.question_ids.length >= 1, {
-    message: "An active questionnaire needs at least one question.",
+    message: "validation.needs_one_question",
     path: ["question_ids"],
   });
 

@@ -33,7 +33,7 @@ export async function createCourse(
   if (!parsed.success) {
     return {
       message: t("validation.field_errors"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, t),
     };
   }
 
@@ -77,7 +77,7 @@ export async function updateCourse(
   if (!parsed.success) {
     return {
       message: t("validation.field_errors"),
-      fieldErrors: fieldErrorsFromZod(parsed.error),
+      fieldErrors: fieldErrorsFromZod(parsed.error, t),
     };
   }
 
