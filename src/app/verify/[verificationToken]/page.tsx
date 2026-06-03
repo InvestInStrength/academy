@@ -81,7 +81,11 @@ export default async function VerifyPage({
         </CardContent>
       </Card>
 
-      <CertificateView svg={snapshot.svg} revoked={revoked} />
+      <CertificateView
+        svg={snapshot.svg}
+        revoked={revoked}
+        revokedLabel={t("common.revoked")}
+      />
     </div>
   );
 }

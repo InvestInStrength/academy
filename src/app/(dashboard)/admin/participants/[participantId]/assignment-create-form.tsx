@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 
 import { emptyFormState } from "@/lib/form";
+import { useT } from "@/lib/i18n/client";
 import { Field } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ export function AssignmentCreateForm({
   topics,
 }: Props) {
   const [state, formAction] = useActionState(createAssignment, emptyFormState);
+  const t = useT();
   const [questionnaireId, setQuestionnaireId] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -57,7 +59,7 @@ export function AssignmentCreateForm({
       <input type="hidden" name="topic_ids" value={JSON.stringify(orderedSelected)} />
 
       <Field
-        label="Questionnaire"
+        label={t("admin.assignments.questionnaire_label")}
         htmlFor="questionnaire_id"
         required
         error={state.fieldErrors?.questionnaire_id}
@@ -72,7 +74,7 @@ export function AssignmentCreateForm({
           }}
           required
         >
-          <option value="">Select a questionnaire…</option>
+          <option value="">{t("admin.assignments.select_questionnaire")}</option>
           {questionnaires.map((questionnaire) => (
             <option key={questionnaire.id} value={questionnaire.id}>
               {questionnaire.title}
@@ -82,15 +84,16 @@ export function AssignmentCreateForm({
       </Field>
 
       <div className="space-y-2">
-        <Label>Certificate topics ({orderedSelected.length})</Label>
+        <Label>
+          {t("admin.assignments.certificate_topics")} ({orderedSelected.length})
+        </Label>
         {!questionnaireId ? (
           <p className="text-xs text-slate-500">
-            Select a questionnaire to choose the topics that appear on the
-            certificate.
+            {t("admin.assignments.select_questionnaire_hint")}
           </p>
         ) : courseTopics.length === 0 ? (
           <p className="text-xs text-slate-500">
-            That questionnaire&apos;s course has no topics yet.
+            {t("admin.assignments.course_no_topics")}
           </p>
         ) : (
           <ul className="max-h-56 space-y-1 overflow-y-auto rounded-md border border-slate-200 p-2">
@@ -117,7 +120,9 @@ export function AssignmentCreateForm({
         </FormMessage>
       )}
 
-      <SubmitButton pendingText="Creating…">Create assignment</SubmitButton>
+      <SubmitButton pendingText={t("admin.assignments.creating")}>
+        {t("admin.assignments.create_button")}
+      </SubmitButton>
     </form>
   );
 }

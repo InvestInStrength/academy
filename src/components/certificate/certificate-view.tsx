@@ -5,9 +5,11 @@
 export function CertificateView({
   svg,
   revoked = false,
+  revokedLabel = "Revoked",
 }: {
   svg: string;
   revoked?: boolean;
+  revokedLabel?: string;
 }) {
   return (
     <div className="relative">
@@ -19,7 +21,7 @@ export function CertificateView({
       {revoked && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span className="-rotate-12 rounded bg-red-600/90 px-6 py-2 text-2xl font-bold uppercase tracking-widest text-white shadow">
-            Revoked
+            {revokedLabel}
           </span>
         </div>
       )}

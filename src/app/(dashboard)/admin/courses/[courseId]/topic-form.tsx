@@ -68,7 +68,7 @@ export function TopicForm({ courseId, topic, showEnglish = false }: Props) {
             name="code"
             defaultValue={topic?.code ?? ""}
             maxLength={50}
-            placeholder="e.g. T1"
+            placeholder={t("admin.topics.code_placeholder")}
           />
         </Field>
         <Field

@@ -69,7 +69,8 @@ export default async function QuestionnairesPage() {
               .
             </p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[48rem] text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
                   <th className="px-5 py-2 font-medium">{t("admin.questionnaires.col_title")}</th>
@@ -138,6 +139,7 @@ export default async function QuestionnairesPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </CardContent>
       </Card>

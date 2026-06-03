@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 
 export function CopyLinkButton({ url }: { url: string }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -19,7 +21,7 @@ export function CopyLinkButton({ url }: { url: string }) {
 
   return (
     <Button type="button" variant="outline" size="sm" onClick={copy}>
-      {copied ? "Copied" : "Copy link"}
+      {copied ? t("admin.assignments.copied") : t("admin.assignments.copy")}
     </Button>
   );
 }

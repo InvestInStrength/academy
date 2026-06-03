@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { emptyFormState } from "@/lib/form";
+import { useT } from "@/lib/i18n/client";
 import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { updateAssignmentTopics } from "../actions";
@@ -21,6 +22,7 @@ export function AssignmentTopicsForm({
   selectedTopicIds,
 }: Props) {
   const [state, formAction] = useActionState(updateAssignmentTopics, emptyFormState);
+  const t = useT();
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(selectedTopicIds),
   );
@@ -38,7 +40,9 @@ export function AssignmentTopicsForm({
 
   if (topics.length === 0) {
     return (
-      <p className="text-xs text-slate-500">No topics in this course.</p>
+      <p className="text-xs text-slate-500">
+        {t("admin.assignments.no_topics_in_course")}
+      </p>
     );
   }
 
@@ -69,8 +73,8 @@ export function AssignmentTopicsForm({
         </FormMessage>
       )}
 
-      <SubmitButton size="sm" variant="outline" pendingText="Saving…">
-        Save topics
+      <SubmitButton size="sm" variant="outline" pendingText={t("common.saving")}>
+        {t("admin.assignments.save_topics")}
       </SubmitButton>
     </form>
   );

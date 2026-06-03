@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -44,6 +45,7 @@ export function CertificateDownloads({
   svg: string;
   certificateNumber: string;
 }) {
+  const t = useT();
   const [pngBusy, setPngBusy] = useState(false);
 
   function downloadSvg() {
@@ -113,7 +115,7 @@ export function CertificateDownloads({
   return (
     <div className="flex flex-wrap gap-2">
       <Button type="button" onClick={downloadSvg}>
-        Download SVG
+        {t("candidate.certificate.download_svg")}
       </Button>
       <Button
         type="button"
@@ -121,7 +123,9 @@ export function CertificateDownloads({
         onClick={downloadPng}
         disabled={pngBusy}
       >
-        {pngBusy ? "Preparing PNG…" : "Download PNG (print-quality)"}
+        {pngBusy
+          ? t("candidate.certificate.preparing_png")
+          : t("candidate.certificate.download_png")}
       </Button>
     </div>
   );

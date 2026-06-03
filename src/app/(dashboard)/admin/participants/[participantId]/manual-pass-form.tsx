@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { emptyFormState } from "@/lib/form";
+import { useT } from "@/lib/i18n/client";
 import { Textarea } from "@/components/ui/textarea";
 import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -10,6 +11,7 @@ import { manualPass } from "../actions";
 
 export function ManualPassForm({ assignmentId }: { assignmentId: string }) {
   const [state, formAction] = useActionState(manualPass, emptyFormState);
+  const t = useT();
 
   return (
     <form action={formAction} className="space-y-2">
@@ -17,7 +19,7 @@ export function ManualPassForm({ assignmentId }: { assignmentId: string }) {
       <Textarea
         name="reason"
         rows={2}
-        placeholder="Reason for manual pass (internal only)"
+        placeholder={t("admin.assignments.manual_pass_reason_placeholder")}
       />
       {state.fieldErrors?.reason && (
         <p className="text-xs text-red-600">{state.fieldErrors.reason}</p>
@@ -27,8 +29,12 @@ export function ManualPassForm({ assignmentId }: { assignmentId: string }) {
           {state.message}
         </FormMessage>
       )}
-      <SubmitButton size="sm" variant="secondary" pendingText="Saving…">
-        Mark as passed &amp; issue certificate
+      <SubmitButton
+        size="sm"
+        variant="secondary"
+        pendingText={t("common.saving")}
+      >
+        {t("admin.assignments.manual_pass_submit")}
       </SubmitButton>
     </form>
   );

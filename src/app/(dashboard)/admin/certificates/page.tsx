@@ -80,7 +80,8 @@ export default async function CertificatesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[44rem] text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
                 <th className="px-5 py-2 font-medium">{t("admin.certificates.col_certificate")}</th>
@@ -152,6 +153,7 @@ export default async function CertificatesPage() {
               })}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
     </div>

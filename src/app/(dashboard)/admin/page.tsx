@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
 import { PageHeader } from "@/components/admin/page-header";
@@ -45,14 +47,20 @@ export default async function AdminDashboardPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent>
-              <p className="text-sm text-slate-500">{stat.label}</p>
-              <p className="mt-1 text-3xl font-bold text-slate-900">
-                {stat.value}
-              </p>
-            </CardContent>
-          </Card>
+          <Link
+            key={stat.label}
+            href={stat.href}
+            className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+          >
+            <Card className="transition-colors hover:border-brand-200 hover:bg-brand-50/40">
+              <CardContent>
+                <p className="text-sm text-slate-500">{stat.label}</p>
+                <p className="mt-1 text-3xl font-bold text-slate-900">
+                  {stat.value}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
