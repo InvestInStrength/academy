@@ -528,5 +528,13 @@
   "attempt.submit": "Submit assessment",
   "attempt.submitting": "Submitting…",
 
-  "scoring.general_topic": "General"
+  "scoring.general_topic": "General",
+
+  "email.certificate.subject": "Your certificate – {course}",
+  "email.certificate.heading": "Your certificate",
+  "email.certificate.greeting": "Hi {name}, congratulations on completing <strong>{course}</strong>.",
+  "email.certificate.label_id": "Certificate ID",
+  "email.certificate.label_completed": "Completed",
+  "email.certificate.cta": "View &amp; verify your certificate",
+  "email.certificate.footer": "Your certificate is attached as an SVG. You can also verify it any time at {url}."
 }
