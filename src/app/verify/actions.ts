@@ -25,7 +25,7 @@ export async function lookupCertificate(
   const headerStore = await headers();
   const ip =
     headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!rateLimit(`verifylookup:${ip}`, 20, 60_000)) {
+  if (!(await rateLimit(`verifylookup:${ip}`, 20, 60_000))) {
     return { message: t("validation.too_many_attempts") };
   }
 

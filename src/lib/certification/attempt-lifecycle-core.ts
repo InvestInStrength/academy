@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Locale } from "@/types/database";
+import { sanitizeAnswerMap, type AnswerMap } from "./attempt-progress-core";
 
 /**
  * Pure core for attempt-lifecycle. Carries no `server-only`, no env-coupled
@@ -14,6 +15,8 @@ export type InProgressAttempt = {
   id: string;
   attempt_number: number;
   language: Locale;
+  /** Persisted working answer map to hydrate the form on resume. */
+  answers: AnswerMap;
 };
 
 /** Given a Supabase client + assignment + the active language, finds or
@@ -30,7 +33,7 @@ export async function startOrResumeAttemptWith(
 ): Promise<InProgressAttempt> {
   const { data: existing } = await service
     .from("attempts")
-    .select("id, attempt_number, language")
+    .select("id, attempt_number, language, answers")
     .eq("certification_assignment_id", assignmentId)
     .is("submitted_at", null)
     .order("attempt_number", { ascending: false })
@@ -42,6 +45,7 @@ export async function startOrResumeAttemptWith(
       id: existing.id,
       attempt_number: existing.attempt_number,
       language: existing.language,
+      answers: sanitizeAnswerMap(existing.answers),
     };
   }
 
@@ -61,7 +65,7 @@ export async function startOrResumeAttemptWith(
       attempt_number: attemptNumber,
       language: currentActiveLanguage,
     })
-    .select("id, attempt_number, language")
+    .select("id, attempt_number, language, answers")
     .single();
 
   if (error || !inserted) {
@@ -72,5 +76,6 @@ export async function startOrResumeAttemptWith(
     id: inserted.id,
     attempt_number: inserted.attempt_number,
     language: inserted.language,
+    answers: sanitizeAnswerMap(inserted.answers),
   };
 }

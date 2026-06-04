@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { submitAttempt } from "../actions";
+import { saveAttemptProgress, submitAttempt } from "../actions";
+
+/** Debounce window for autosaving answers after the candidate clicks. */
+const AUTOSAVE_DELAY_MS = 700;
 
 type DisplayedOption = { id: string; option_text: string };
 
@@ -21,6 +24,10 @@ type Props = {
   questions: DisplayedQuestion[];
   questionOrder: string[];
   optionOrder: Record<string, string[]>;
+  /** Previously persisted answers, hydrated so a reload resumes where the
+   * candidate left off. Keyed by question id, so display reshuffles are
+   * irrelevant. */
+  initialAnswers?: Record<string, string[]>;
 };
 
 /**
@@ -35,10 +42,29 @@ export function AttemptForm({
   questions,
   questionOrder,
   optionOrder,
+  initialAnswers,
 }: Props) {
   const t = useT();
   const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string[]>>({});
+  const [answers, setAnswers] = useState<Record<string, string[]>>(
+    () => initialAnswers ?? {},
+  );
+
+  // Autosave answers to the in-progress attempt (debounced) so a reload or
+  // connection blip no longer wipes them. Skips the initial render — the
+  // hydrated state is already what the server has.
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      // Best-effort: the action swallows its own failures.
+      void saveAttemptProgress(accessToken, answers);
+    }, AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [accessToken, answers]);
 
   const total = questions.length;
   const q = questions[index];

@@ -36,21 +36,34 @@ describe("normalizeTemplateFonts", () => {
 });
 
 describe("certificate raster pipeline", () => {
-  it("renders the default template to a valid high-DPI PNG", async () => {
-    const svg = await renderCertificateSvg(sample);
-    const { png, width, height } = await renderSvgToPng(svg);
-    // PNG magic bytes.
-    expect(png.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
-    // ~300 DPI A4 landscape.
-    expect(width).toBeGreaterThan(3000);
-    expect(height).toBeGreaterThan(2000);
-  });
+  // High-DPI rasterization via the native resvg addon is slow on a cold run
+  // (several seconds), which intermittently blew the default 5s timeout. Give
+  // these real-render tests generous headroom.
+  const RENDER_TIMEOUT_MS = 30_000;
 
-  it("embeds the PNG into a valid A4-landscape PDF", async () => {
-    const svg = await renderCertificateSvg(sample);
-    const { png } = await renderSvgToPng(svg);
-    const pdf = await pngToPdf(png);
-    expect(pdf.subarray(0, 5).toString("ascii")).toBe("%PDF-");
-    expect(pdf.byteLength).toBeGreaterThan(1000);
-  });
+  it(
+    "renders the default template to a valid high-DPI PNG",
+    async () => {
+      const svg = await renderCertificateSvg(sample);
+      const { png, width, height } = await renderSvgToPng(svg);
+      // PNG magic bytes.
+      expect(png.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+      // ~300 DPI A4 landscape.
+      expect(width).toBeGreaterThan(3000);
+      expect(height).toBeGreaterThan(2000);
+    },
+    RENDER_TIMEOUT_MS,
+  );
+
+  it(
+    "embeds the PNG into a valid A4-landscape PDF",
+    async () => {
+      const svg = await renderCertificateSvg(sample);
+      const { png } = await renderSvgToPng(svg);
+      const pdf = await pngToPdf(png);
+      expect(pdf.subarray(0, 5).toString("ascii")).toBe("%PDF-");
+      expect(pdf.byteLength).toBeGreaterThan(1000);
+    },
+    RENDER_TIMEOUT_MS,
+  );
 });

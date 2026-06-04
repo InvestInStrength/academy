@@ -25,6 +25,7 @@ type AttemptRow = {
   attempt_number: number;
   submitted_at: string | null;
   language: Locale;
+  answers?: Record<string, string[]> | null;
 };
 
 function makeFakeService(seed: AttemptRow[] = []) {
@@ -135,6 +136,34 @@ describe("startOrResumeAttemptWith", () => {
     expect(result.id).toBe("existing-de-attempt");
     expect(result.language).toBe("de"); // frozen
     expect(rows).toHaveLength(1); // no new row inserted
+  });
+
+  it("hydrates persisted answers when resuming, and sanitizes garbage", async () => {
+    const { client } = makeFakeService([
+      {
+        id: "resumable",
+        certification_assignment_id: "asgn-1",
+        attempt_number: 1,
+        submitted_at: null,
+        language: "de",
+        answers: {
+          "q-1": ["opt-a", "opt-a", "opt-b"], // duplicate de-duped
+          "q-2": "not-an-array" as unknown as string[], // dropped
+          "q-3": ["opt-c"],
+        },
+      },
+    ]);
+    const result = await startOrResumeAttemptWith(client, "asgn-1", "de");
+    expect(result.answers).toEqual({
+      "q-1": ["opt-a", "opt-b"],
+      "q-3": ["opt-c"],
+    });
+  });
+
+  it("defaults answers to an empty map on a freshly created attempt", async () => {
+    const { client } = makeFakeService();
+    const result = await startOrResumeAttemptWith(client, "asgn-1", "de");
+    expect(result.answers).toEqual({});
   });
 
   it("creates a new attempt with the now-current language after the previous was submitted", async () => {

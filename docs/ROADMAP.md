@@ -109,17 +109,22 @@ Other remaining cross-cutting hardening items (not new slices):
 - Candidate email verification (currently trust-on-submit).
 - End-to-end QA against a real Supabase project (everything so far is verified at
   the type/build/route level only).
-- **Persist partial attempt progress** (added 2026-06-02). After
-  pagination shipped (`feat(candidate): paginated attempt …`,
-  `157c667`), reload mid-attempt still loses in-page answer state —
-  state is held client-side in the AttemptForm component, so a refresh
-  resets it. Fix shape: add `attempts.answers jsonb` (e.g.
-  `{[questionId]: optionId[]}`), persist on every answer-toggle via a
-  small `saveAttemptProgress` server action (rate-limited like the
-  attempt action), hydrate state from the row on render. Snapshot at
-  submit-time is unchanged. Migration is append-only (single nullable
-  column). Worth landing before the platform goes live to real
-  candidates so a connection blip doesn't void 30 minutes of work.
+- ✅ **Persist partial attempt progress** (added 2026-06-02, **built
+  2026-06-04**). The paginated attempt form held answers only in client
+  state, so a mid-attempt reload/connection blip wiped them. Shipped:
+  migration `0005` adds `attempts.answers jsonb` (nullable, append-only);
+  `saveAttemptProgress(accessToken, answers)` server action (best-effort,
+  silent, rate-limited 120/60s via a `progress:` key) writes the working
+  map onto the in-progress attempt guarded by `submitted_at IS NULL`;
+  `AttemptForm` hydrates `initialAnswers` and debounce-autosaves (700ms)
+  on every toggle. A shared pure sanitizer (`attempt-progress-core.ts`,
+  `sanitizeAnswerMap`) bounds/cleans the map on both write and read paths
+  (caps: 500 questions, 50 options/q, 100-char ids; de-dupes). Submit-time
+  grading + snapshot unchanged (correctness still recomputed from the DB).
+  Answers are keyed by question id, so display reshuffles don't affect
+  hydration. Also bumped the flaky cold-run resvg render-test timeout to
+  30s. 83 tests (was 72), typecheck + build green. **Founder TODO: apply
+  migration 0005 in the Supabase SQL editor (paste SQL only).**
 
 Migration note: `0001_core_schema.sql` **is now applied to the live Supabase
 project (2026-05-30)**. From here, all schema changes are **append-only

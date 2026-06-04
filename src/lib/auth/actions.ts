@@ -28,7 +28,7 @@ export async function signInAction(
   const headerStore = await headers();
   const ip =
     headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!rateLimit(`login:${ip}`, 10, 60_000)) {
+  if (!(await rateLimit(`login:${ip}`, 10, 60_000))) {
     return { message: t("validation.too_many_attempts") };
   }
 

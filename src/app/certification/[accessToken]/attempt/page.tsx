@@ -98,6 +98,7 @@ export default async function AttemptPage({
           questions={displayedQuestions}
           questionOrder={questionOrder}
           optionOrder={optionOrder}
+          initialAnswers={attempt.answers}
         />
       </CardContent>
     </Card>
