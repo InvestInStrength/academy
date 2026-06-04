@@ -66,7 +66,7 @@ export async function submitEmail(
   const accessToken = String(formData.get("access_token") ?? "");
   const { t: tr } = await getServerT();
 
-  if (!rateLimit(`email:${await clientKey(accessToken)}`, 10, 60_000)) {
+  if (!(await rateLimit(`email:${await clientKey(accessToken)}`, 10, 60_000))) {
     return { message: tr("validation.too_many_attempts") };
   }
 
@@ -94,7 +94,7 @@ export async function emailMyCertificate(
   const accessToken = String(formData.get("access_token") ?? "");
   const { t: tr, locale } = await getServerT();
 
-  if (!rateLimit(`certemail:${await clientKey(accessToken)}`, 5, 300_000)) {
+  if (!(await rateLimit(`certemail:${await clientKey(accessToken)}`, 5, 300_000))) {
     return { message: tr("validation.too_many_attempts") };
   }
 
@@ -148,7 +148,7 @@ export async function saveAttemptProgress(
   answers: Record<string, string[]>,
 ): Promise<void> {
   // Generous window: one debounced save per answer toggle on a long test.
-  if (!rateLimit(`progress:${await clientKey(accessToken)}`, 120, 60_000)) {
+  if (!(await rateLimit(`progress:${await clientKey(accessToken)}`, 120, 60_000))) {
     return;
   }
 
@@ -169,7 +169,7 @@ export async function submitAttempt(formData: FormData): Promise<void> {
     redirect(`/certification/${accessToken}`);
   }
 
-  if (!rateLimit(`attempt:${await clientKey(accessToken)}`, 20, 60_000)) {
+  if (!(await rateLimit(`attempt:${await clientKey(accessToken)}`, 20, 60_000))) {
     redirect(`/certification/${accessToken}?busy=1`);
   }
 
