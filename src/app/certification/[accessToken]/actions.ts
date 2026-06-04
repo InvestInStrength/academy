@@ -9,12 +9,14 @@ import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { sendCertificateEmail } from "@/lib/email/certificate-email";
 import { getDictionary, getServerT, t } from "@/lib/i18n";
 import { getInProgressAttempt } from "@/lib/certification/attempt-lifecycle";
+import { sanitizeAnswerMap } from "@/lib/certification/attempt-progress-core";
 import {
   confirmParticipantEmail,
   getCandidateContext,
   getCertificateForAssignment,
   loadQuestionnaireQuestions,
   markCertificateEmailed,
+  persistAttemptProgress,
   recordAttempt,
 } from "@/lib/certification/data";
 import {
@@ -130,6 +132,32 @@ export async function emailMyCertificate(
       email: context.participant.email,
     }),
   };
+}
+
+/**
+ * Autosave the candidate's working answers onto the in-progress attempt row so
+ * a reload or connection blip no longer wipes them. Best-effort and silent:
+ * called on a debounce from the attempt form, it returns `void` and swallows
+ * every failure path (no link, unconfirmed email, no in-progress attempt, rate
+ * limited) rather than surfacing an error mid-test. Grading is unaffected —
+ * correctness is still recomputed from the DB at submit time.
+ */
+export async function saveAttemptProgress(
+  accessToken: string,
+  answers: Record<string, string[]>,
+): Promise<void> {
+  // Generous window: one debounced save per answer toggle on a long test.
+  if (!rateLimit(`progress:${await clientKey(accessToken)}`, 120, 60_000)) {
+    return;
+  }
+
+  const context = await getCandidateContext(accessToken);
+  if (!context || !context.participant.email_confirmed) return;
+
+  const inProgress = await getInProgressAttempt(context.assignment.id);
+  if (!inProgress) return;
+
+  await persistAttemptProgress(inProgress.id, sanitizeAnswerMap(answers));
 }
 
 export async function submitAttempt(formData: FormData): Promise<void> {

@@ -489,6 +489,7 @@ export type Database = {
           passed: boolean | null;
           attempt_snapshot: Json | null;
           recommendation_snapshot: Json | null;
+          answers: Json | null;
           language: Locale;
           created_at: string;
         };
@@ -504,6 +505,7 @@ export type Database = {
           passed?: boolean | null;
           attempt_snapshot?: Json | null;
           recommendation_snapshot?: Json | null;
+          answers?: Json | null;
           language?: Locale;
           created_at?: string;
         };
@@ -519,6 +521,7 @@ export type Database = {
           passed?: boolean | null;
           attempt_snapshot?: Json | null;
           recommendation_snapshot?: Json | null;
+          answers?: Json | null;
           language?: Locale;
           created_at?: string;
         };

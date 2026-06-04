@@ -3,6 +3,7 @@ import "server-only";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 import { issueCertificate } from "@/lib/certificate/issue";
 import { pickLocalized } from "@/lib/i18n/content";
+import type { AnswerMap } from "@/lib/certification/attempt-progress-core";
 import type { AssignmentStatus, Json, Locale, QuestionType } from "@/types/database";
 import type {
   AttemptScore,
@@ -385,6 +386,24 @@ export async function recordAttempt(params: {
   );
 
   return { passed: score.passed, attempt_number: attemptNumber };
+}
+
+/**
+ * Persist the candidate's working answer map onto the in-progress attempt row.
+ * Best-effort autosave: guarded by `submitted_at IS NULL` so it can never
+ * touch an already-graded attempt, and it never throws — a failed save just
+ * means the next reload falls back to the last persisted state.
+ */
+export async function persistAttemptProgress(
+  attemptId: string,
+  answers: AnswerMap,
+): Promise<void> {
+  const service = createSupabaseServiceRoleClient();
+  await service
+    .from("attempts")
+    .update({ answers: answers as unknown as Json })
+    .eq("id", attemptId)
+    .is("submitted_at", null);
 }
 
 /** The candidate's latest result only — safe fields, no per-question detail. */

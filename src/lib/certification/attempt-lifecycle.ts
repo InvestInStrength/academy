@@ -7,6 +7,7 @@ import {
   startOrResumeAttemptWith,
   type InProgressAttempt,
 } from "./attempt-lifecycle-core";
+import { sanitizeAnswerMap } from "./attempt-progress-core";
 
 /**
  * Attempt lifecycle — Slice 7a.
@@ -47,7 +48,7 @@ export async function getInProgressAttempt(
   const service = createSupabaseServiceRoleClient();
   const { data } = await service
     .from("attempts")
-    .select("id, attempt_number, language")
+    .select("id, attempt_number, language, answers")
     .eq("certification_assignment_id", assignmentId)
     .is("submitted_at", null)
     .order("attempt_number", { ascending: false })
@@ -58,5 +59,6 @@ export async function getInProgressAttempt(
     id: data.id,
     attempt_number: data.attempt_number,
     language: data.language,
+    answers: sanitizeAnswerMap(data.answers),
   };
 }
