@@ -92,7 +92,7 @@ export async function emailMyCertificate(
   formData: FormData,
 ): Promise<FormState> {
   const accessToken = String(formData.get("access_token") ?? "");
-  const { t: tr } = await getServerT();
+  const { t: tr, locale } = await getServerT();
 
   if (!rateLimit(`certemail:${await clientKey(accessToken)}`, 5, 300_000)) {
     return { message: tr("validation.too_many_attempts") };
@@ -115,6 +115,7 @@ export async function emailMyCertificate(
   const sent = await sendCertificateEmail({
     toEmail: context.participant.email,
     snapshot: certificate.snapshot,
+    locale,
   });
   if (!sent.ok) {
     return { message: tr("candidate.actions.email_send_failed") };

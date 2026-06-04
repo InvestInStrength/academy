@@ -528,5 +528,13 @@
   "attempt.submit": "Test abschicken",
   "attempt.submitting": "Wird gesendet…",
 
-  "scoring.general_topic": "Allgemein"
+  "scoring.general_topic": "Allgemein",
+
+  "email.certificate.subject": "Ihr Zertifikat – {course}",
+  "email.certificate.heading": "Ihr Zertifikat",
+  "email.certificate.greeting": "Hallo {name}, herzlichen Glückwunsch zum Abschluss von <strong>{course}</strong>.",
+  "email.certificate.label_id": "Zertifikat-ID",
+  "email.certificate.label_completed": "Abgeschlossen",
+  "email.certificate.cta": "Zertifikat ansehen &amp; überprüfen",
+  "email.certificate.footer": "Ihr Zertifikat ist als SVG angehängt. Sie können es jederzeit unter {url} überprüfen."
 }

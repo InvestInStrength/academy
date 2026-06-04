@@ -78,7 +78,7 @@ export async function sendCertificateEmailAction(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
-  const { t } = await getServerT();
+  const { t, locale } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   if (!id) return { message: t("validation.generic_error") };
@@ -111,7 +111,11 @@ export async function sendCertificateEmailAction(
   }
 
   const snapshot = certificate.certificate_public_snapshot as unknown as CertificateSnapshot;
-  const sent = await sendCertificateEmail({ toEmail: participant.email, snapshot });
+  const sent = await sendCertificateEmail({
+    toEmail: participant.email,
+    snapshot,
+    locale,
+  });
   if (!sent.ok) {
     return { message: t("admin.certificates.could_not_send") };
   }
