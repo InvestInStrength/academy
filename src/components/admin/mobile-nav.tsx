@@ -25,11 +25,16 @@ export function MobileNav({ isSuperadmin, userEmail, brand }: Props) {
   const t = useT();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
 
-  // Close whenever the route changes (i.e. a nav link was tapped).
-  useEffect(() => {
+  // Close whenever the route changes (i.e. a nav link was tapped). Done during
+  // render rather than in an effect (React's "adjust state on prop change"
+  // pattern) so it commits in the same pass with no extra paint — and avoids the
+  // react-hooks/set-state-in-effect rule.
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   // While open: lock body scroll and close on Escape.
   useEffect(() => {

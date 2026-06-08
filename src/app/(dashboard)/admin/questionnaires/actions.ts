@@ -135,7 +135,13 @@ export async function createQuestionnaire(
       fieldErrors: { question_ids: t("admin.questionnaires.select_active_question") },
     };
   }
-  await replaceQuestionnaireQuestions(supabase, inserted.id, ids);
+  const linked = await replaceQuestionnaireQuestions(supabase, inserted.id, ids);
+  if (!linked) {
+    // Roll back so we never strand a questionnaire (possibly active) whose
+    // question links failed to persist.
+    await supabase.from("questionnaires").delete().eq("id", inserted.id);
+    return { message: t("admin.questionnaires.could_not_create") };
+  }
 
   revalidatePath("/admin/questionnaires");
   redirect(`/admin/questionnaires/${inserted.id}`);

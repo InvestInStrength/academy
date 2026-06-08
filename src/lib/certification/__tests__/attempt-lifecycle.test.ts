@@ -28,6 +28,28 @@ type AttemptRow = {
   answers?: Record<string, string[]> | null;
 };
 
+type FakeResult = Promise<{
+  data: AttemptRow | null;
+  error: { message: string } | null;
+}>;
+
+/** The self-referential chained-query shape the lifecycle helper calls. */
+type FakeQuery = {
+  select(cols: string): FakeQuery;
+  eq(col: keyof AttemptRow, value: unknown): FakeQuery;
+  is(col: keyof AttemptRow, value: unknown): FakeQuery;
+  order(col: keyof AttemptRow, opts: { ascending: boolean }): FakeQuery;
+  limit(n: number): FakeQuery;
+  maybeSingle(): FakeResult;
+  single(): FakeResult;
+  insert(
+    row: Partial<AttemptRow> & {
+      certification_assignment_id: string;
+      attempt_number: number;
+    },
+  ): FakeQuery;
+};
+
 function makeFakeService(seed: AttemptRow[] = []) {
   const rows: AttemptRow[] = [...seed];
   let nextRowId = rows.length + 1;
@@ -37,7 +59,7 @@ function makeFakeService(seed: AttemptRow[] = []) {
     let mode: "query" | "insert" = "query";
     let insertedRow: AttemptRow | null = null;
 
-    const api: any = {
+    const api: FakeQuery = {
       select(_cols: string) {
         return api;
       },

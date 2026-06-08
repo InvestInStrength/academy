@@ -248,13 +248,24 @@ export async function createAssignment(
     parsed.data.topic_ids,
   );
   if (topicIds.length > 0) {
-    await supabase.from("certification_assignment_topics").insert(
-      topicIds.map((topicId, index) => ({
-        certification_assignment_id: assignment.id,
-        topic_id: topicId,
-        sort_order: index,
-      })),
-    );
+    const { error: topicsError } = await supabase
+      .from("certification_assignment_topics")
+      .insert(
+        topicIds.map((topicId, index) => ({
+          certification_assignment_id: assignment.id,
+          topic_id: topicId,
+          sort_order: index,
+        })),
+      );
+    if (topicsError) {
+      // Roll back the just-created assignment so we never strand one without its
+      // chosen certificate topics (the FK cascade clears any partial rows).
+      await supabase
+        .from("certification_assignments")
+        .delete()
+        .eq("id", assignment.id);
+      return { message: t("admin.assignments.could_not_save_topics") };
+    }
   }
 
   await logAccountEvent(supabase, user.id, {
