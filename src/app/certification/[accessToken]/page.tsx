@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FormMessage } from "@/components/ui/form-message";
-import { EmailForm } from "./email-form";
+import { EmailVerificationFlow } from "./email-form";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +59,10 @@ export default async function CertificationHubPage({
               __html: t("candidate.assigned_intro", { title }),
             }}
           />
-          <EmailForm accessToken={accessToken} defaultEmail={participant.email} />
+          <EmailVerificationFlow
+            accessToken={accessToken}
+            defaultEmail={participant.email}
+          />
         </CardContent>
       </Card>
     );

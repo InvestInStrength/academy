@@ -672,6 +672,38 @@ export type Database = {
           created_at?: string;
         };
       };
+      email_verification_codes: {
+        Row: {
+          id: string;
+          participant_id: string;
+          email: string;
+          code_hash: string;
+          attempts: number;
+          expires_at: string;
+          consumed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          participant_id: string;
+          email: string;
+          code_hash: string;
+          attempts?: number;
+          expires_at: string;
+          consumed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          participant_id?: string;
+          email?: string;
+          code_hash?: string;
+          attempts?: number;
+          expires_at?: string;
+          consumed_at?: string | null;
+          created_at?: string;
+        };
+      };
     }>;
     Views: Record<string, never>;
     Functions: {
@@ -708,3 +740,4 @@ export type AttemptAnswer = Tables["attempt_answers"]["Row"];
 export type Certificate = Tables["certificates"]["Row"];
 export type AccountHistoryEvent = Tables["account_history"]["Row"];
 export type PlatformSettings = Tables["platform_settings"]["Row"];
+export type EmailVerificationCode = Tables["email_verification_codes"]["Row"];

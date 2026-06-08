@@ -106,7 +106,17 @@ Other remaining cross-cutting hardening items (not new slices):
 - Automated tests — **started 2026-05-29**: Vitest with 22 unit tests for the
   scoring engine + key Zod schemas (`pnpm test`). Still to add: server-action
   parsing and DB-invariant/integration tests.
-- Candidate email verification (currently trust-on-submit).
+- ✅ **Candidate email verification** (built 2026-06-08). Replaced the
+  trust-on-submit model with a one-time 6-digit code. Migration `0006`
+  adds `email_verification_codes` (hashed code, attempts counter, expiry,
+  single-use). The hub email step now stores the email as *pending*,
+  emails a code (`src/lib/email/verification-email*.ts`), and only sets
+  `email_confirmed = true` once the candidate enters the code
+  (`verifyEmail` action → `verifyEmailCode` in `data.ts`). Pure logic in
+  `src/lib/certification/email-verification-core.ts` (10-min TTL, 5
+  attempts/code, SHA-256 hash) is unit-tested. Resend must be configured
+  for delivery. **Founder TODO: apply migration 0006 in the Supabase SQL
+  editor (paste SQL only).**
 - End-to-end QA against a real Supabase project (everything so far is verified at
   the type/build/route level only).
 - ✅ **Persist partial attempt progress** (added 2026-06-02, **built
@@ -138,10 +148,17 @@ Migration numbering (live):
   questions, options, questionnaires; backfills `_de` from the legacy
   column; updates `guard_questions_update` to include the new columns in
   the locked-content check.
-- `0004+` — reserved for **Slice 6 Certificate Output System**. Slice 6
-  ships with multilanguage hooks built in (cert snapshot includes
-  `language`, renderer + email accept locale, verification renders from
-  snapshot language) — see `docs/codex-audit-multilanguage.md` §1.9.
+- `0004_certificate_assets.sql` — **Slice 6 Certificate Output System**.
+  `certificate_assets` table + typed `template_type`/`width`/`height` on
+  `certificate_templates`. Slice 6 ships with multilanguage hooks built in
+  (cert snapshot includes `language`, renderer + email accept locale,
+  verification renders from snapshot language) — see
+  `docs/codex-audit-multilanguage.md` §1.9.
+- `0005_attempt_progress.sql` — **Persist partial attempt progress**
+  (2026-06-04). Adds `attempts.answers jsonb`.
+- `0006_email_verification_codes.sql` — **Candidate email verification**
+  (2026-06-08). Adds `email_verification_codes` (hashed one-time codes).
+  **Founder must apply.**
 
 ---
 

@@ -7,17 +7,19 @@ import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { sendCertificateEmail } from "@/lib/email/certificate-email";
+import { sendVerificationEmail } from "@/lib/email/verification-email";
 import { getDictionary, getServerT, t } from "@/lib/i18n";
 import { getInProgressAttempt } from "@/lib/certification/attempt-lifecycle";
 import { sanitizeAnswerMap } from "@/lib/certification/attempt-progress-core";
 import {
-  confirmParticipantEmail,
   getCandidateContext,
   getCertificateForAssignment,
   loadQuestionnaireQuestions,
   markCertificateEmailed,
   persistAttemptProgress,
   recordAttempt,
+  startEmailVerification,
+  verifyEmailCode,
 } from "@/lib/certification/data";
 import {
   buildRecommendations,
@@ -27,6 +29,13 @@ import {
 
 const emailSchema = z.object({
   email: z.string().trim().email({ message: "validation.email_invalid" }),
+});
+
+const codeSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, { message: "validation.code_invalid" }),
 });
 
 async function clientKey(token: string): Promise<string> {
@@ -59,12 +68,17 @@ function parseIdMap(value: FormDataEntryValue | null): Record<string, string[]> 
   }
 }
 
+/**
+ * Step 1 of email verification (also the "resend" path): validate the email,
+ * store it as pending, generate + email a fresh 6-digit code. Returns ok so the
+ * client flips to the code-entry step. The email is NOT confirmed here.
+ */
 export async function submitEmail(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const accessToken = String(formData.get("access_token") ?? "");
-  const { t: tr } = await getServerT();
+  const { t: tr, locale } = await getServerT();
 
   if (!(await rateLimit(`email:${await clientKey(accessToken)}`, 10, 60_000))) {
     return { message: tr("validation.too_many_attempts") };
@@ -83,8 +97,72 @@ export async function submitEmail(
     return { message: tr("candidate.email.no_link") };
   }
 
-  await confirmParticipantEmail(context, parsed.data.email);
-  redirect(`/certification/${accessToken}/attempt`);
+  const { code } = await startEmailVerification(context, parsed.data.email);
+  const sent = await sendVerificationEmail({
+    toEmail: parsed.data.email,
+    code,
+    locale,
+  });
+  if (!sent.ok) {
+    return { message: tr("candidate.verify.send_failed") };
+  }
+
+  return {
+    ok: true,
+    message: tr("candidate.verify.code_sent", { email: parsed.data.email }),
+  };
+}
+
+/**
+ * Step 2 of email verification: check the 6-digit code. On success the email is
+ * confirmed and the candidate is redirected into the attempt; otherwise a
+ * localized reason (wrong/expired/too-many/none) comes back.
+ */
+export async function verifyEmail(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const accessToken = String(formData.get("access_token") ?? "");
+  const { t: tr } = await getServerT();
+
+  if (!(await rateLimit(`verify:${await clientKey(accessToken)}`, 10, 60_000))) {
+    return { message: tr("validation.too_many_attempts") };
+  }
+
+  const parsed = codeSchema.safeParse({ code: formData.get("code") });
+  if (!parsed.success) {
+    return {
+      message: tr("candidate.verify.invalid_code"),
+      fieldErrors: fieldErrorsFromZod(parsed.error, tr),
+    };
+  }
+
+  const context = await getCandidateContext(accessToken);
+  if (!context) {
+    return { message: tr("candidate.email.no_link") };
+  }
+
+  const result = await verifyEmailCode(context, parsed.data.code);
+  if (result.ok) {
+    redirect(`/certification/${accessToken}/attempt`);
+  }
+
+  if (result.reason === "invalid") {
+    return {
+      message: tr("candidate.verify.attempts_remaining", {
+        remaining: result.attemptsRemaining,
+      }),
+      fieldErrors: { code: tr("candidate.verify.invalid_code") },
+    };
+  }
+
+  const messageKey =
+    result.reason === "expired"
+      ? "candidate.verify.expired"
+      : result.reason === "too_many"
+        ? "candidate.verify.too_many_attempts"
+        : "candidate.verify.no_code";
+  return { message: tr(messageKey) };
 }
 
 export async function emailMyCertificate(
