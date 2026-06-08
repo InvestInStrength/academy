@@ -46,10 +46,6 @@ const CENTERED_LINES = [
   { token: "{{certificate_id}}", centerX: DATE_BLOCK_CENTER_X },
 ];
 
-function escapeRegex(literal) {
-  return literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 // 1. Copy source SVG to the public/brand/templates/ folder verbatim.
 //    This is the designer-editable reference (keeps all dashed indicators,
 //    decorative groups, etc.). The in-repo runtime template gets the QR fix
@@ -91,7 +87,6 @@ console.log(`fixed ${qrMatches.length} QR placeholder(s)`);
 //     intended center, and inject text-anchor="middle".
 let centeredCount = 0;
 for (const { token, centerX } of CENTERED_LINES) {
-  const tokenEsc = escapeRegex(token);
   // Match a <text ...> element that contains the token in its body. Captures:
   //   1. attrs before the transform (may be empty)
   //   2. transform X value
