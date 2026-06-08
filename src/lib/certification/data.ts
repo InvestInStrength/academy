@@ -3,13 +3,12 @@ import "server-only";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 import { issueCertificate } from "@/lib/certificate/issue";
 import { pickLocalized } from "@/lib/i18n/content";
+import { generateCode } from "@/lib/certification/email-verification-core";
 import {
-  codeExpiry,
-  evaluateCode,
-  generateCode,
-  hashCode,
-  type VerifyDecision,
-} from "@/lib/certification/email-verification-core";
+  startEmailVerificationWith,
+  verifyEmailCodeWith,
+  type VerifyEmailResult,
+} from "@/lib/certification/email-verification-data";
 import type { AnswerMap } from "@/lib/certification/attempt-progress-core";
 import type { AssignmentStatus, Json, Locale, QuestionType } from "@/types/database";
 import type {
@@ -254,117 +253,47 @@ async function logEvent(
   });
 }
 
+export type { VerifyEmailResult };
+
 /**
- * Begins email verification: stores the candidate's (pending) email,
- * invalidates any prior outstanding codes, and inserts a fresh hashed 6-digit
- * code. Returns the PLAINTEXT code so the caller can email it — it is never
- * stored in the clear. `email_confirmed` stays false until the candidate enters
- * the code (see {@link verifyEmailCode}).
+ * Begins email verification: stores the candidate's (pending) email, invalidates
+ * any prior outstanding codes, and emails a fresh hashed 6-digit code. Returns
+ * the PLAINTEXT code so the caller can email it — it is never stored in the
+ * clear. `email_confirmed` stays false until the candidate enters the code (see
+ * {@link verifyEmailCode}). Thin wrapper over the injectable, unit-tested
+ * orchestration in `email-verification-data.ts`.
  */
 export async function startEmailVerification(
   context: CandidateContext,
   email: string,
 ): Promise<{ code: string }> {
-  const service = createSupabaseServiceRoleClient();
-  const now = new Date().toISOString();
-
-  // Capture the (pending) email; confirmation waits for the code.
-  await service
-    .from("participants")
-    .update({ email, email_confirmed: false })
-    .eq("id", context.participant.id);
-
-  // Invalidate any earlier outstanding codes so only the newest one is valid.
-  await service
-    .from("email_verification_codes")
-    .update({ consumed_at: now })
-    .eq("participant_id", context.participant.id)
-    .is("consumed_at", null);
-
   const code = generateCode();
-  await service.from("email_verification_codes").insert({
-    participant_id: context.participant.id,
+  await startEmailVerificationWith(
+    createSupabaseServiceRoleClient(),
+    { participantId: context.participant.id, assignmentId: context.assignment.id },
     email,
-    code_hash: hashCode(code),
-    expires_at: codeExpiry(Date.now()),
-  });
-
-  await logEvent(
-    service,
-    context.participant.id,
-    context.assignment.id,
-    "email_submitted",
-    "Email submitted",
+    { code, nowMs: Date.now() },
   );
-
   return { code };
 }
-
-export type VerifyEmailResult =
-  | { ok: true }
-  | { ok: false; reason: "no_code" | "expired" | "too_many" }
-  | { ok: false; reason: "invalid"; attemptsRemaining: number };
 
 /**
  * Verifies a submitted code against the newest outstanding row for the
  * participant. On success sets `email_confirmed = true`, consumes the code, and
- * logs `email_confirmed`. On a wrong code, increments that code's attempt
- * counter. The decision itself is the pure {@link evaluateCode}.
+ * logs `email_confirmed`; on a wrong code, increments that code's attempt
+ * counter. Thin wrapper over the injectable, unit-tested orchestration in
+ * `email-verification-data.ts`.
  */
 export async function verifyEmailCode(
   context: CandidateContext,
   submitted: string,
 ): Promise<VerifyEmailResult> {
-  const service = createSupabaseServiceRoleClient();
-
-  const { data: row } = await service
-    .from("email_verification_codes")
-    .select("id, code_hash, attempts, expires_at, consumed_at")
-    .eq("participant_id", context.participant.id)
-    .is("consumed_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!row) return { ok: false, reason: "no_code" };
-
-  const decision: VerifyDecision = evaluateCode({
+  return verifyEmailCodeWith(
+    createSupabaseServiceRoleClient(),
+    { participantId: context.participant.id, assignmentId: context.assignment.id },
     submitted,
-    storedHash: row.code_hash,
-    attempts: row.attempts,
-    expiresAtMs: new Date(row.expires_at).getTime(),
-    consumed: row.consumed_at !== null,
-    nowMs: Date.now(),
-  });
-
-  if (decision.kind === "ok") {
-    await service
-      .from("email_verification_codes")
-      .update({ consumed_at: new Date().toISOString() })
-      .eq("id", row.id);
-    await service
-      .from("participants")
-      .update({ email_confirmed: true })
-      .eq("id", context.participant.id);
-    await logEvent(
-      service,
-      context.participant.id,
-      context.assignment.id,
-      "email_confirmed",
-      "Email confirmed",
-    );
-    return { ok: true };
-  }
-
-  if (decision.kind === "invalid") {
-    await service
-      .from("email_verification_codes")
-      .update({ attempts: row.attempts + 1 })
-      .eq("id", row.id);
-    return { ok: false, reason: "invalid", attemptsRemaining: decision.attemptsRemaining };
-  }
-
-  return { ok: false, reason: decision.kind };
+    { nowMs: Date.now() },
+  );
 }
 
 /** Records a completed attempt. Slice 7a: the attempt row already exists (it
