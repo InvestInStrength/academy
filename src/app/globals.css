@@ -112,3 +112,31 @@ button:not(:disabled),
   );
   pointer-events: none;
 }
+
+/*
+ * Celebration pop — the candidate result screen's success badge springs in with
+ * a slight overshoot so passing feels like an achievement. Honours
+ * prefers-reduced-motion (renders statically, no movement).
+ */
+@keyframes celebrate-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-celebrate {
+  animation: celebrate-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-celebrate {
+    animation: none;
+  }
+}

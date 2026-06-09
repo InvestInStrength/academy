@@ -492,6 +492,7 @@
   "candidate.result.focus_next": "Where to focus next",
   "candidate.result.review_default": "Review the course material and try again.",
   "candidate.result.passing_line": "Passing score: {percent}%.",
+  "candidate.result.score_stat": "Score: {percent}%",
 
   "candidate.certificate.title": "Your certificate",
   "candidate.certificate.preparing_title": "Certificate",

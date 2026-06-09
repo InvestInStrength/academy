@@ -492,6 +492,7 @@
   "candidate.result.focus_next": "Worauf Sie als nächstes achten sollten",
   "candidate.result.review_default": "Bitte überprüfen Sie das Kursmaterial und versuchen Sie es erneut.",
   "candidate.result.passing_line": "Bestehensgrenze: {percent}%.",
+  "candidate.result.score_stat": "Ergebnis: {percent}%",
 
   "candidate.certificate.title": "Ihr Zertifikat",
   "candidate.certificate.preparing_title": "Zertifikat",
