@@ -67,7 +67,7 @@ export default async function ResultPage({
         <Card>
           <CardContent className="flex flex-col items-center gap-6 px-6 py-12 text-center">
             <span
-              className="animate-celebrate flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-600 ring-8 ring-green-50"
+              className="animate-celebrate flex h-20 w-20 items-center justify-center rounded-full bg-ice text-brand-700 ring-8 ring-ice/30"
               aria-hidden
             >
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
@@ -95,7 +95,7 @@ export default async function ResultPage({
               />
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-1.5 text-sm font-semibold text-green-800">
+            <div className="inline-flex items-center gap-2 rounded-full bg-ice/40 px-4 py-1.5 text-sm font-semibold text-brand-800">
               {t("candidate.result.score_stat", {
                 percent: latest.score_percentage,
               })}

@@ -18,7 +18,7 @@ export function FormMessage({ tone = "error", children, className }: Props) {
         "rounded-xl px-3 py-2 text-sm",
         tone === "error"
           ? "bg-red-50 text-red-700"
-          : "bg-green-50 text-green-700",
+          : "bg-ice/30 text-brand-800",
         className,
       )}
     >
