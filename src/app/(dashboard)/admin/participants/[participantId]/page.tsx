@@ -10,11 +10,10 @@ import type {
   CertificationAssignment,
   Participant,
 } from "@/types/database";
-import { PageHeader } from "@/components/admin/page-header";
 import { GuardedDeleteButton } from "@/components/admin/guarded-delete-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ParticipantForm } from "../participant-form";
 import { deleteParticipant } from "../actions";
+import { ParticipantProfileCard } from "./participant-profile-card";
 import { AssignmentsSection } from "./assignments-section";
 import { HistorySection } from "./history-section";
 
@@ -120,31 +119,52 @@ export default async function ParticipantDetailPage({
   );
 
   return (
-    <div>
+    <div className="space-y-6">
       <Link
         href="/admin/participants"
         className="text-sm text-slate-500 hover:text-slate-900"
       >
         {t("admin.participants.back")}
       </Link>
-      <div className="mt-3">
-        <PageHeader
-          title={participant.full_name}
-          description={participant.email ?? t("admin.participants.no_email_yet")}
+
+      <ParticipantProfileCard participant={participant} />
+
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <AssignmentsSection
+          participantId={participant.id}
+          locale={locale}
+          assignments={assignments}
+          questionnaires={(questionnaireData ?? []).map((q) => ({
+            id: q.id,
+            title: pickLocalized(q, "title", locale) ?? q.title,
+            course_id: q.course_id,
+            active: q.active,
+          }))}
+          topics={(topicData ?? []).map((tp) => ({
+            id: tp.id,
+            title: pickLocalized(tp, "title", locale) ?? tp.title,
+            course_id: tp.course_id,
+          }))}
+          assignmentTopics={
+            (assignmentTopicData ?? []) as {
+              certification_assignment_id: string;
+              topic_id: string;
+            }[]
+          }
+          certificates={
+            certificatesWithAssets as {
+              id: string;
+              certification_assignment_id: string;
+              certificate_number: string;
+              status: "valid" | "revoked";
+              verification_token: string;
+              pdf_url: string | null;
+              preview_url: string | null;
+            }[]
+          }
         />
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.6fr]">
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("admin.participants.details_card")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ParticipantForm participant={participant} />
-            </CardContent>
-          </Card>
-
           <HistorySection
             events={history}
             adminEmailById={adminEmailById}
@@ -169,40 +189,6 @@ export default async function ParticipantDetailPage({
             </CardContent>
           </Card>
         </div>
-
-        <AssignmentsSection
-          participantId={participant.id}
-          locale={locale}
-          assignments={assignments}
-          questionnaires={(questionnaireData ?? []).map((q) => ({
-            id: q.id,
-            title: pickLocalized(q, "title", locale) ?? q.title,
-            course_id: q.course_id,
-            active: q.active,
-          }))}
-          topics={(topicData ?? []).map((t) => ({
-            id: t.id,
-            title: pickLocalized(t, "title", locale) ?? t.title,
-            course_id: t.course_id,
-          }))}
-          assignmentTopics={
-            (assignmentTopicData ?? []) as {
-              certification_assignment_id: string;
-              topic_id: string;
-            }[]
-          }
-          certificates={
-            certificatesWithAssets as {
-              id: string;
-              certification_assignment_id: string;
-              certificate_number: string;
-              status: "valid" | "revoked";
-              verification_token: string;
-              pdf_url: string | null;
-              preview_url: string | null;
-            }[]
-          }
-        />
       </div>
     </div>
   );

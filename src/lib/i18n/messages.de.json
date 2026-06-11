@@ -301,6 +301,7 @@
   "admin.assignments.status.passed": "Bestanden",
   "admin.assignments.status.failed": "Nicht bestanden",
   "admin.assignments.create_card": "Zertifizierungszuweisung erstellen",
+  "admin.assignments.create_hint": "Weisen Sie diesem Teilnehmer einen Test zu und wählen Sie die Module für das Zertifikat.",
   "admin.assignments.no_active_questionnaires": "Keine aktiven Tests verfügbar. Bitte zuerst einen Test erstellen und aktivieren.",
   "admin.assignments.list_title": "Zuweisungen ({count})",
   "admin.assignments.empty": "Noch keine Zuweisungen. Erstellen Sie oben eine.",

@@ -301,6 +301,7 @@
   "admin.assignments.status.passed": "Passed",
   "admin.assignments.status.failed": "Failed",
   "admin.assignments.create_card": "Create a certification assignment",
+  "admin.assignments.create_hint": "Assign a test to this participant and pick the modules for the certificate.",
   "admin.assignments.no_active_questionnaires": "No active questionnaires available. Create and activate one first.",
   "admin.assignments.list_title": "Assignments ({count})",
   "admin.assignments.empty": "No assignments yet. Create one above.",

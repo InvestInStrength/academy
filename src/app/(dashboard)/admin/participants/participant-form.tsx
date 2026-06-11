@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 
 import type { Participant } from "@/types/database";
 import { emptyFormState } from "@/lib/form";
@@ -11,13 +11,24 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createParticipant, updateParticipant } from "./actions";
 
-export function ParticipantForm({ participant }: { participant?: Participant }) {
+export function ParticipantForm({
+  participant,
+  onSaved,
+}: {
+  participant?: Participant;
+  /** Called once after a successful save (used to collapse inline edit mode). */
+  onSaved?: () => void;
+}) {
   const isEdit = Boolean(participant);
   const t = useT();
   const [state, formAction] = useActionState(
     isEdit ? updateParticipant : createParticipant,
     emptyFormState,
   );
+
+  useEffect(() => {
+    if (state.ok) onSaved?.();
+  }, [state.ok, onSaved]);
 
   return (
     <form action={formAction} className="space-y-4">

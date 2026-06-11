@@ -20,26 +20,53 @@ export default async function ParticipantsPage() {
   const participants: Participant[] = data ?? [];
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title={t("admin.participants.title")}
         description={t("admin.participants.description")}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {t("admin.participants.list_title", { count: participants.length })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {participants.length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-slate-500">
-                {t("admin.participants.empty")}
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
+      {/* Primary action on top: add a participant before scanning the list. */}
+      <Card className="border-brand-200 ring-1 ring-brand-100">
+        <CardHeader className="border-brand-100 bg-brand-50/60">
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                aria-hidden
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </span>
+            <CardTitle>{t("admin.participants.create_card_title")}</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="max-w-2xl">
+            <ParticipantForm />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {t("admin.participants.list_title", { count: participants.length })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {participants.length === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-slate-500">
+              {t("admin.participants.empty")}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
               <table className="w-full min-w-[36rem] text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -74,20 +101,10 @@ export default async function ParticipantsPage() {
                   ))}
                 </tbody>
               </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>{t("admin.participants.create_card_title")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ParticipantForm />
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
