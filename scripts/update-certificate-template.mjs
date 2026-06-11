@@ -158,7 +158,7 @@ export const DEFAULT_CERTIFICATE_TEMPLATE = \`${escaped}\`;
 
 /** The issuer name printed on the certificate (and used by templates that
  * include \`{{issuer_name}}\`). */
-export const ISSUER_NAME = "Invest in Strength";
+export const ISSUER_NAME = "INVEST IN STRENGTH";
 `;
 
 writeFileSync(TS_DEST, ts, "utf8");

@@ -22,7 +22,7 @@ describe("renderCertificateSvg — default template", () => {
 
   it("substitutes {{issuer_name}} with the brand name", async () => {
     const svg = await renderCertificateSvg(baseData);
-    expect(svg).toContain("Invest in Strength");
+    expect(svg).toContain("INVEST IN STRENGTH");
     expect(svg).not.toContain("{{issuer_name}}");
   });
 

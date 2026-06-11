@@ -38,6 +38,47 @@ function formatLongDate(iso: string): string {
   });
 }
 
+/** Max topics per row before wrapping onto a new line. */
+const TOPICS_PER_ROW = 4;
+/** Vertical step (user units ≈ pt) between wrapped topic rows. Tuned to the
+ * ~12px topics font in the default template. */
+const TOPICS_LINE_HEIGHT = 15;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    rows.push(items.slice(i, i + size));
+  }
+  return rows;
+}
+
+/**
+ * Builds the inner markup for the `{{included_topics}}` / `{{topics}}` slot:
+ * topics laid out in rows of up to {@link TOPICS_PER_ROW}, joined with a middot
+ * WITHIN a row and broken onto a new line BETWEEN rows. The dividing symbol only
+ * ever sits between two topics in the same row — never at a row's end.
+ *
+ * The placeholder lives inside the template's topics `<text><tspan x="0" y="0">`
+ * element (center-anchored in the default template). The first row continues
+ * that tspan; each later row closes it and opens a fresh `<tspan>` re-anchored
+ * to `x="0"` (the centered pivot) and stepped down one line, so the rows stack
+ * and stay centered instead of overflowing a single line. Each row's text is
+ * XML-escaped; the tspan markup itself is literal.
+ */
+function topicsMarkup(topics: string[]): string {
+  const rows = chunk(topics, TOPICS_PER_ROW).map((row) =>
+    escapeXml(row.join("  ·  ")),
+  );
+  if (rows.length === 0) return "";
+  return rows
+    .slice(1)
+    .reduce(
+      (acc, row) =>
+        `${acc}</tspan><tspan x="0" dy="${TOPICS_LINE_HEIGHT}">${row}`,
+      rows[0],
+    );
+}
+
 /** Strips the XML prolog/doctype from the qrcode library output so it can be
  * nested inside the certificate SVG. */
 function inlineQr(qrSvg: string): string {
@@ -73,7 +114,7 @@ function applySubstitutions(
 ): string {
   const candidate = escapeXml(data.candidate_name);
   const courseTitle = escapeXml(data.course_title);
-  const topicsText = escapeXml(data.topics.join("  ·  "));
+  const topicsText = topicsMarkup(data.topics);
   const completion = escapeXml(formatLongDate(data.completion_date));
   const certificateId = escapeXml(data.certificate_number);
   const verifyUrl = escapeXml(data.verification_url);

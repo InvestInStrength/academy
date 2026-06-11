@@ -32,8 +32,8 @@ async function ins(table, row, select = "id") {
 
 // -- 1. Course ---------------------------------------------------------------
 const course = await ins("courses", {
-  title: "Invest in Strength — Methodik",
-  title_de: "Invest in Strength — Methodik",
+  title: "INVEST IN STRENGTH — Methodik",
+  title_de: "INVEST IN STRENGTH — Methodik",
   description:
     "Theoriebasierte Zertifizierung zu struktureller Balance, Hypertrophie, Connective Tissue Work, Nervensystem, Schulter, Hüfte, systemischer Kraft und Faszien.",
   description_de:
@@ -565,8 +565,8 @@ console.log("questions:", questionIds.length);
 // -- 4. Questionnaire --------------------------------------------------------
 const questionnaire = await ins("questionnaires", {
   course_id: course.id,
-  title: "Invest in Strength — Zertifizierungstest",
-  title_de: "Invest in Strength — Zertifizierungstest",
+  title: "INVEST IN STRENGTH — Zertifizierungstest",
+  title_de: "INVEST IN STRENGTH — Zertifizierungstest",
   description:
     "Theorie-Zertifizierungstest. Bestehensgrenze 80%. Fragen folgen der thematischen Reihenfolge (Strukturelle Balance → Hypertrophie → CTW → Nervensystem → Schulter → Hüfte → Systemische Kraft → Faszien).",
   description_de:
