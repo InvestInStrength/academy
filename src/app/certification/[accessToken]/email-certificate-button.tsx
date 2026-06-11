@@ -13,19 +13,24 @@ export function EmailCertificateButton({ accessToken }: { accessToken: string })
   const t = useT();
 
   return (
-    <form action={formAction} className="space-y-2">
-      <input type="hidden" name="access_token" value={accessToken} />
-      <SubmitButton
-        variant="outline"
-        pendingText={t("candidate.certificate.emailing")}
-      >
-        {t("candidate.certificate.email_button")}
-      </SubmitButton>
+    <>
+      <form action={formAction}>
+        <input type="hidden" name="access_token" value={accessToken} />
+        <SubmitButton
+          variant="outline"
+          pendingText={t("candidate.certificate.emailing")}
+        >
+          {t("candidate.certificate.email_button")}
+        </SubmitButton>
+      </form>
       {state.message && (
-        <FormMessage tone={state.ok ? "success" : "error"}>
+        <FormMessage
+          tone={state.ok ? "success" : "error"}
+          className="w-full"
+        >
           {state.message}
         </FormMessage>
       )}
-    </form>
+    </>
   );
 }

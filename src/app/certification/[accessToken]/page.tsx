@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   getCandidateContext,
   getLatestResult,
-  localizedQuestionnaireDescription,
   localizedQuestionnaireTitle,
 } from "@/lib/certification/data";
 import { getServerT } from "@/lib/i18n";
@@ -44,7 +43,6 @@ export default async function CertificationHubPage({
 
   const { participant, questionnaire, assignment } = context;
   const title = localizedQuestionnaireTitle(questionnaire, locale);
-  const description = localizedQuestionnaireDescription(questionnaire, locale);
 
   if (!participant.email_confirmed) {
     return (
@@ -80,12 +78,6 @@ export default async function CertificationHubPage({
         <CardContent className="space-y-3">
           <p className="text-sm text-slate-600">
             {t("candidate.candidate_label")}: <strong>{participant.full_name}</strong>
-          </p>
-          {description && (
-            <p className="text-sm text-slate-600">{description}</p>
-          )}
-          <p className="text-sm text-slate-500">
-            {t("candidate.passing_score", { percent: questionnaire.passing_percentage })}
           </p>
 
           {busy && (

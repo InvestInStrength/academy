@@ -105,8 +105,10 @@ export default async function CandidateCertificatePage({
           )}
 
           {!revoked && (
-            <>
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-3">
+              {/* One unified action group: download + email sit together so the
+                * card reads as a single set of next steps. */}
+              <div className="flex flex-wrap items-start gap-3">
                 {official_pdf && (
                   <a
                     href={official_pdf}
@@ -127,12 +129,13 @@ export default async function CandidateCertificatePage({
                     {t("candidate.certificate.download_png")}
                   </a>
                 )}
+                <EmailCertificateButton accessToken={accessToken} />
               </div>
 
               {/* Fallback: client-side SVG/PNG download while server assets are
                 * being prepared (or if rendering failed). */}
               {!hasServerAssets && (
-                <>
+                <div className="space-y-2">
                   <p className="text-sm text-slate-500">
                     {t("candidate.certificate.assets_pending")}
                   </p>
@@ -140,22 +143,20 @@ export default async function CandidateCertificatePage({
                     svg={certificate.snapshot.svg}
                     certificateNumber={certificate.certificate_number}
                   />
-                </>
+                </div>
               )}
-
-              <EmailCertificateButton accessToken={accessToken} />
-            </>
+            </div>
           )}
 
-          <p className="text-sm text-slate-500">
+          <div className="border-t border-slate-100 pt-3 text-sm text-slate-500">
             {t("candidate.certificate.verify_at")}{" "}
             <a
               href={certificate.snapshot.verification_url}
-              className="text-brand-700 hover:underline"
+              className="font-medium break-all text-brand-700 hover:underline"
             >
               {certificate.snapshot.verification_url}
             </a>
-          </p>
+          </div>
         </CardContent>
       </Card>
 
