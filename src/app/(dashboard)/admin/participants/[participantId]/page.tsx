@@ -132,6 +132,7 @@ export default async function ParticipantDetailPage({
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <AssignmentsSection
           participantId={participant.id}
+          participantEmail={participant.email}
           locale={locale}
           assignments={assignments}
           questionnaires={(questionnaireData ?? []).map((q) => ({

@@ -6,10 +6,13 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
+import { pickLocalized } from "@/lib/i18n/content";
+import { certificationUrl } from "@/lib/public-url";
+import { sendInviteEmail } from "@/lib/email/invite-email";
 import { issueCertificate } from "@/lib/certificate/issue";
 import { generateCertificateAssets } from "@/lib/certificate/generate";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
-import type { Json } from "@/types/database";
+import type { Json, Locale } from "@/types/database";
 import {
   assignmentCreateSchema,
   assignmentTopicsSchema,
@@ -38,6 +41,48 @@ async function logAccountEvent(
     event_data: params.data ?? null,
     created_by_admin_id: adminId,
   });
+}
+
+/**
+ * Best-effort: email a candidate their personal invitation to begin and, on
+ * success, append an immutable `invite_sent` / `invite_resent` event. Never
+ * throws — a failed send returns false so callers can keep the assignment and
+ * surface a "couldn't send" notice. Email isn't sent when none is on file (the
+ * caller guards that earlier).
+ */
+async function sendAssignmentInvite(
+  supabase: Supabase,
+  locale: Locale,
+  params: {
+    participantId: string;
+    assignmentId: string;
+    adminId: string;
+    candidateName: string;
+    email: string;
+    assessmentTitle: string;
+    accessToken: string;
+    resent?: boolean;
+  },
+): Promise<boolean> {
+  const sent = await sendInviteEmail({
+    toEmail: params.email,
+    candidateName: params.candidateName,
+    assessmentTitle: params.assessmentTitle,
+    link: certificationUrl(params.accessToken),
+    locale,
+  });
+
+  if (sent.ok) {
+    await logAccountEvent(supabase, params.adminId, {
+      participantId: params.participantId,
+      assignmentId: params.assignmentId,
+      type: params.resent ? "invite_resent" : "invite_sent",
+      label: params.resent ? "Invitation email re-sent" : "Invitation email sent",
+      data: { email: params.email },
+    });
+  }
+
+  return sent.ok;
 }
 
 function parseParticipantForm(formData: FormData) {
@@ -189,7 +234,7 @@ export async function createAssignment(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
-  const { t } = await getServerT();
+  const { t, locale } = await getServerT();
 
   const participantId = String(formData.get("participant_id") ?? "");
   if (!participantId) return { message: t("validation.generic_error") };
@@ -207,7 +252,7 @@ export async function createAssignment(
 
   const { data: questionnaire } = await supabase
     .from("questionnaires")
-    .select("id, course_id, active")
+    .select("id, course_id, active, title, title_de, title_en")
     .eq("id", parsed.data.questionnaire_id)
     .maybeSingle();
 
@@ -276,8 +321,36 @@ export async function createAssignment(
     data: { questionnaire_id: parsed.data.questionnaire_id },
   });
 
+  // Auto-send the "start your certification" invite if the candidate has an
+  // email on file. Best-effort: the assignment stands either way, and the
+  // returned message tells the admin exactly what happened.
+  const { data: participant } = await supabase
+    .from("participants")
+    .select("full_name, email")
+    .eq("id", participantId)
+    .maybeSingle();
+
+  const assessmentTitle =
+    pickLocalized(questionnaire, "title", locale) ?? questionnaire.title;
+
+  let message = t("admin.assignments.created_no_email");
+  if (participant?.email) {
+    const invited = await sendAssignmentInvite(supabase, locale, {
+      participantId,
+      assignmentId: assignment.id,
+      adminId: user.id,
+      candidateName: participant.full_name,
+      email: participant.email,
+      assessmentTitle,
+      accessToken: assignment.access_token,
+    });
+    message = invited
+      ? t("admin.assignments.created_and_invited", { email: participant.email })
+      : t("admin.assignments.created_invite_failed");
+  }
+
   revalidatePath(`/admin/participants/${participantId}`);
-  return { ok: true, message: t("admin.assignments.created_msg") };
+  return { ok: true, message };
 }
 
 export async function toggleAssignmentActive(formData: FormData): Promise<void> {
@@ -345,6 +418,53 @@ export async function regenerateAccessLink(formData: FormData): Promise<void> {
       label: "Access link regenerated",
     });
   }
+
+  revalidatePath(`/admin/participants/${participantId}`);
+}
+
+/** Re-sends the "start your certification" invite for an existing assignment.
+ * Best-effort and silent (ActionButton); no-ops when no email is on file. */
+export async function resendInvite(formData: FormData): Promise<void> {
+  const { supabase, user } = await requireAdmin();
+  const { locale } = await getServerT();
+
+  const id = String(formData.get("id") ?? "");
+  const participantId = String(formData.get("participant_id") ?? "");
+  if (!id || !participantId) return;
+
+  const { data: assignment } = await supabase
+    .from("certification_assignments")
+    .select("id, access_token, questionnaire_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!assignment) return;
+
+  const { data: participant } = await supabase
+    .from("participants")
+    .select("full_name, email")
+    .eq("id", participantId)
+    .maybeSingle();
+  if (!participant?.email) return;
+
+  const { data: questionnaire } = await supabase
+    .from("questionnaires")
+    .select("title, title_de, title_en")
+    .eq("id", assignment.questionnaire_id)
+    .maybeSingle();
+  const assessmentTitle = questionnaire
+    ? pickLocalized(questionnaire, "title", locale) ?? questionnaire.title
+    : "";
+
+  await sendAssignmentInvite(supabase, locale, {
+    participantId,
+    assignmentId: assignment.id,
+    adminId: user.id,
+    candidateName: participant.full_name,
+    email: participant.email,
+    assessmentTitle,
+    accessToken: assignment.access_token,
+    resent: true,
+  });
 
   revalidatePath(`/admin/participants/${participantId}`);
 }

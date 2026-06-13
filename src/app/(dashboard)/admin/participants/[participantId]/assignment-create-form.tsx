@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useState, type FormEvent } from "react";
 
 import { emptyFormState } from "@/lib/form";
 import { useT } from "@/lib/i18n/client";
@@ -16,12 +16,14 @@ type TopicOption = { id: string; title: string; course_id: string };
 
 type Props = {
   participantId: string;
+  participantEmail: string | null;
   questionnaires: QuestionnaireOption[];
   topics: TopicOption[];
 };
 
 export function AssignmentCreateForm({
   participantId,
+  participantEmail,
   questionnaires,
   topics,
 }: Props) {
@@ -53,8 +55,20 @@ export function AssignmentCreateForm({
     });
   }
 
+  // Confirm before creating, and make the email side effect explicit: with an
+  // email on file the candidate is invited immediately; without one, none is
+  // sent. Aborting the submit leaves the form untouched.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    const message = participantEmail
+      ? t("admin.assignments.create_send_confirm", { email: participantEmail })
+      : t("admin.assignments.create_no_email_confirm");
+    if (!window.confirm(message)) {
+      event.preventDefault();
+    }
+  }
+
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="participant_id" value={participantId} />
       <input type="hidden" name="topic_ids" value={JSON.stringify(orderedSelected)} />
 

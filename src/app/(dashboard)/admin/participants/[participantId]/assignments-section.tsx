@@ -12,6 +12,7 @@ import { CopyLinkButton } from "./copy-link-button";
 import {
   regenerateAccessLink,
   regenerateCertificateAssets,
+  resendInvite,
   toggleAssignmentActive,
 } from "../actions";
 
@@ -39,6 +40,7 @@ type CertificateInfo = {
 
 type Props = {
   participantId: string;
+  participantEmail: string | null;
   locale: Locale;
   assignments: Assignment[];
   questionnaires: Questionnaire[];
@@ -56,6 +58,7 @@ const statusTone: Record<AssignmentStatus, "neutral" | "warning" | "success" | "
 
 export function AssignmentsSection({
   participantId,
+  participantEmail,
   locale,
   assignments,
   questionnaires,
@@ -115,6 +118,7 @@ export function AssignmentsSection({
           ) : (
             <AssignmentCreateForm
               participantId={participantId}
+              participantEmail={participantEmail}
               questionnaires={activeQuestionnaires}
               topics={topics}
             />
@@ -177,7 +181,23 @@ export function AssignmentsSection({
                         {link}
                       </code>
                       <CopyLinkButton url={link} />
+                      {participantEmail ? (
+                        <ActionButton
+                          action={resendInvite}
+                          hidden={{ id: assignment.id, participant_id: participantId }}
+                          confirm={t("admin.assignments.resend_invite_confirm", {
+                            email: participantEmail,
+                          })}
+                        >
+                          {t("admin.assignments.resend_invite")}
+                        </ActionButton>
+                      ) : null}
                     </div>
+                    {!participantEmail && (
+                      <p className="text-xs text-slate-400">
+                        {t("admin.assignments.no_email_hint")}
+                      </p>
+                    )}
                   </div>
 
                   <div className="mt-3">
