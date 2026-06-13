@@ -573,7 +573,7 @@
   "email.invite.subject": "You're invited to start your certification",
   "email.invite.heading": "Start your certification",
   "email.invite.greeting": "Hi {name},",
-  "email.invite.intro": "You've been invited to complete your certification: <strong>{assessment}</strong>. Click the button below to begin — you'll confirm your email and start the assessment.",
+  "email.invite.intro": "You've been invited to complete your certification:<strong style='display:block; margin:8px 0;'>{assessment}</strong>Click the button below to begin — you'll confirm your email and start the assessment.",
   "email.invite.cta": "Start now",
   "email.invite.fallback": "If the button doesn't work, copy this link into your browser: {url}",
   "email.invite.ignore_note": "If you didn't expect this email, you can safely ignore it."
