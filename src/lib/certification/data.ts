@@ -10,11 +10,15 @@ import {
   type VerifyEmailResult,
 } from "@/lib/certification/email-verification-data";
 import type { AnswerMap } from "@/lib/certification/attempt-progress-core";
+import { startOrResumeAttemptWith } from "@/lib/certification/attempt-lifecycle-core";
 import type { AssignmentStatus, Json, Locale, QuestionType } from "@/types/database";
-import type {
-  AttemptScore,
-  GradedQuestion,
-  TopicRecommendation,
+import {
+  buildRecommendations,
+  gradeAttempt,
+  type AttemptScore,
+  type GradableQuestion,
+  type GradedQuestion,
+  type TopicRecommendation,
 } from "@/lib/certification/scoring";
 
 /**
@@ -416,6 +420,148 @@ export async function recordAttempt(params: {
   );
 
   return { passed: score.passed, attempt_number: attemptNumber };
+}
+
+/**
+ * Records a synthetic, fully-correct (100%) attempt for an admin "mark as
+ * passed" action, so a manually-passed candidate is treated exactly like one
+ * who sat and aced the test: the result page shows a passed/100% result and the
+ * account history reads attempt_submitted + attempt_passed. Idempotent — if a
+ * passing attempt already exists, it does nothing. Does NOT flip the assignment
+ * status or issue the certificate; the caller (`manualPass`) owns those.
+ */
+export async function recordManualPassAttempt(
+  assignmentId: string,
+  locale: Locale,
+): Promise<void> {
+  const service = createSupabaseServiceRoleClient();
+
+  const { data: assignment } = await service
+    .from("certification_assignments")
+    .select("id, participant_id, questionnaire_id")
+    .eq("id", assignmentId)
+    .maybeSingle();
+  if (!assignment) return;
+
+  // Idempotency: never stack a second passing attempt on top of an existing one.
+  const { data: existingPass } = await service
+    .from("attempts")
+    .select("id")
+    .eq("certification_assignment_id", assignmentId)
+    .eq("passed", true)
+    .limit(1)
+    .maybeSingle();
+  if (existingPass) return;
+
+  const { data: questionnaire } = await service
+    .from("questionnaires")
+    .select(
+      "id, title, title_de, title_en, passing_percentage, randomize_question_order, randomize_answer_order",
+    )
+    .eq("id", assignment.questionnaire_id)
+    .maybeSingle();
+  if (!questionnaire) return;
+
+  // Reuse an in-progress attempt if the candidate started one; otherwise create
+  // a fresh row. Its frozen language drives question localization + snapshots.
+  const attempt = await startOrResumeAttemptWith(service, assignmentId, locale);
+  const loaded = await loadQuestionnaireQuestions(
+    assignment.questionnaire_id,
+    attempt.language,
+  );
+
+  // Synthesize an all-correct submission: every question selects exactly its
+  // correct option set, which grades to 100%.
+  const gradable: GradableQuestion[] = loaded.map((q) => ({
+    question_id: q.question_id,
+    question_text: q.question_text,
+    question_type: q.question_type,
+    topic_id: q.topic_id,
+    topic_title: q.topic_title,
+    recommendation_text: q.recommendation_text,
+    options: q.options,
+    selected_option_ids: q.options.filter((o) => o.is_correct).map((o) => o.id),
+  }));
+  const score = gradeAttempt(gradable, questionnaire.passing_percentage);
+  const recommendations = buildRecommendations(score.graded); // empty at 100%
+  const displayedQuestionOrder = loaded.map((q) => q.question_id);
+  // A manual pass is always a pass; an empty questionnaire still reads 100%.
+  const scorePercentage = score.total > 0 ? score.score_percentage : 100;
+
+  const attemptSnapshot: Json = {
+    language: attempt.language,
+    questionnaire_id: questionnaire.id,
+    questionnaire_title:
+      pickLocalized(questionnaire, "title", attempt.language) ?? questionnaire.title,
+    passing_percentage: questionnaire.passing_percentage,
+    randomize_question_order: questionnaire.randomize_question_order,
+    randomize_answer_order: questionnaire.randomize_answer_order,
+    question_order: displayedQuestionOrder,
+    total_questions: score.total,
+    manual_pass: true,
+  };
+
+  const { error: updError } = await service
+    .from("attempts")
+    .update({
+      submitted_at: new Date().toISOString(),
+      score_percentage: scorePercentage,
+      correct_count: score.correct_count,
+      wrong_count: score.wrong_count,
+      passed: true,
+      attempt_snapshot: attemptSnapshot,
+      recommendation_snapshot: recommendations as unknown as Json,
+    })
+    .eq("id", attempt.id)
+    .is("submitted_at", null);
+  if (updError) return;
+
+  const answerRows = score.graded.map((question: GradedQuestion, index) => ({
+    attempt_id: attempt.id,
+    question_id: question.question_id,
+    question_snapshot: {
+      language: attempt.language,
+      question_id: question.question_id,
+      question_text: question.question_text,
+      question_type: question.question_type,
+      topic_id: question.topic_id,
+      topic_title: question.topic_title,
+      options: question.options,
+    } as Json,
+    selected_option_ids: question.selected_option_ids,
+    selected_option_snapshots: question.options
+      .filter((o) => question.selected_option_ids.includes(o.id))
+      .map((o) => ({ id: o.id, option_text: o.option_text })) as unknown as Json,
+    correct_option_ids: question.correct_option_ids,
+    is_correct: question.is_correct,
+    displayed_question_order: index,
+    displayed_option_order: question.options.map((o) => o.id) as unknown as Json,
+  }));
+  if (answerRows.length > 0) {
+    await service.from("attempt_answers").insert(answerRows);
+  }
+
+  await logEvent(
+    service,
+    assignment.participant_id,
+    assignmentId,
+    "attempt_submitted",
+    `Attempt ${attempt.attempt_number} submitted`,
+    {
+      attempt_number: attempt.attempt_number,
+      score_percentage: scorePercentage,
+      passed: true,
+      manual_pass: true,
+    },
+  );
+  await logEvent(
+    service,
+    assignment.participant_id,
+    assignmentId,
+    "attempt_passed",
+    "Attempt passed",
+    { attempt_number: attempt.attempt_number, score_percentage: scorePercentage, manual_pass: true },
+  );
 }
 
 /**

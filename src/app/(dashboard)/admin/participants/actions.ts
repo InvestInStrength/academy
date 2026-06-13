@@ -11,6 +11,7 @@ import { certificationUrl } from "@/lib/public-url";
 import { sendInviteEmail } from "@/lib/email/invite-email";
 import { issueCertificate } from "@/lib/certificate/issue";
 import { generateCertificateAssets } from "@/lib/certificate/generate";
+import { recordManualPassAttempt } from "@/lib/certification/data";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import type { Json, Locale } from "@/types/database";
 import {
@@ -474,7 +475,7 @@ export async function manualPass(
   formData: FormData,
 ): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
-  const { t } = await getServerT();
+  const { t, locale } = await getServerT();
 
   const assignmentId = String(formData.get("assignment_id") ?? "");
   const reason = String(formData.get("reason") ?? "").trim();
@@ -521,6 +522,11 @@ export async function manualPass(
     event_data: { reason },
     created_by_admin_id: user.id,
   });
+
+  // Treat a manually-passed candidate as one who sat and aced the test: record a
+  // synthetic 100% attempt so their result page shows a passed result instead of
+  // "no attempt completed". Service-role internally; best-effort.
+  await recordManualPassAttempt(assignmentId, locale);
 
   await issueCertificate(supabase, assignmentId, { adminId: user.id });
 

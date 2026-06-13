@@ -63,12 +63,14 @@ svg = svg.replace(/^\s*<\?xml[^?]*\?>\s*/g, "");
 svg = svg.replace(/<!--[\s\S]*?-->/g, "");
 
 // 2c. Fix the QR placeholder. The designer wraps {{verification_qr}} in
-//     <text class="st7" transform="translate(X Y)"><tspan ...>{{verification_qr}}</tspan></text>,
+//     <text class="…" transform="translate(X Y)"><tspan ...>{{verification_qr}}</tspan></text>,
 //     which produces invalid SVG when the placeholder is replaced with a
 //     nested <svg>. Replace with a transform-only <g> positioned at the
-//     QR slot's top-left so the QR fills the dashed-corner area.
+//     QR slot's top-left so the QR fills the dashed-corner area. The match is
+//     class-agnostic (the designer's class numbering drifts between exports —
+//     it was st7 in earlier templates, st2 in template-03).
 const qrPattern =
-  /<text\s+class="st7"\s+transform="translate\([^)]+\)"\s*>\s*<tspan[^>]*>\{\{verification_qr\}\}<\/tspan>\s*<\/text>/g;
+  /<text\s+[^>]*?>\s*<tspan[^>]*>\{\{verification_qr\}\}<\/tspan>\s*<\/text>/g;
 const qrMatches = svg.match(qrPattern) ?? [];
 if (qrMatches.length === 0) {
   console.error(
