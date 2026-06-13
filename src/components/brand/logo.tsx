@@ -21,7 +21,7 @@ export function Logo({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={logoSrc[variant]}
-      alt="Invest in Strength"
+      alt="INVEST IN STRENGTH"
       className={cn("block w-auto", className)}
     />
   );
@@ -33,7 +33,7 @@ export function Emblem({ className }: { className?: string }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src="/brand/IIS_emblem.svg"
-      alt="Invest in Strength"
+      alt="INVEST IN STRENGTH"
       className={cn("block", className)}
     />
   );

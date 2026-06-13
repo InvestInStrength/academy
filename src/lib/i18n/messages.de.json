@@ -1,7 +1,7 @@
 {
-  "meta.app_title": "Invest in Strength — Zertifizierung",
-  "meta.app_description": "Zertifizierungsplattform für Invest in Strength.",
-  "meta.brand": "Invest in Strength",
+  "meta.app_title": "INVEST IN STRENGTH — Zertifizierung",
+  "meta.app_description": "Zertifizierungsplattform für INVEST IN STRENGTH.",
+  "meta.brand": "INVEST IN STRENGTH",
   "meta.brand_subtitle": "Zertifizierungs-Verwaltung",
 
   "home.heading": "Zertifizierungsplattform",
@@ -498,7 +498,7 @@
   "candidate.result.title": "Ihr Ergebnis",
   "candidate.result.no_attempt": "Sie haben noch keinen Versuch abgeschlossen.",
   "candidate.result.congratulations": "Glückwunsch, {name}",
-  "candidate.result.passed_body": "Sie haben die Prüfung <strong>{title}</strong> bestanden.",
+  "candidate.result.passed_body": "Sie haben die Prüfung <strong style='display:block; margin:6px 0;'>{title}</strong> bestanden.",
   "candidate.result.view_certificate": "Zertifikat ansehen",
   "candidate.result.focus_next": "Worauf Sie als nächstes achten sollten",
   "candidate.result.review_default": "Bitte überprüfen Sie das Kursmaterial und versuchen Sie es erneut.",
