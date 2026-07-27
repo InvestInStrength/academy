@@ -79,6 +79,12 @@ Still open (decide when we reach the relevant slice, not blocking now):
   **Deferred:** real email-verification step for candidates (still
   trust-on-submit); durable rate-limit store.
 
+- ✅ **Seminars — second certification kind.** Done (2026-07-27): `courses.kind`
+  (`course` | `seminar`) + event date + per-record certificate template;
+  `/admin/seminars`; certificate template CRUD; first seminar seeded live with
+  its own artwork. Migration `0007` applied to prod. See the dedicated section
+  below and `docs/SEMINARS.md`.
+
 ### MVP slice sequence (1–5) complete
 All originally-planned MVP slices are built and verified end-to-end against a live
 Supabase project + Resend domain (2026-05-29).
@@ -102,7 +108,8 @@ Other remaining cross-cutting hardening items (not new slices):
 - Durable rate-limit store (Upstash/Redis) — replace the in-memory stopgap.
 - Server-side PNG/PDF rendering + Supabase Storage upload (currently client-side
   PNG + on-page/attached SVG).
-- Admin certificate-template CRUD (default renderer used today).
+- ✅ **Admin certificate-template CRUD** (built 2026-07-27 with Seminars).
+  `/admin/settings/templates`; assigned per course/seminar. See below.
 - Automated tests — **started 2026-05-29**: Vitest with 22 unit tests for the
   scoring engine + key Zod schemas (`pnpm test`). Still to add: server-action
   parsing and DB-invariant/integration tests.
@@ -159,6 +166,52 @@ Migration numbering (live):
 - `0006_email_verification_codes.sql` — **Candidate email verification**
   (2026-06-08). Adds `email_verification_codes` (hashed one-time codes).
   **Founder must apply.**
+
+---
+
+## ✅ Seminars — second certification kind — SHIPPED 2026-07-27
+
+A **seminar** is a single event certified with a questionnaire in exactly the
+same way as a course. Locked decision: a seminar is a `courses` row with
+`kind = 'seminar'`, **not** a parallel system — everything below `courses`
+(topics, questions, questionnaires, assignments, attempts, certificates, email,
+verification) is kind-agnostic and was not changed.
+
+Migration `0007_seminars.sql` (**applied to prod 2026-07-27**) adds
+`courses.kind`, `courses.event_date` and `courses.certificate_template_id`.
+
+**Canonical reference — architecture, the three invariants, template
+requirements and the scripts — lives in `docs/SEMINARS.md`.** Read that before
+touching either kind or anything in the certificate template path.
+
+Shipped with it:
+- `/admin/seminars` sharing one implementation with `/admin/courses`; nav
+  restructured so Kurse and Seminare are siblings with Fragenpool/Tests
+  alongside (both kinds own questions and tests).
+- **Certificate template CRUD** at `/admin/settings/templates`, finally wiring
+  up the long-dead `certificate_template_id` column. Resolution at issue time:
+  questionnaire → course/seminar → built-in template for `kind`.
+- **Template SVGs are now untrusted input** — they are admin-uploadable and reach
+  the public verification page. Two independent layers: `CertificateView`
+  renders snapshots through `<img src="data:image/svg+xml;base64,…">` (browsers
+  never execute scripts there, and this also covers snapshots frozen earlier),
+  and `sanitizeTemplateSvg` strips active content on write. **Do not remove one
+  on the strength of the other**, and do not revert the `<img>` render to inline
+  SVG. See `docs/SEMINARS.md` § "Why template SVGs are treated as untrusted".
+- First seminar seeded live: *Applied Shoulder Biomechanics* (12 questions, 80%
+  pass) with its own designed artwork.
+
+**Known gaps / next:**
+- Q2, Q4 and Q6 of the Shoulder Biomechanics test are not seeded — the source
+  PDF gave them no options and two are marked "Frage existiert bereits". They
+  need linking from the existing question bank.
+- Long participant names overflow the seminar template's name slot (~25+ chars
+  encroach on the artwork). `certificate_display_name` is the escape hatch.
+- The verification URL prints at 3.2pt on that template: the designer's gap in
+  the bottom rule is 136pt and a real URL is 88 chars. Widening the gap is a
+  design change, not a code one. The QR is the primary path.
+- No CSP on the app (flagged during the security review; the `<img>` isolation
+  is what actually mitigates template-borne script today).
 
 ---
 
