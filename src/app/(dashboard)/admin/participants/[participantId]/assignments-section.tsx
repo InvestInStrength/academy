@@ -1,7 +1,12 @@
 import { certificationUrl, verificationUrl } from "@/lib/public-url";
 import { formatDate } from "@/lib/utils";
 import { getDictionary, t as rawT } from "@/lib/i18n/dict";
-import type { AssignmentStatus, CertificateStatus, Locale } from "@/types/database";
+import type {
+  AssignmentStatus,
+  CertificateStatus,
+  CourseKind,
+  Locale,
+} from "@/types/database";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/admin/action-button";
@@ -25,7 +30,14 @@ type Assignment = {
   created_at: string;
 };
 
-type Questionnaire = { id: string; title: string; course_id: string; active: boolean };
+type Questionnaire = {
+  id: string;
+  title: string;
+  course_id: string;
+  active: boolean;
+  /** Kind of the questionnaire's course — seminars print no topics. */
+  kind: CourseKind;
+};
 type Topic = { id: string; title: string; course_id: string };
 type AssignmentTopic = { certification_assignment_id: string; topic_id: string };
 type CertificateInfo = {
@@ -200,6 +212,7 @@ export function AssignmentsSection({
                     )}
                   </div>
 
+                  {questionnaire?.kind === "seminar" ? null : (
                   <div className="mt-3">
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                       {t("admin.assignments.certificate_topics")}
@@ -222,6 +235,7 @@ export function AssignmentsSection({
                       </div>
                     </details>
                   </div>
+                  )}
 
                   <div className="mt-3">
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">

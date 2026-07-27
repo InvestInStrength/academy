@@ -53,6 +53,20 @@ export default async function SettingsPage() {
         </Card>
       )}
 
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{t("admin.settings.templates_card")}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between gap-3">
+          <p className="text-sm text-slate-600">
+            {t("admin.settings.templates_description")}
+          </p>
+          <ButtonLink href="/admin/settings/templates" size="sm" variant="outline">
+            {t("admin.settings.manage_templates")}
+          </ButtonLink>
+        </CardContent>
+      </Card>
+
       <PlaceholderPanel note={t("admin.settings.placeholder")} />
     </div>
   );

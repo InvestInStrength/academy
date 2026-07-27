@@ -10,6 +10,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
+import { CourseOptions } from "@/components/admin/course-options";
 import { toggleQuestionActive } from "./actions";
 
 export default async function QuestionsPage({
@@ -24,7 +25,7 @@ export default async function QuestionsPage({
   const [{ data: courseData }, { data: topicData }] = await Promise.all([
     supabase
       .from("courses")
-      .select("id, title, title_de, title_en")
+      .select("id, title, title_de, title_en, kind")
       .order("title"),
     supabase.from("course_topics").select("id, title, title_de, title_en, course_id"),
   ]);
@@ -32,6 +33,7 @@ export default async function QuestionsPage({
   const courses = (courseData ?? []).map((c) => ({
     id: c.id,
     title: pickLocalized(c, "title", locale) ?? c.title,
+    kind: c.kind,
   }));
   const topics = (topicData ?? []).map((t) => ({
     id: t.id,
@@ -68,11 +70,7 @@ export default async function QuestionsPage({
           <form method="get" className="flex items-center gap-2">
             <Select name="course" defaultValue={courseFilter ?? ""} className="w-56">
               <option value="">{t("admin.questions.all_courses")}</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.title}
-                </option>
-              ))}
+              <CourseOptions courses={courses} />
             </Select>
             <button
               type="submit"

@@ -1,6 +1,8 @@
 import QRCode from "qrcode";
 
+import type { CourseKind } from "@/types/database";
 import { DEFAULT_CERTIFICATE_TEMPLATE, ISSUER_NAME } from "./templates";
+import { SEMINAR_CERTIFICATE_TEMPLATE } from "./seminar-template";
 
 /**
  * Certificate rendering. Produces a self-contained SVG (no external resources,
@@ -10,6 +12,10 @@ import { DEFAULT_CERTIFICATE_TEMPLATE, ISSUER_NAME } from "./templates";
  *
  * Per the locked rules the certificate shows the course and included topics but
  * NEVER the score.
+ *
+ * Two built-in templates: a course certificate (module count + included topics)
+ * and a seminar certificate (single event + event date, no topics). `kind`
+ * picks between them; an explicit `templateSvg` always wins.
  */
 
 export type CertificateRenderData = {
@@ -19,7 +25,20 @@ export type CertificateRenderData = {
   topics: string[];
   completion_date: string; // ISO
   verification_url: string;
+  /** Which built-in template to fall back to. Defaults to "course" so
+   * pre-seminar callers and snapshots keep rendering exactly as before. */
+  kind?: CourseKind;
+  /** Seminar only: the day the event was held (ISO date). Null/absent for a
+   * course — the slot then renders empty rather than showing a stray date. */
+  event_date?: string | null;
 };
+
+/** The built-in template for a certification kind. */
+export function defaultTemplateFor(kind: CourseKind | undefined): string {
+  return kind === "seminar"
+    ? SEMINAR_CERTIFICATE_TEMPLATE
+    : DEFAULT_CERTIFICATE_TEMPLATE;
+}
 
 function escapeXml(value: string): string {
   return value
@@ -31,11 +50,28 @@ function escapeXml(value: string): string {
 }
 
 function formatLongDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return toDate(iso).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+}
+
+/**
+ * Parses a certificate date. `completion_date` is a full ISO timestamp, but
+ * `event_date` comes from a Postgres `date` column as "YYYY-MM-DD", which
+ * `new Date()` reads as UTC midnight — that renders as the previous day in any
+ * negative-offset timezone. Date-only strings are therefore built as local
+ * midnight so the printed day always matches the day the admin entered.
+ */
+function toDate(value: string): Date {
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!dateOnly) return new Date(value);
+  return new Date(
+    Number(dateOnly[1]),
+    Number(dateOnly[2]) - 1,
+    Number(dateOnly[3]),
+  );
 }
 
 /** Max topics per row before wrapping onto a new line. */
@@ -116,11 +152,15 @@ function applySubstitutions(
   const courseTitle = escapeXml(data.course_title);
   const topicsText = topicsMarkup(data.topics);
   const completion = escapeXml(formatLongDate(data.completion_date));
+  const eventDate = data.event_date
+    ? escapeXml(formatLongDate(data.event_date))
+    : "";
   const certificateId = escapeXml(data.certificate_number);
   const verifyUrl = escapeXml(data.verification_url);
   const issuer = escapeXml(ISSUER_NAME);
 
   return template
+    .replaceAll("{{event_date}}", eventDate)
     // Preferred vocab (per docs/CERTIFICATE-OUTPUT.md)
     .replaceAll("{{participant_name}}", candidate)
     .replaceAll("{{certificate_display_name}}", candidate)
@@ -141,13 +181,14 @@ function applySubstitutions(
 /**
  * Renders the certificate SVG. If `templateSvg` is provided (e.g. an admin-
  * defined SVG stored on `certificate_templates`), it's used; otherwise the
- * built-in default template from `./templates.ts` is used.
+ * built-in template for `data.kind` is used — the course template from
+ * `./templates.ts`, or the seminar variant from `./seminar-template.ts`.
  */
 export async function renderCertificateSvg(
   data: CertificateRenderData,
   templateSvg?: string | null,
 ): Promise<string> {
   const qr = await qrSvgFor(data.verification_url);
-  const template = templateSvg ?? DEFAULT_CERTIFICATE_TEMPLATE;
+  const template = templateSvg ?? defaultTemplateFor(data.kind);
   return applySubstitutions(template, data, qr);
 }

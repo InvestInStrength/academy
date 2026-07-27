@@ -16,6 +16,10 @@ export type Json =
   | Json[];
 
 export type QuestionType = "single_choice" | "multiple_choice";
+/** A `courses` row is either a multi-module course or a single-event seminar.
+ * Both certify identically; the kind picks the certificate template and decides
+ * whether topics are printed. See `supabase/migrations/0007_seminars.sql`. */
+export type CourseKind = "course" | "seminar";
 export type AssignmentStatus = "not_started" | "in_progress" | "passed" | "failed";
 export type CertificateStatus = "valid" | "revoked";
 
@@ -96,6 +100,9 @@ export type Database = {
       courses: {
         Row: {
           id: string;
+          kind: CourseKind;
+          event_date: string | null;
+          certificate_template_id: string | null;
           title: string;
           title_de: string | null;
           title_en: string | null;
@@ -108,6 +115,9 @@ export type Database = {
         };
         Insert: {
           id?: string;
+          kind?: CourseKind;
+          event_date?: string | null;
+          certificate_template_id?: string | null;
           title: string;
           title_de?: string | null;
           title_en?: string | null;
@@ -120,6 +130,9 @@ export type Database = {
         };
         Update: {
           id?: string;
+          kind?: CourseKind;
+          event_date?: string | null;
+          certificate_template_id?: string | null;
           title?: string;
           title_de?: string | null;
           title_en?: string | null;

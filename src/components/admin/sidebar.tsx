@@ -12,16 +12,15 @@ type NavLink = {
   children?: NavLink[];
 };
 
+// Kurse and Seminare are two kinds of the same thing and both own questions and
+// tests, so the question pool and the tests sit alongside them as their own
+// entries rather than nested under one of the two.
 const baseLinks: NavLink[] = [
   { href: "/admin", labelKey: "nav.dashboard" },
-  {
-    href: "/admin/courses",
-    labelKey: "nav.courses",
-    children: [
-      { href: "/admin/questions", labelKey: "nav.questions" },
-      { href: "/admin/questionnaires", labelKey: "nav.questionnaires" },
-    ],
-  },
+  { href: "/admin/courses", labelKey: "nav.courses" },
+  { href: "/admin/seminars", labelKey: "nav.seminars" },
+  { href: "/admin/questions", labelKey: "nav.questions" },
+  { href: "/admin/questionnaires", labelKey: "nav.questionnaires" },
   { href: "/admin/participants", labelKey: "nav.participants" },
   { href: "/admin/certificates", labelKey: "nav.certificates" },
   { href: "/admin/settings", labelKey: "nav.settings" },
@@ -32,9 +31,23 @@ const superadminLinks: NavLink[] = [
   { href: "/admin/settings/language", labelKey: "nav.language" },
 ];
 
+/** Settings subpages that get their own top-level nav entry, so the Settings
+ * row must NOT also light up for them. Everything else under /admin/settings
+ * (e.g. the certificate templates library) is reached from the Settings page and
+ * highlights it. */
+const SETTINGS_OWN_ENTRIES = ["/admin/settings/admins", "/admin/settings/language"];
+
 function isActive(pathname: string, href: string): boolean {
   if (href === "/admin") return pathname === "/admin";
-  if (href === "/admin/settings") return pathname === "/admin/settings";
+  if (href === "/admin/settings") {
+    return (
+      pathname === "/admin/settings" ||
+      (pathname.startsWith("/admin/settings/") &&
+        !SETTINGS_OWN_ENTRIES.some(
+          (own) => pathname === own || pathname.startsWith(`${own}/`),
+        ))
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

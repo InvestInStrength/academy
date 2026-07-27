@@ -2,7 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 
-import type { Course, Question, Questionnaire } from "@/types/database";
+import type { Question, Questionnaire } from "@/types/database";
 import { emptyFormState } from "@/lib/form";
 import { useT } from "@/lib/i18n/client";
 import { Field } from "@/components/ui/field";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { CourseOptions, type CourseOption } from "@/components/admin/course-options";
 import { createQuestionnaire, updateQuestionnaire } from "./actions";
 
 type SelectableQuestion = Pick<
@@ -22,7 +23,7 @@ type SelectableQuestion = Pick<
 >;
 
 type Props = {
-  courses: Pick<Course, "id" | "title">[];
+  courses: CourseOption[];
   questions: SelectableQuestion[];
   questionnaire?: Questionnaire;
   initialQuestionIds?: string[];
@@ -166,11 +167,7 @@ export function QuestionnaireForm({
             required
           >
             <option value="">{t("admin.forms.field.select_course")}</option>
-            {courses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.title}
-              </option>
-            ))}
+            <CourseOptions courses={courses} />
           </Select>
         </Field>
 

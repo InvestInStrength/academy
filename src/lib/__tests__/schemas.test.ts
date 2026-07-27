@@ -7,12 +7,54 @@ import { questionnaireSchema } from "@/app/(dashboard)/admin/questionnaires/sche
 const UUID = "11111111-1111-1111-1111-111111111111";
 
 describe("courseSchema", () => {
+  const course = { kind: "course" as const, title: "Course", active: true };
+
   it("accepts a valid course", () => {
-    expect(courseSchema.safeParse({ title: "Course", active: true }).success).toBe(true);
+    expect(courseSchema.safeParse(course).success).toBe(true);
   });
 
   it("rejects an empty title", () => {
-    expect(courseSchema.safeParse({ title: "  ", active: true }).success).toBe(false);
+    expect(courseSchema.safeParse({ ...course, title: "  " }).success).toBe(false);
+  });
+
+  it("rejects an unknown kind", () => {
+    expect(courseSchema.safeParse({ ...course, kind: "workshop" }).success).toBe(
+      false,
+    );
+  });
+
+  it("accepts a seminar with an event date", () => {
+    const parsed = courseSchema.safeParse({
+      ...course,
+      kind: "seminar",
+      event_date: "2026-03-12",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("treats an empty event date as absent rather than invalid", () => {
+    // An untouched `<input type="date">` posts "", which must not fail
+    // validation — the action stores null.
+    const parsed = courseSchema.safeParse({
+      ...course,
+      kind: "seminar",
+      event_date: "",
+    });
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data.event_date).toBeUndefined();
+  });
+
+  it("rejects a malformed event date", () => {
+    expect(
+      courseSchema.safeParse({ ...course, kind: "seminar", event_date: "12.03.2026" })
+        .success,
+    ).toBe(false);
+  });
+
+  it("rejects a certificate template id that is not a uuid", () => {
+    expect(
+      courseSchema.safeParse({ ...course, certificate_template_id: "nope" }).success,
+    ).toBe(false);
   });
 });
 

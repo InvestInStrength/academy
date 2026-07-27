@@ -6,9 +6,11 @@ import { PageHeader } from "@/components/admin/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 
+type Supabase = Awaited<ReturnType<typeof requireAdmin>>["supabase"];
+
 async function countRows(
-  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
-  table: "courses" | "questions" | "questionnaires" | "participants",
+  supabase: Supabase,
+  table: "questions" | "questionnaires" | "participants",
 ): Promise<number> {
   const { count } = await supabase
     .from(table)
@@ -16,19 +18,34 @@ async function countRows(
   return count ?? 0;
 }
 
+/** Courses and seminars live in the same table, split by `kind`. */
+async function countCourses(
+  supabase: Supabase,
+  kind: "course" | "seminar",
+): Promise<number> {
+  const { count } = await supabase
+    .from("courses")
+    .select("*", { count: "exact", head: true })
+    .eq("kind", kind);
+  return count ?? 0;
+}
+
 export default async function AdminDashboardPage() {
   const { supabase } = await requireAdmin();
   const { t } = await getServerT();
 
-  const [courses, questions, questionnaires, participants] = await Promise.all([
-    countRows(supabase, "courses"),
-    countRows(supabase, "questions"),
-    countRows(supabase, "questionnaires"),
-    countRows(supabase, "participants"),
-  ]);
+  const [courses, seminars, questions, questionnaires, participants] =
+    await Promise.all([
+      countCourses(supabase, "course"),
+      countCourses(supabase, "seminar"),
+      countRows(supabase, "questions"),
+      countRows(supabase, "questionnaires"),
+      countRows(supabase, "participants"),
+    ]);
 
   const stats = [
     { label: t("nav.courses"), value: courses, href: "/admin/courses" },
+    { label: t("nav.seminars"), value: seminars, href: "/admin/seminars" },
     { label: t("nav.questions"), value: questions, href: "/admin/questions" },
     {
       label: t("nav.questionnaires"),
@@ -45,7 +62,7 @@ export default async function AdminDashboardPage() {
         description={t("admin.dashboard.description")}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         {stats.map((stat) => (
           <Link
             key={stat.label}
@@ -71,6 +88,9 @@ export default async function AdminDashboardPage() {
           </span>
           <ButtonLink href="/admin/courses" size="sm" variant="outline">
             {t("admin.dashboard.manage_courses")}
+          </ButtonLink>
+          <ButtonLink href="/admin/seminars" size="sm" variant="outline">
+            {t("admin.dashboard.manage_seminars")}
           </ButtonLink>
           <ButtonLink href="/admin/questions" size="sm" variant="outline">
             {t("admin.dashboard.build_questions")}

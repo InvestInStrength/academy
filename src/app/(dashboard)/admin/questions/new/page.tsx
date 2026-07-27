@@ -17,7 +17,7 @@ export default async function NewQuestionPage() {
   const [{ data: courseData }, { data: topicData }] = await Promise.all([
     supabase
       .from("courses")
-      .select("id, title, title_de, title_en")
+      .select("id, title, title_de, title_en, kind")
       .order("title"),
     supabase
       .from("course_topics")
@@ -25,9 +25,12 @@ export default async function NewQuestionPage() {
       .order("sort_order"),
   ]);
 
+  // Questions and tests belong to a course OR a seminar; the picker groups them
+  // by kind so the two never get confused.
   const courses = (courseData ?? []).map((c) => ({
     id: c.id,
     title: pickLocalized(c, "title", locale) ?? c.title,
+    kind: c.kind,
   }));
   const topics = (topicData ?? []).map((t) => ({
     id: t.id,

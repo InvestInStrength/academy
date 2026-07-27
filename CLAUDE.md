@@ -2,11 +2,17 @@
 
 # Invest in Strength — Certification Platform
 
-Standalone certification management platform. Admins build courses, topics, a
-question bank, and questionnaires; candidates take assessments via a personal
-link and receive a verifiable certificate. **The central object is the
+Standalone certification management platform. Admins build courses and seminars,
+topics, a question bank, and questionnaires; candidates take assessments via a
+personal link and receive a verifiable certificate. **The central object is the
 certification _assignment_ (one participant + one questionnaire + one token), not
 the questionnaire — do not treat this as a generic quiz app.**
+
+**Two certification kinds, one table.** A `courses` row is either a multi-module
+`course` or a single-event `seminar` (`courses.kind`). They certify through the
+exact same chain (topics → questions → questionnaire → assignment → attempt →
+certificate); only the admin section, the copy, the event date and the
+certificate template differ. See `docs/SEMINARS.md` before touching either.
 
 ## Stack
 - Next.js 16 (App Router) + React 19, TypeScript (strict)
@@ -66,6 +72,9 @@ the questionnaire — do not treat this as a generic quiz app.**
   - `0002_platform_settings_and_attempt_language.sql` — Slice 7a multilanguage
     foundation (typed `platform_settings` single-row table; `attempts.language`
     frozen at attempt-start).
+  - `0007_seminars.sql` — the Seminar certification kind. Adds `courses.kind`
+    (`course` | `seminar`), `courses.event_date` (seminars only, printed on the
+    certificate) and `courses.certificate_template_id` (per-seminar artwork).
   - `0003_localized_content_columns.sql` — Slice 7b. Adds `_de`/`_en` text
     columns to `courses`, `course_topics`, `questions`, `question_options`,
     `questionnaires`. Backfills `_de` from the legacy column. Updates

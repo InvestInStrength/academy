@@ -11,7 +11,13 @@ import {
 } from "@/lib/certification/email-verification-data";
 import type { AnswerMap } from "@/lib/certification/attempt-progress-core";
 import { startOrResumeAttemptWith } from "@/lib/certification/attempt-lifecycle-core";
-import type { AssignmentStatus, Json, Locale, QuestionType } from "@/types/database";
+import type {
+  AssignmentStatus,
+  CourseKind,
+  Json,
+  Locale,
+  QuestionType,
+} from "@/types/database";
 import {
   buildRecommendations,
   gradeAttempt,
@@ -100,6 +106,10 @@ export type CertificateSnapshot = {
   completion_date: string;
   verification_url: string;
   svg: string;
+  /** Optional: snapshots frozen before seminars existed have neither field, so
+   * every reader must treat a missing `kind` as "course". */
+  kind?: CourseKind;
+  event_date?: string | null;
 };
 
 export type CertificateAssetUrls = {

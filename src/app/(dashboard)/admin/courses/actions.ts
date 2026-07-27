@@ -6,14 +6,37 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
+import { basePathFor, messagePrefixFor } from "./shared";
 import { courseSchema } from "./schema";
+
+/**
+ * Server actions for both certification kinds. `courses` rows are either a
+ * multi-module course or a single-event seminar (`kind`), surfaced under
+ * /admin/courses and /admin/seminars respectively — same table, same actions,
+ * different section.
+ */
+
+/** Revalidates both sections. A record only ever appears in one of them, but
+ * revalidating both is a single cheap call and removes any chance of a stale
+ * list after an edit. */
+function revalidateBoth(id?: string): void {
+  revalidatePath("/admin/courses");
+  revalidatePath("/admin/seminars");
+  if (id) {
+    revalidatePath(`/admin/courses/${id}`);
+    revalidatePath(`/admin/seminars/${id}`);
+  }
+}
 
 function parseCourseForm(formData: FormData) {
   return courseSchema.safeParse({
+    kind: formData.get("kind"),
     title: formData.get("title"),
     title_en: formData.get("title_en") || undefined,
     description: formData.get("description") || undefined,
     description_en: formData.get("description_en") || undefined,
+    event_date: formData.get("event_date") ?? undefined,
+    certificate_template_id: formData.get("certificate_template_id") ?? undefined,
     active: formData.get("active") === "on",
   });
 }
@@ -42,23 +65,28 @@ export async function createCourse(
   const { data, error } = await supabase
     .from("courses")
     .insert({
+      kind: d.kind,
       title: d.title,
       title_de: d.title,
       title_en: nullOrText(d.title_en),
       description,
       description_de: description,
       description_en: nullOrText(d.description_en),
+      // The DB rejects an event date on a course; keep the write consistent
+      // with that rather than relying on the constraint to catch it.
+      event_date: d.kind === "seminar" ? nullOrText(d.event_date) : null,
+      certificate_template_id: nullOrText(d.certificate_template_id),
       active: d.active,
     })
     .select("id")
     .single();
 
   if (error || !data) {
-    return { message: t("admin.courses.could_not_create") };
+    return { message: t(`${messagePrefixFor(d.kind)}.could_not_create`) };
   }
 
-  revalidatePath("/admin/courses");
-  redirect(`/admin/courses/${data.id}`);
+  revalidateBoth();
+  redirect(`${basePathFor(d.kind)}/${data.id}`);
 }
 
 export async function updateCourse(
@@ -81,6 +109,19 @@ export async function updateCourse(
     };
   }
 
+  // `kind` is immutable: read the stored value instead of trusting the posted
+  // one, so a record can never jump between the two admin sections (which would
+  // also change which certificate template its future certificates use).
+  const { data: existing } = await supabase
+    .from("courses")
+    .select("kind")
+    .eq("id", id)
+    .maybeSingle();
+  if (!existing) {
+    return { message: t("validation.generic_error") };
+  }
+  const kind = existing.kind;
+
   const d = parsed.data;
   const description = nullOrText(d.description);
   const { error } = await supabase
@@ -92,17 +133,19 @@ export async function updateCourse(
       description,
       description_de: description,
       description_en: nullOrText(d.description_en),
+      event_date: kind === "seminar" ? nullOrText(d.event_date) : null,
+      certificate_template_id: nullOrText(d.certificate_template_id),
       active: d.active,
     })
     .eq("id", id);
 
+  const p = messagePrefixFor(kind);
   if (error) {
-    return { message: t("admin.courses.could_not_save") };
+    return { message: t(`${p}.could_not_save`) };
   }
 
-  revalidatePath("/admin/courses");
-  revalidatePath(`/admin/courses/${id}`);
-  return { ok: true, message: t("admin.courses.saved") };
+  revalidateBoth(id);
+  return { ok: true, message: t(`${p}.saved`) };
 }
 
 export async function toggleCourseActive(formData: FormData): Promise<void> {
@@ -113,8 +156,7 @@ export async function toggleCourseActive(formData: FormData): Promise<void> {
   if (!id) return;
 
   await supabase.from("courses").update({ active }).eq("id", id);
-  revalidatePath("/admin/courses");
-  revalidatePath(`/admin/courses/${id}`);
+  revalidateBoth(id);
 }
 
 export async function deleteCourse(
@@ -126,6 +168,12 @@ export async function deleteCourse(
 
   const id = String(formData.get("id") ?? "");
   if (!id) return { message: t("validation.generic_error") };
+
+  const { data: existing } = await supabase
+    .from("courses")
+    .select("kind")
+    .eq("id", id)
+    .maybeSingle();
 
   // Only unused courses may be hard-deleted; otherwise deactivate.
   const [{ count: questionCount }, { count: questionnaireCount }] =
@@ -140,15 +188,16 @@ export async function deleteCourse(
         .eq("course_id", id),
     ]);
 
+  const p = messagePrefixFor(existing?.kind ?? "course");
   if ((questionCount ?? 0) > 0 || (questionnaireCount ?? 0) > 0) {
-    return { message: t("admin.courses.cannot_delete_with_questions") };
+    return { message: t(`${p}.cannot_delete_with_questions`) };
   }
 
   const { error } = await supabase.from("courses").delete().eq("id", id);
   if (error) {
-    return { message: t("admin.courses.could_not_delete") };
+    return { message: t(`${p}.could_not_delete`) };
   }
 
-  revalidatePath("/admin/courses");
-  redirect("/admin/courses");
+  revalidateBoth();
+  redirect(basePathFor(existing?.kind ?? "course"));
 }

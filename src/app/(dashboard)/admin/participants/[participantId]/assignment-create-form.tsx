@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState, type FormEvent } from "react";
 
+import type { CourseKind } from "@/types/database";
 import { emptyFormState } from "@/lib/form";
 import { useT } from "@/lib/i18n/client";
 import { Field } from "@/components/ui/field";
@@ -11,7 +12,14 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createAssignment } from "../actions";
 
-type QuestionnaireOption = { id: string; title: string; course_id: string };
+type QuestionnaireOption = {
+  id: string;
+  title: string;
+  course_id: string;
+  /** Kind of the questionnaire's course. A seminar certificate never lists
+   * topics, so the picker below is pointless for one and is hidden. */
+  kind: CourseKind;
+};
 type TopicOption = { id: string; title: string; course_id: string };
 
 type Props = {
@@ -32,10 +40,12 @@ export function AssignmentCreateForm({
   const [questionnaireId, setQuestionnaireId] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const courseId = useMemo(
-    () => questionnaires.find((q) => q.id === questionnaireId)?.course_id ?? "",
+  const selectedQuestionnaire = useMemo(
+    () => questionnaires.find((q) => q.id === questionnaireId),
     [questionnaires, questionnaireId],
   );
+  const courseId = selectedQuestionnaire?.course_id ?? "";
+  const isSeminar = selectedQuestionnaire?.kind === "seminar";
   const courseTopics = useMemo(
     () => topics.filter((topic) => topic.course_id === courseId),
     [topics, courseId],
@@ -97,6 +107,7 @@ export function AssignmentCreateForm({
         </Select>
       </Field>
 
+      {isSeminar ? null : (
       <div className="space-y-2">
         <Label>
           {t("admin.assignments.certificate_topics")} ({orderedSelected.length})
@@ -127,6 +138,7 @@ export function AssignmentCreateForm({
           </ul>
         )}
       </div>
+      )}
 
       {state.message && (
         <FormMessage tone={state.ok ? "success" : "error"}>

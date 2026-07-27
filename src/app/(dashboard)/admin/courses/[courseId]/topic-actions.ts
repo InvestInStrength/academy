@@ -7,6 +7,16 @@ import { getServerT } from "@/lib/i18n";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { topicSchema } from "./topic-schema";
 
+/** Topics belong to a `courses` row, which is surfaced under /admin/courses or
+ * /admin/seminars depending on its kind. The topic actions don't know which, so
+ * they revalidate both — one extra cheap call instead of threading the kind
+ * through every form. */
+function revalidateOwner(courseId: string): void {
+  if (!courseId) return;
+  revalidatePath(`/admin/courses/${courseId}`);
+  revalidatePath(`/admin/seminars/${courseId}`);
+}
+
 function parseTopicForm(formData: FormData) {
   return topicSchema.safeParse({
     course_id: formData.get("course_id"),
@@ -51,7 +61,7 @@ export async function createTopic(
     return { message: t("admin.topics.could_not_create") };
   }
 
-  revalidatePath(`/admin/courses/${parsed.data.course_id}`);
+  revalidateOwner(parsed.data.course_id);
   return { ok: true, message: t("admin.topics.added") };
 }
 
@@ -89,7 +99,7 @@ export async function updateTopic(
     return { message: t("admin.topics.could_not_save") };
   }
 
-  revalidatePath(`/admin/courses/${parsed.data.course_id}`);
+  revalidateOwner(parsed.data.course_id);
   return { ok: true, message: t("admin.topics.saved") };
 }
 
@@ -102,7 +112,7 @@ export async function toggleTopicActive(formData: FormData): Promise<void> {
   if (!id) return;
 
   await supabase.from("course_topics").update({ active }).eq("id", id);
-  if (courseId) revalidatePath(`/admin/courses/${courseId}`);
+  revalidateOwner(courseId);
 }
 
 export async function deleteTopic(
@@ -130,6 +140,6 @@ export async function deleteTopic(
     return { message: t("admin.topics.could_not_delete") };
   }
 
-  if (courseId) revalidatePath(`/admin/courses/${courseId}`);
+  revalidateOwner(courseId);
   return { ok: true, message: t("admin.topics.deleted") };
 }

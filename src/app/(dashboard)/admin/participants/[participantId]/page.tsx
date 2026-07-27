@@ -40,6 +40,7 @@ export default async function ParticipantDetailPage({
     { data: assignmentData },
     { data: questionnaireData },
     { data: topicData },
+    { data: courseKindData },
     { data: historyData },
     { data: adminData },
   ] = await Promise.all([
@@ -56,6 +57,7 @@ export default async function ParticipantDetailPage({
       .from("course_topics")
       .select("id, title, title_de, title_en, course_id")
       .order("sort_order"),
+    supabase.from("courses").select("id, kind"),
     supabase
       .from("account_history")
       .select("*")
@@ -63,6 +65,12 @@ export default async function ParticipantDetailPage({
       .order("created_at", { ascending: false }),
     supabase.from("admin_profiles").select("id, email"),
   ]);
+
+  // A seminar certificate never lists topics, so the assignment UI hides the
+  // topic picker for one — resolved via the questionnaire's course.
+  const courseKind = new Map(
+    (courseKindData ?? []).map((c) => [c.id, c.kind]),
+  );
 
   const assignments = (assignmentData ?? []) as Pick<
     CertificationAssignment,
@@ -140,6 +148,7 @@ export default async function ParticipantDetailPage({
             title: pickLocalized(q, "title", locale) ?? q.title,
             course_id: q.course_id,
             active: q.active,
+            kind: courseKind.get(q.course_id) ?? "course",
           }))}
           topics={(topicData ?? []).map((tp) => ({
             id: tp.id,

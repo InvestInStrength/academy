@@ -21,7 +21,7 @@ export default async function QuestionnairesPage() {
         .from("questionnaires")
         .select("*")
         .order("created_at", { ascending: false }),
-      supabase.from("courses").select("id, title, title_de, title_en"),
+      supabase.from("courses").select("id, title, title_de, title_en, kind"),
       supabase.from("questionnaire_questions").select("questionnaire_id"),
     ]);
 
@@ -32,6 +32,9 @@ export default async function QuestionnairesPage() {
       pickLocalized(c, "title", locale) ?? c.title,
     ]),
   );
+  // Tests hang off a course OR a seminar; mark the latter so the list is
+  // unambiguous when both kinds share similar titles.
+  const courseKind = new Map((courseData ?? []).map((c) => [c.id, c.kind]));
 
   const questionCount = new Map<string, number>();
   for (const row of qqData ?? []) {
@@ -96,6 +99,11 @@ export default async function QuestionnairesPage() {
                     </td>
                     <td className="px-5 py-3 text-slate-600">
                       {courseTitle.get(questionnaire.course_id) ?? "—"}
+                      {courseKind.get(questionnaire.course_id) === "seminar" && (
+                        <Badge tone="neutral" className="ml-2">
+                          {t("common.seminar")}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-slate-600">
                       {questionnaire.passing_percentage}%

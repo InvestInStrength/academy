@@ -3,7 +3,6 @@
 import { useActionState, useMemo, useState } from "react";
 
 import type {
-  Course,
   CourseTopic,
   Question,
   QuestionOption,
@@ -19,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { CourseOptions, type CourseOption } from "@/components/admin/course-options";
 import { createQuestion, updateQuestion } from "./actions";
 
 type OptionRow = {
@@ -29,7 +29,7 @@ type OptionRow = {
 };
 
 type Props = {
-  courses: Pick<Course, "id" | "title">[];
+  courses: CourseOption[];
   topics: Pick<CourseTopic, "id" | "title" | "course_id">[];
   question?: Question;
   initialOptions?: QuestionOption[];
@@ -171,11 +171,7 @@ export function QuestionForm({
             required
           >
             <option value="">{t("admin.forms.field.select_course")}</option>
-            {courses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.title}
-              </option>
-            ))}
+            <CourseOptions courses={courses} />
           </Select>
         </Field>
 

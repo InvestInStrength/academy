@@ -101,6 +101,7 @@ export default async function CandidateCertificatePage({
               svg={certificate.snapshot.svg}
               revoked={revoked}
               revokedLabel={t("candidate.certificate.revoked_overlay")}
+              alt={certificate.snapshot.course_title}
             />
           )}
 

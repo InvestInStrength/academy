@@ -32,6 +32,8 @@ export default async function VerifyPage({
   const { snapshot, status } = certificate;
   const revoked = status === "revoked";
   const preview = certificate.assets.official_png_preview;
+  // Snapshots frozen before seminars existed carry no `kind` — those are courses.
+  const isSeminar = snapshot.kind === "seminar";
 
   return (
     <div className="space-y-6">
@@ -56,6 +58,7 @@ export default async function VerifyPage({
           svg={snapshot.svg}
           revoked={revoked}
           revokedLabel={t("common.revoked")}
+          alt={snapshot.course_title}
         />
       )}
 
@@ -81,9 +84,19 @@ export default async function VerifyPage({
               <dd className="font-medium text-slate-900">{snapshot.candidate_name}</dd>
             </div>
             <div>
-              <dt className="text-slate-400">{t("verify.course_label")}</dt>
+              <dt className="text-slate-400">
+                {isSeminar ? t("verify.seminar_label") : t("verify.course_label")}
+              </dt>
               <dd className="font-medium text-slate-900">{snapshot.course_title}</dd>
             </div>
+            {isSeminar && snapshot.event_date && (
+              <div>
+                <dt className="text-slate-400">{t("verify.event_date_label")}</dt>
+                <dd className="font-medium text-slate-900">
+                  {formatLongDate(snapshot.event_date, locale)}
+                </dd>
+              </div>
+            )}
             <div>
               <dt className="text-slate-400">{t("verify.completed_label")}</dt>
               <dd className="font-medium text-slate-900">
