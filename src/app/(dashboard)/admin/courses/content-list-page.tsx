@@ -111,7 +111,13 @@ export async function ContentListPage({ kind }: { kind: CourseKind }) {
                           <div className="flex items-center justify-end gap-2">
                             <ActionButton
                               action={toggleCourseActive}
-                              hidden={{ id: course.id, active: String(!course.active) }}
+                              // `kind` travels with the click so a failure is
+                              // reported in this section's own wording.
+                              hidden={{
+                                id: course.id,
+                                active: String(!course.active),
+                                kind,
+                              }}
                             >
                               {course.active
                                 ? t("common.deactivate")

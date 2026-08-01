@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
-import { logger } from "@/lib/logger";
+import { logger, reportError } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { questionnaireSchema } from "./schema";
 
@@ -327,27 +327,52 @@ export async function updateQuestionnaire(
     : { message: t("admin.questionnaires.could_not_save_questions") };
 }
 
-export async function toggleQuestionnaireActive(formData: FormData): Promise<void> {
+export async function toggleQuestionnaireActive(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const active = formData.get("active") === "true";
-  if (!id) return;
+
+  if (!id) {
+    // The button posted without its hidden id: the click changed nothing at
+    // all, which is precisely the failure that used to leave no trace.
+    const reference = reportError(
+      "admin.questionnaire.toggle_active_missing_id",
+      new Error("toggleQuestionnaireActive received no questionnaire id"),
+      { active },
+    );
+    return {
+      message: t("admin.questionnaires.could_not_change_status", { reference }),
+    };
+  }
 
   const { error } = await supabase
     .from("questionnaires")
     .update({ active })
     .eq("id", id);
-  if (error) {
-    logger.error(
-      "admin.questionnaire.toggle_active_failed",
-      { questionnaireId: id, active },
-      error,
-    );
-  }
+  const reference = error
+    ? reportError("admin.questionnaire.toggle_active_failed", error, {
+        questionnaireId: id,
+        active,
+      })
+    : null;
 
+  // Revalidated on failure too: the row then re-renders as it really is,
+  // instead of leaving the state the click implied.
   revalidatePath("/admin/questionnaires");
   revalidatePath(`/admin/questionnaires/${id}`);
+
+  if (reference) {
+    return {
+      message: t("admin.questionnaires.could_not_change_status", { reference }),
+    };
+  }
+  // No success message on purpose — this button is clicked constantly.
+  return { ok: true };
 }
 
 export async function deleteQuestionnaire(

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
-import { logger } from "@/lib/logger";
+import { logger, reportError } from "@/lib/logger";
 import type { FormState } from "@/lib/form";
 import { sendCertificateEmail } from "@/lib/email/certificate-email";
 import type { CertificateSnapshot } from "@/lib/certification/data";
@@ -225,14 +225,18 @@ export async function sendCertificateEmailAction(
   };
 }
 
-export async function reinstateCertificate(formData: FormData): Promise<void> {
+export async function reinstateCertificate(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  if (!id) return { message: t("validation.generic_error") };
 
   const refs = await participantPathFor(supabase, id);
-  if (!refs) return;
+  if (!refs) return { message: t("admin.certificates.cert_gone") };
 
   const { error } = await supabase
     .from("certificates")
@@ -243,10 +247,19 @@ export async function reinstateCertificate(formData: FormData): Promise<void> {
       revoke_reason: null,
     })
     .eq("id", id);
-  // This action returns void, so a failure here is indistinguishable from a
-  // successful reinstatement in the UI: the log is the only record.
+  // A failed reinstatement leaves a certificate that still verifies as revoked;
+  // the admin has to know, and the reference ties the screen to the log line.
+  // Revalidate first so the row re-renders as REVOKED next to the error rather
+  // than optimistically as valid — but return before the history insert, since
+  // writing "Certificate reinstated" into an append-only timeline for something
+  // that did not happen would be a permanent lie.
   if (error) {
-    logger.error("admin.certificate.reinstate_failed", { certificateId: id }, error);
+    revalidatePath("/admin/certificates");
+    revalidatePath(`/admin/participants/${refs.participantId}`);
+    const reference = reportError("admin.certificate.reinstate_failed", error, {
+      certificateId: id,
+    });
+    return { message: t("admin.certificates.could_not_reinstate", { reference }) };
   }
 
   const { error: historyError } = await supabase.from("account_history").insert({
@@ -256,6 +269,8 @@ export async function reinstateCertificate(formData: FormData): Promise<void> {
     event_label: "Certificate reinstated",
     created_by_admin_id: user.id,
   });
+  // The certificate is valid again either way; a missing timeline row is a log
+  // matter, not a reason to tell the admin the button failed.
   if (historyError) {
     logger.error(
       "admin.certificate.history_write_failed",
@@ -266,4 +281,5 @@ export async function reinstateCertificate(formData: FormData): Promise<void> {
 
   revalidatePath("/admin/certificates");
   revalidatePath(`/admin/participants/${refs.participantId}`);
+  return { ok: true };
 }

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireSuperadmin } from "@/lib/auth/admin";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 import { getServerT } from "@/lib/i18n";
-import { logger } from "@/lib/logger";
+import { logger, reportError } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { createAdminSchema } from "./schema";
 
@@ -87,44 +87,69 @@ export async function createAdmin(
   };
 }
 
-export async function setAdminActive(formData: FormData): Promise<void> {
+export async function setAdminActive(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { user, supabase } = await requireSuperadmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const active = formData.get("active") === "true";
-  // A superadmin cannot lock themselves out.
-  if (!id || id === user.id) return;
+  if (!id) return { message: t("validation.generic_error") };
+  // A superadmin cannot lock themselves out. The list hides the buttons on your
+  // own row, so reaching this means a stale page or a hand-made request.
+  if (id === user.id) return { message: t("admin.admins.cannot_change_self") };
 
   const { error } = await supabase
     .from("admin_profiles")
     .update({ active })
     .eq("id", id);
+  // Revalidate on the failure path too, so the list re-renders from the real
+  // row rather than the one the click implied.
+  revalidatePath(ADMINS_PATH);
+
   // Silent failure here means an admin the superadmin believes is disabled can
-  // still sign in — worth an error even though the action returns void.
+  // still sign in.
   if (error) {
-    logger.error("admin.account.set_active_failed", { adminId: id, active }, error);
+    const reference = reportError("admin.account.set_active_failed", error, {
+      adminId: id,
+      active,
+    });
+    return { message: t("admin.admins.could_not_update_status", { reference }) };
   }
 
-  revalidatePath(ADMINS_PATH);
+  return { ok: true };
 }
 
-export async function setAdminRole(formData: FormData): Promise<void> {
+export async function setAdminRole(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { user, supabase } = await requireSuperadmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const raw = formData.get("role");
   const role =
     raw === "superadmin" ? "superadmin" : raw === "admin" ? "admin" : null;
+  if (!id || !role) return { message: t("validation.generic_error") };
   // Don't allow changing your own role (avoids removing the last superadmin).
-  if (!id || id === user.id || !role) return;
+  if (id === user.id) return { message: t("admin.admins.cannot_change_self") };
 
   const { error } = await supabase
     .from("admin_profiles")
     .update({ role })
     .eq("id", id);
+  revalidatePath(ADMINS_PATH);
+
   if (error) {
-    logger.error("admin.account.set_role_failed", { adminId: id, role }, error);
+    const reference = reportError("admin.account.set_role_failed", error, {
+      adminId: id,
+      role,
+    });
+    return { message: t("admin.admins.could_not_update_role", { reference }) };
   }
 
-  revalidatePath(ADMINS_PATH);
+  return { ok: true };
 }

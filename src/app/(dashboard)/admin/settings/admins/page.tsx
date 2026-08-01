@@ -89,7 +89,7 @@ export default async function AdminsPage() {
                             —
                           </span>
                         ) : (
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex flex-wrap items-start justify-end gap-2">
                             <ActionButton
                               action={setAdminRole}
                               hidden={{

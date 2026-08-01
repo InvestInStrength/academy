@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
-import { logger } from "@/lib/logger";
+import { logger, reportError } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { templateSchema } from "./schema";
 
@@ -104,28 +104,39 @@ export async function updateTemplate(
   return { ok: true, message: t("admin.templates.saved") };
 }
 
-export async function toggleTemplateActive(formData: FormData): Promise<void> {
+export async function toggleTemplateActive(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const active = formData.get("active") === "true";
-  if (!id) return;
+  if (!id) return { message: t("validation.generic_error") };
 
   const { error } = await supabase
     .from("certificate_templates")
     .update({ active })
     .eq("id", id);
-  if (error) {
-    logger.error(
-      "admin.template.toggle_active_failed",
-      { templateId: id, active },
-      error,
-    );
-  }
-
+  // Revalidate even when the write failed: the list must re-render from what
+  // the database actually holds, not from what the click implied. Skipping it
+  // on failure would leave the admin reading a stale row next to the error.
   revalidatePath("/admin/settings/templates");
   revalidatePath("/admin/courses");
   revalidatePath("/admin/seminars");
+
+  // The badge is rendered from the row, so a failed toggle used to look like a
+  // button that simply refused to move.
+  if (error) {
+    const reference = reportError("admin.template.toggle_active_failed", error, {
+      templateId: id,
+      active,
+    });
+    return { message: t("admin.templates.could_not_toggle_active", { reference }) };
+  }
+
+  return { ok: true };
 }
 
 export async function deleteTemplate(

@@ -65,7 +65,7 @@ async function sendAssignmentInvite(
     accessToken: string;
     resent?: boolean;
   },
-): Promise<boolean> {
+): Promise<{ ok: boolean; error?: string }> {
   const sent = await sendInviteEmail({
     toEmail: params.email,
     candidateName: params.candidateName,
@@ -84,7 +84,10 @@ async function sendAssignmentInvite(
     });
   }
 
-  return sent.ok;
+  // Returns the whole result, not just a boolean: the caller reports a support
+  // reference, and without the underlying reason that reference points at a log
+  // line the responder cannot act on.
+  return sent;
 }
 
 function parseParticipantForm(formData: FormData) {
@@ -346,7 +349,7 @@ export async function createAssignment(
       assessmentTitle,
       accessToken: assignment.access_token,
     });
-    message = invited
+    message = invited.ok
       ? t("admin.assignments.created_and_invited", { email: participant.email })
       : t("admin.assignments.created_invite_failed");
   }
@@ -355,13 +358,17 @@ export async function createAssignment(
   return { ok: true, message };
 }
 
-export async function toggleAssignmentActive(formData: FormData): Promise<void> {
+export async function toggleAssignmentActive(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const participantId = String(formData.get("participant_id") ?? "");
   const active = formData.get("active") === "true";
-  if (!id || !participantId) return;
+  if (!id || !participantId) return { message: t("validation.generic_error") };
 
   // Reactivating must not create a second active assignment for the same pair.
   if (active) {
@@ -378,7 +385,12 @@ export async function toggleAssignmentActive(formData: FormData): Promise<void> 
         .eq("questionnaire_id", row.questionnaire_id)
         .eq("active", true)
         .neq("id", id);
-      if ((count ?? 0) > 0) return; // conflict — leave as-is
+      // The conflict rule is unchanged; only the silence is. This used to be a
+      // bare `return`: the row stayed inactive, the page revalidated, and the
+      // admin had no way to tell a refusal from a broken button.
+      if ((count ?? 0) > 0) {
+        return { message: t("admin.assignments.cannot_reactivate_duplicate") };
+      }
     }
   }
 
@@ -397,14 +409,28 @@ export async function toggleAssignmentActive(formData: FormData): Promise<void> 
   }
 
   revalidatePath(`/admin/participants/${participantId}`);
+
+  if (error) {
+    const reference = reportError("assignment_active_toggle_failed", error, {
+      assignmentId: id,
+      active,
+    });
+    return { message: t("admin.assignments.could_not_toggle_active", { reference }) };
+  }
+
+  return { ok: true };
 }
 
-export async function regenerateAccessLink(formData: FormData): Promise<void> {
+export async function regenerateAccessLink(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const participantId = String(formData.get("participant_id") ?? "");
-  if (!id || !participantId) return;
+  if (!id || !participantId) return { message: t("validation.generic_error") };
 
   const token = randomBytes(24).toString("hex");
   const { error } = await supabase
@@ -422,31 +448,50 @@ export async function regenerateAccessLink(formData: FormData): Promise<void> {
   }
 
   revalidatePath(`/admin/participants/${participantId}`);
+
+  // Rotation is all-or-nothing at the DB level, so a failure leaves the old
+  // token in place — the message says so, because an admin who has already
+  // told the candidate "your old link is dead" needs to know it isn't.
+  if (error) {
+    const reference = reportError("access_link_regenerate_failed", error, {
+      assignmentId: id,
+    });
+    return { message: t("admin.assignments.could_not_regenerate_link", { reference }) };
+  }
+
+  return { ok: true };
 }
 
 /** Re-sends the "start your certification" invite for an existing assignment.
- * Best-effort and silent (ActionButton); no-ops when no email is on file. */
-export async function resendInvite(formData: FormData): Promise<void> {
+ * Reports both silent-until-now outcomes: no email on file, and a failed send. */
+export async function resendInvite(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { supabase, user } = await requireAdmin();
-  const { locale } = await getServerT();
+  const { t, locale } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const participantId = String(formData.get("participant_id") ?? "");
-  if (!id || !participantId) return;
+  if (!id || !participantId) return { message: t("validation.generic_error") };
 
   const { data: assignment } = await supabase
     .from("certification_assignments")
     .select("id, access_token, questionnaire_id")
     .eq("id", id)
     .maybeSingle();
-  if (!assignment) return;
+  if (!assignment) return { message: t("admin.assignments.assignment_gone") };
 
   const { data: participant } = await supabase
     .from("participants")
     .select("full_name, email")
     .eq("id", participantId)
     .maybeSingle();
-  if (!participant?.email) return;
+  // The button is hidden when the profile has no email, so reaching this means
+  // the page is stale — reporting it beats a click that does nothing.
+  if (!participant?.email) {
+    return { message: t("admin.assignments.resend_no_email") };
+  }
 
   const { data: questionnaire } = await supabase
     .from("questionnaires")
@@ -457,7 +502,7 @@ export async function resendInvite(formData: FormData): Promise<void> {
     ? pickLocalized(questionnaire, "title", locale) ?? questionnaire.title
     : "";
 
-  await sendAssignmentInvite(supabase, locale, {
+  const sent = await sendAssignmentInvite(supabase, locale, {
     participantId,
     assignmentId: assignment.id,
     adminId: user.id,
@@ -469,6 +514,23 @@ export async function resendInvite(formData: FormData): Promise<void> {
   });
 
   revalidatePath(`/admin/participants/${participantId}`);
+
+  // A failed send used to look exactly like a sent one, which is the worst
+  // case here: the admin stops chasing a candidate who never got the mail.
+  // The send's own reason is carried into this log line so the reference the
+  // admin quotes resolves to something actionable — the mailer logs separately
+  // and shares no id with this action, so a synthesised message would leave the
+  // responder correlating by timestamp.
+  if (!sent.ok) {
+    const reference = reportError(
+      "invite_resend_failed",
+      new Error(sent.error ?? "sendInviteEmail reported a failed send"),
+      { assignmentId: assignment.id },
+    );
+    return { message: t("admin.assignments.resend_failed", { reference }) };
+  }
+
+  return { ok: true };
 }
 
 export async function manualPass(
@@ -685,14 +747,18 @@ export async function reissueCertificate(
 }
 
 /** Re-renders + re-uploads the certificate's official PDF + PNG preview.
- * Preserves the certificate number/token (identity unchanged). Best-effort. */
+ * Preserves the certificate number/token (identity unchanged). Best-effort:
+ * the certificate stays valid when generation fails, but the admin is told. */
 export async function regenerateCertificateAssets(
+  _prevState: FormState,
   formData: FormData,
-): Promise<void> {
+): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
+
   const certificateId = String(formData.get("certificate_id") ?? "");
   const participantId = String(formData.get("participant_id") ?? "");
-  if (!certificateId) return;
+  if (!certificateId) return { message: t("validation.generic_error") };
 
   // Authorization: confirm the admin's RLS-scoped client can see this cert.
   const { data: cert } = await supabase
@@ -700,10 +766,25 @@ export async function regenerateCertificateAssets(
     .select("id")
     .eq("id", certificateId)
     .maybeSingle();
-  if (!cert) return;
+  if (!cert) return { message: t("admin.assignments.certificate_gone") };
 
-  await generateCertificateAssets(certificateId);
+  const result = await generateCertificateAssets(certificateId);
   if (participantId) revalidatePath(`/admin/participants/${participantId}`);
+
+  // generateCertificateAssets never throws and both callers used to discard its
+  // result, so a render or Storage failure left the files stuck on "not
+  // generated yet" with no explanation. It logs the cause itself; the reference
+  // ties this screen to that log line.
+  if (!result.ok) {
+    const reference = reportError(
+      "certificate_assets_regenerate_failed",
+      new Error(result.error ?? "generateCertificateAssets reported a failure"),
+      { certificateId },
+    );
+    return { message: t("admin.assignments.could_not_regenerate_assets", { reference }) };
+  }
+
+  return { ok: true };
 }
 
 export async function updateAssignmentTopics(

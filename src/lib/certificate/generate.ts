@@ -17,10 +17,14 @@ import { assetPath, uploadCertificateAsset } from "./storage";
  * ID + verification token stay valid; a failure surfaces as "pending/failed"
  * in the UI. Service-role only (Storage write + admin-RLS table).
  *
- * Both callers discard the returned error, so every failure is written to the
- * structured log here. The `certificate_generation_failed` history event is
- * additional, not primary: it needs a participant to hang off, and the failure
- * that broke generation may be the very reason we never resolved one.
+ * `ok` and `error` are part of the contract, not decoration:
+ * `regenerateCertificateAssets` (admin/participants/actions.ts) branches on
+ * them to show the admin why a regeneration failed. Keep populating both.
+ * Every failure is ALSO written to the structured log here, because the other
+ * caller (issueCertificate) is best-effort and ignores the result. The
+ * `certificate_generation_failed` history event is additional, not primary: it
+ * needs a participant to hang off, and the failure that broke generation may be
+ * the very reason we never resolved one.
  */
 
 type SnapshotShape = { svg?: unknown } | null;

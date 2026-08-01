@@ -189,7 +189,7 @@ export function AssignmentsSection({
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                       {t("admin.assignments.personal_link")}
                     </p>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-start gap-2">
                       <code className="flex-1 break-all rounded bg-slate-50 px-2 py-1 text-xs text-slate-700">
                         {link}
                       </code>
@@ -265,7 +265,7 @@ export function AssignmentsSection({
                                 {t("admin.assignments.verify")}
                               </a>
                             </div>
-                            <div className="flex flex-wrap items-center gap-3 text-xs">
+                            <div className="flex flex-wrap items-start gap-3 text-xs">
                               {cert.pdf_url ? (
                                 <a
                                   href={cert.pdf_url}
@@ -331,7 +331,11 @@ export function AssignmentsSection({
                     })()}
                   </div>
 
-                  <div className="mt-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                  {/* These two buttons now report failures and refusals inline
+                      beneath themselves, so the row has to wrap and top-align:
+                      a fixed-height centred row would clip the message that is
+                      the whole point of clicking. */}
+                  <div className="mt-3 flex flex-wrap items-start justify-end gap-2 border-t border-slate-100 pt-3">
                     <ActionButton
                       action={regenerateAccessLink}
                       hidden={{ id: assignment.id, participant_id: participantId }}

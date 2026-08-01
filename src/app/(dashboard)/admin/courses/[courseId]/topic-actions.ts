@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
-import { logger } from "@/lib/logger";
+import { logger, reportError } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { topicSchema } from "./topic-schema";
 
@@ -114,27 +114,49 @@ export async function updateTopic(
   return { ok: true, message: t("admin.topics.saved") };
 }
 
-export async function toggleTopicActive(formData: FormData): Promise<void> {
+export async function toggleTopicActive(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const courseId = String(formData.get("course_id") ?? "");
   const active = formData.get("active") === "true";
-  if (!id) return;
+
+  if (!id) {
+    // The button posted without its hidden id: the click changed nothing at
+    // all, which is precisely the failure that used to leave no trace.
+    const reference = reportError(
+      "admin.topic.toggle_active_missing_id",
+      new Error("toggleTopicActive received no topic id"),
+      { courseId, active },
+    );
+    return { message: t("admin.topics.could_not_change_status", { reference }) };
+  }
 
   const { error } = await supabase
     .from("course_topics")
     .update({ active })
     .eq("id", id);
-  if (error) {
-    logger.error(
-      "admin.topic.toggle_active_failed",
-      { topicId: id, courseId, active },
-      error,
-    );
-  }
+  const reference = error
+    ? reportError("admin.topic.toggle_active_failed", error, {
+        topicId: id,
+        courseId,
+        active,
+      })
+    : null;
 
+  // Revalidated on failure too: the topic then re-renders as it really is,
+  // instead of leaving the state the click implied.
   revalidateOwner(courseId);
+
+  if (reference) {
+    return { message: t("admin.topics.could_not_change_status", { reference }) };
+  }
+  // No success message on purpose — this button is clicked constantly.
+  return { ok: true };
 }
 
 export async function deleteTopic(

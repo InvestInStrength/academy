@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
-import { logger } from "@/lib/logger";
+import { logger, reportError } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { basePathFor, messagePrefixFor } from "./shared";
 import { courseSchema } from "./schema";
@@ -154,19 +154,49 @@ export async function updateCourse(
   return { ok: true, message: t(`${p}.saved`) };
 }
 
-export async function toggleCourseActive(formData: FormData): Promise<void> {
+export async function toggleCourseActive(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const { supabase } = await requireAdmin();
+  const { t } = await getServerT();
 
   const id = String(formData.get("id") ?? "");
   const active = formData.get("active") === "true";
-  if (!id) return;
+  // `kind` only selects the message namespace here — it is never written — so
+  // the posted value needs no guarding beyond this narrowing.
+  const p = messagePrefixFor(
+    formData.get("kind") === "seminar" ? "seminar" : "course",
+  );
 
-  const { error } = await supabase.from("courses").update({ active }).eq("id", id);
-  if (error) {
-    logger.error("admin.course.toggle_active_failed", { courseId: id, active }, error);
+  if (!id) {
+    // The button posted without its hidden id: the click changed nothing at
+    // all, which is precisely the failure that used to leave no trace.
+    const reference = reportError(
+      "admin.course.toggle_active_missing_id",
+      new Error("toggleCourseActive received no course id"),
+      { active },
+    );
+    return { message: t(`${p}.could_not_change_status`, { reference }) };
   }
 
+  const { error } = await supabase.from("courses").update({ active }).eq("id", id);
+  const reference = error
+    ? reportError("admin.course.toggle_active_failed", error, {
+        courseId: id,
+        active,
+      })
+    : null;
+
+  // Revalidated on failure too: the list then re-renders the row as it really
+  // is, instead of leaving the state the click implied.
   revalidateBoth(id);
+
+  if (reference) {
+    return { message: t(`${p}.could_not_change_status`, { reference }) };
+  }
+  // No success message on purpose — this button is clicked constantly.
+  return { ok: true };
 }
 
 export async function deleteCourse(
