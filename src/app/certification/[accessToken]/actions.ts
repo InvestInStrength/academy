@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { sendCertificateEmail } from "@/lib/email/certificate-email";
 import { sendVerificationEmail } from "@/lib/email/verification-email";
@@ -45,16 +46,28 @@ async function clientKey(token: string): Promise<string> {
   return `${token}:${ip}`;
 }
 
-function parseIdArray(value: FormDataEntryValue | null): string[] {
+/**
+ * Nothing in this file may log the access token, the participant's address, the
+ * verification code, answers or scores — assignment and attempt ids are the
+ * correlation handles, and they are enough to find the row.
+ */
+
+function parseIdArray(value: FormDataEntryValue | null, field: string): string[] {
   try {
     const parsed = JSON.parse(String(value ?? "[]"));
     return Array.isArray(parsed) ? parsed.map(String) : [];
-  } catch {
+  } catch (error) {
+    // Falls back to the DB order below, so grading is unaffected — but a broken
+    // payload means the attempt form shipped something malformed.
+    logger.warn("candidate.attempt.payload_parse_failed", { field }, error);
     return [];
   }
 }
 
-function parseIdMap(value: FormDataEntryValue | null): Record<string, string[]> {
+function parseIdMap(
+  value: FormDataEntryValue | null,
+  field: string,
+): Record<string, string[]> {
   try {
     const parsed = JSON.parse(String(value ?? "{}"));
     if (!parsed || typeof parsed !== "object") return {};
@@ -63,7 +76,8 @@ function parseIdMap(value: FormDataEntryValue | null): Record<string, string[]> 
       if (Array.isArray(val)) out[key] = val.map(String);
     }
     return out;
-  } catch {
+  } catch (error) {
+    logger.warn("candidate.attempt.payload_parse_failed", { field }, error);
     return {};
   }
 }
@@ -81,6 +95,7 @@ export async function submitEmail(
   const { t: tr, locale } = await getServerT();
 
   if (!(await rateLimit(`email:${await clientKey(accessToken)}`, 10, 60_000))) {
+    logger.warn("candidate.verify.rate_limited", { action: "submit_email" });
     return { message: tr("validation.too_many_attempts") };
   }
 
@@ -94,6 +109,7 @@ export async function submitEmail(
 
   const context = await getCandidateContext(accessToken);
   if (!context) {
+    logger.warn("candidate.link.unresolved", { action: "submit_email" });
     return { message: tr("candidate.email.no_link") };
   }
 
@@ -104,6 +120,11 @@ export async function submitEmail(
     locale,
   });
   if (!sent.ok) {
+    // The candidate is now stuck at the code step with a code they never got;
+    // the Resend error itself is logged inside the email module.
+    logger.error("candidate.verify.email_send_failed", {
+      assignmentId: context.assignment.id,
+    });
     return { message: tr("candidate.verify.send_failed") };
   }
 
@@ -126,6 +147,7 @@ export async function verifyEmail(
   const { t: tr } = await getServerT();
 
   if (!(await rateLimit(`verify:${await clientKey(accessToken)}`, 10, 60_000))) {
+    logger.warn("candidate.verify.rate_limited", { action: "verify_email" });
     return { message: tr("validation.too_many_attempts") };
   }
 
@@ -139,6 +161,7 @@ export async function verifyEmail(
 
   const context = await getCandidateContext(accessToken);
   if (!context) {
+    logger.warn("candidate.link.unresolved", { action: "verify_email" });
     return { message: tr("candidate.email.no_link") };
   }
 
@@ -146,6 +169,13 @@ export async function verifyEmail(
   if (result.ok) {
     redirect(`/certification/${accessToken}/attempt`);
   }
+
+  // Rejections are usually a mistyped code, but a run of them on one assignment
+  // is the only signal that a candidate is locked out of their own exam.
+  logger.warn("candidate.verify.code_rejected", {
+    assignmentId: context.assignment.id,
+    reason: result.reason,
+  });
 
   if (result.reason === "invalid") {
     return {
@@ -173,11 +203,15 @@ export async function emailMyCertificate(
   const { t: tr, locale } = await getServerT();
 
   if (!(await rateLimit(`certemail:${await clientKey(accessToken)}`, 5, 300_000))) {
+    logger.warn("candidate.certificate.rate_limited", { action: "email_certificate" });
     return { message: tr("validation.too_many_attempts") };
   }
 
   const context = await getCandidateContext(accessToken);
-  if (!context) return { message: tr("candidate.email.no_link") };
+  if (!context) {
+    logger.warn("candidate.link.unresolved", { action: "email_certificate" });
+    return { message: tr("candidate.email.no_link") };
+  }
   if (context.assignment.status !== "passed") {
     return { message: tr("candidate.actions.no_certificate_yet") };
   }
@@ -187,6 +221,12 @@ export async function emailMyCertificate(
 
   const certificate = await getCertificateForAssignment(context.assignment.id);
   if (!certificate || certificate.status !== "valid") {
+    // A passed assignment with no valid certificate is an issuance gap, not a
+    // candidate mistake.
+    logger.warn("candidate.certificate.unavailable", {
+      assignmentId: context.assignment.id,
+      status: certificate?.status ?? null,
+    });
     return { message: tr("candidate.actions.certificate_unavailable") };
   }
 
@@ -196,6 +236,10 @@ export async function emailMyCertificate(
     locale,
   });
   if (!sent.ok) {
+    logger.error("candidate.certificate.email_send_failed", {
+      assignmentId: context.assignment.id,
+      certificateNumber: certificate.snapshot.certificate_number,
+    });
     return { message: tr("candidate.actions.email_send_failed") };
   }
 
@@ -227,14 +271,29 @@ export async function saveAttemptProgress(
 ): Promise<void> {
   // Generous window: one debounced save per answer toggle on a long test.
   if (!(await rateLimit(`progress:${await clientKey(accessToken)}`, 120, 60_000))) {
+    logger.warn("candidate.attempt.progress_save_failed", { reason: "rate_limited" });
     return;
   }
 
   const context = await getCandidateContext(accessToken);
-  if (!context || !context.participant.email_confirmed) return;
+  if (!context || !context.participant.email_confirmed) {
+    // Silent by design for the candidate, but each of these means answers are
+    // no longer being autosaved — the log is the only place that shows it.
+    logger.warn("candidate.attempt.progress_save_failed", {
+      reason: context ? "email_unconfirmed" : "no_context",
+      assignmentId: context?.assignment.id,
+    });
+    return;
+  }
 
   const inProgress = await getInProgressAttempt(context.assignment.id);
-  if (!inProgress) return;
+  if (!inProgress) {
+    logger.warn("candidate.attempt.progress_save_failed", {
+      reason: "no_open_attempt",
+      assignmentId: context.assignment.id,
+    });
+    return;
+  }
 
   await persistAttemptProgress(inProgress.id, sanitizeAnswerMap(answers));
 }
@@ -244,10 +303,20 @@ export async function submitAttempt(formData: FormData): Promise<void> {
 
   const context = await getCandidateContext(accessToken);
   if (!context || !context.participant.email_confirmed) {
+    // A bounce at submit time loses a completed exam form, so every one of
+    // these redirects is worth a line even when the cause is benign.
+    logger.warn("candidate.attempt.submit_bounced", {
+      reason: context ? "email_unconfirmed" : "no_context",
+      assignmentId: context?.assignment.id,
+    });
     redirect(`/certification/${accessToken}`);
   }
 
   if (!(await rateLimit(`attempt:${await clientKey(accessToken)}`, 20, 60_000))) {
+    logger.warn("candidate.attempt.submit_bounced", {
+      reason: "rate_limited",
+      assignmentId: context.assignment.id,
+    });
     redirect(`/certification/${accessToken}?busy=1`);
   }
 
@@ -256,6 +325,10 @@ export async function submitAttempt(formData: FormData): Promise<void> {
   // materialized — never grade against a missing attempt row.
   const inProgress = await getInProgressAttempt(context.assignment.id);
   if (!inProgress) {
+    logger.warn("candidate.attempt.submit_bounced", {
+      reason: "no_open_attempt",
+      assignmentId: context.assignment.id,
+    });
     redirect(`/certification/${accessToken}/attempt`);
   }
 
@@ -267,14 +340,15 @@ export async function submitAttempt(formData: FormData): Promise<void> {
 
   // Trust the DB for which questions/options exist; the submitted order only
   // affects the recorded "what was shown", never correctness.
-  const submittedOrder = parseIdArray(formData.get("question_order")).filter((id) =>
-    byId.has(id),
-  );
+  const submittedOrder = parseIdArray(
+    formData.get("question_order"),
+    "question_order",
+  ).filter((id) => byId.has(id));
   const finalOrder =
     submittedOrder.length === loaded.length
       ? submittedOrder
       : loaded.map((q) => q.question_id);
-  const optionOrder = parseIdMap(formData.get("option_order"));
+  const optionOrder = parseIdMap(formData.get("option_order"), "option_order");
 
   const gradable: GradableQuestion[] = finalOrder.map((questionId) => {
     const question = byId.get(questionId)!;
@@ -315,15 +389,31 @@ export async function submitAttempt(formData: FormData): Promise<void> {
   );
   const recommendations = buildRecommendations(score.graded, fallbackTopicLabel);
 
-  await recordAttempt({
-    context,
-    attemptId: inProgress.id,
-    attemptNumber: inProgress.attempt_number,
-    attemptLanguage: inProgress.language,
-    score,
-    recommendations,
-    displayedQuestionOrder: finalOrder,
-  });
+  try {
+    await recordAttempt({
+      context,
+      attemptId: inProgress.id,
+      attemptNumber: inProgress.attempt_number,
+      attemptLanguage: inProgress.language,
+      score,
+      recommendations,
+      displayedQuestionOrder: finalOrder,
+    });
+  } catch (error) {
+    // Rethrown unchanged — the candidate still gets the error page they got
+    // before. This is the one write where losing a graded exam is unacceptable,
+    // so it must never fail without a trace. Never log the score itself.
+    logger.error(
+      "candidate.attempt.record_failed",
+      {
+        assignmentId: context.assignment.id,
+        attemptId: inProgress.id,
+        attemptNumber: inProgress.attempt_number,
+      },
+      error,
+    );
+    throw error;
+  }
 
   redirect(`/certification/${accessToken}/result`);
 }

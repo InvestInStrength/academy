@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireSuperadmin } from "@/lib/auth/admin";
+import { logger } from "@/lib/logger";
 import type { Locale } from "@/types/database";
 
 const LANGUAGE_PATH = "/admin/settings/language";
@@ -15,11 +16,16 @@ type Settings = {
 async function loadSettings(
   supabase: Awaited<ReturnType<typeof requireSuperadmin>>["supabase"],
 ): Promise<Settings | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("platform_settings")
     .select("active_language, enabled_languages")
     .eq("id", true)
     .maybeSingle<Settings>();
+  // Every action below silently returns when this comes back null, so a read
+  // failure looks exactly like a button that does nothing.
+  if (error) {
+    logger.error("admin.settings.language.load_failed", {}, error);
+  }
   return data;
 }
 
@@ -33,10 +39,14 @@ export async function enableEnglish(_formData: FormData): Promise<void> {
     return;
   }
   const next: Locale[] = [...current.enabled_languages, "en"];
-  await supabase
+  const { error } = await supabase
     .from("platform_settings")
     .update({ enabled_languages: next })
     .eq("id", true);
+  if (error) {
+    logger.error("admin.settings.language.enable_english_failed", {}, error);
+  }
+
   revalidatePath(LANGUAGE_PATH);
   revalidatePath("/admin/settings");
 }
@@ -53,10 +63,14 @@ export async function disableEnglish(_formData: FormData): Promise<void> {
   }
   const next = current.enabled_languages.filter((l) => l !== "en");
   if (next.length === 0) return; // defensive — never empty
-  await supabase
+  const { error } = await supabase
     .from("platform_settings")
     .update({ enabled_languages: next })
     .eq("id", true);
+  if (error) {
+    logger.error("admin.settings.language.disable_english_failed", {}, error);
+  }
+
   revalidatePath(LANGUAGE_PATH);
   revalidatePath("/admin/settings");
 }
@@ -74,10 +88,18 @@ export async function setActiveLanguage(formData: FormData): Promise<void> {
     revalidatePath(LANGUAGE_PATH);
     return;
   }
-  await supabase
+  const { error } = await supabase
     .from("platform_settings")
     .update({ active_language: raw })
     .eq("id", true);
+  if (error) {
+    logger.error(
+      "admin.settings.language.set_active_failed",
+      { language: raw },
+      error,
+    );
+  }
+
   // Active-language change affects every server render.
   revalidatePath(LANGUAGE_PATH);
   revalidatePath("/", "layout");

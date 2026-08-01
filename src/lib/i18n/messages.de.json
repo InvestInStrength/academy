@@ -3,16 +3,13 @@
   "meta.app_description": "Zertifizierungsplattform für INVEST IN STRENGTH.",
   "meta.brand": "INVEST IN STRENGTH",
   "meta.brand_subtitle": "Zertifizierungs-Verwaltung",
-
   "home.heading": "Zertifizierungsplattform",
   "home.intro": "Zertifizierungen ausstellen, verwalten und überprüfen. Teilnehmende absolvieren ihre Prüfung über einen persönlichen Link; Zertifikate lassen sich öffentlich anhand ihrer Zertifikats-ID überprüfen.",
   "home.verify_cta": "Zertifikat überprüfen",
   "home.admin_cta": "Admin-Anmeldung",
-
   "legal.impressum": "Impressum",
   "legal.agb": "AGB",
   "legal.back_home": "← Zurück zur Startseite",
-
   "common.save": "Speichern",
   "common.save_changes": "Änderungen speichern",
   "common.saving": "Wird gespeichert…",
@@ -47,7 +44,6 @@
   "common.not_passed": "Nicht bestanden",
   "common.revoked": "Widerrufen",
   "common.valid": "Gültig",
-
   "validation.title_required": "Titel ist erforderlich.",
   "validation.email_invalid": "Bitte eine gültige E-Mail eingeben.",
   "validation.too_many_attempts": "Zu viele Versuche. Bitte einen Moment warten und erneut versuchen.",
@@ -70,7 +66,6 @@
   "validation.passing_range": "Muss zwischen 0 und 100 liegen.",
   "validation.needs_one_question": "Ein aktiver Test braucht mindestens eine Frage.",
   "validation.password_min": "Das Passwort muss mindestens 8 Zeichen lang sein.",
-
   "nav.dashboard": "Dashboard",
   "nav.courses": "Kurse",
   "nav.seminars": "Seminare",
@@ -81,17 +76,14 @@
   "nav.settings": "Einstellungen",
   "nav.administrators": "Administratoren",
   "nav.language": "Sprache",
-
   "admin.sections_label": "Admin-Bereiche",
   "admin.open_menu": "Menü öffnen",
-
   "admin.dashboard.title": "Dashboard",
   "admin.dashboard.description": "Überblick über Ihre Zertifizierungsinhalte.",
   "admin.dashboard.get_started": "Loslegen:",
   "admin.dashboard.manage_courses": "Kurse verwalten",
   "admin.dashboard.build_questions": "Fragenpool aufbauen",
   "admin.dashboard.create_questionnaire": "Test erstellen",
-
   "admin.courses.title": "Kurse",
   "admin.courses.description": "Oberste Ebene der Zertifizierung. Themen, Fragen und Tests gehören jeweils zu einem Kurs.",
   "admin.courses.intro.title": "Schnellstart: So setzen Sie einen Kurs auf",
@@ -126,7 +118,6 @@
   "admin.courses.could_not_save": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
   "admin.courses.could_not_delete": "Kurs konnte nicht gelöscht werden. Bitte erneut versuchen.",
   "admin.courses.saved": "Kurs gespeichert.",
-
   "admin.topics.add_card": "Thema hinzufügen",
   "admin.topics.list_title": "Themen ({count})",
   "admin.topics.empty": "Noch keine Themen. Fügen Sie oben eines hinzu. Themen steuern die Lernempfehlungen für Kandidaten, die nicht bestehen.",
@@ -142,7 +133,6 @@
   "admin.topics.could_not_create": "Thema konnte nicht erstellt werden. Bitte erneut versuchen.",
   "admin.topics.could_not_save": "Thema konnte nicht gespeichert werden. Bitte erneut versuchen.",
   "admin.topics.could_not_delete": "Thema konnte nicht gelöscht werden. Bitte erneut versuchen.",
-
   "admin.questions.title": "Fragenpool",
   "admin.questions.description": "Wiederverwendbare Fragen. Jede gehört zu einem Kurs und (optional) zu einem Thema.",
   "admin.questions.new_button": "Neue Frage",
@@ -172,7 +162,6 @@
   "admin.questions.saved": "Frage gespeichert.",
   "admin.questions.topic_not_in_course": "Das gewählte Thema gehört nicht zum gewählten Kurs.",
   "admin.questions.choose_topic_from_course": "Wählen Sie ein Thema aus diesem Kurs.",
-
   "admin.questionnaires.title": "Tests",
   "admin.questionnaires.description": "Konfigurierte Prüfungen. Bestehensgrenze und Mischverhalten sind pro Test einstellbar.",
   "admin.questionnaires.new_button": "Neuen Test",
@@ -203,7 +192,6 @@
   "admin.questionnaires.saved": "Test gespeichert.",
   "admin.questionnaires.create_button": "Test erstellen",
   "admin.questionnaires.save_button": "Test speichern",
-
   "admin.settings.title": "Einstellungen",
   "admin.settings.description": "Plattformkonfiguration und Zertifikatsvorlagen.",
   "admin.settings.admins_card": "Administratoren",
@@ -213,9 +201,7 @@
   "admin.settings.language_description": "Mehrsprachen-Feature-Flag. Aktive Plattformsprache umschalten (DE/EN) und die ruhende Zweitsprache aktivieren.",
   "admin.settings.manage_language": "Sprache verwalten",
   "admin.settings.placeholder": "Verwaltung der Zertifikatsvorlagen und weitere Einstellungen werden hier verfügbar sein.",
-
   "admin.placeholder.note": "Diese Funktion folgt in einer späteren Phase.",
-
   "admin.forms.field.title": "Titel",
   "admin.forms.field.title_de": "Titel (Deutsch)",
   "admin.forms.field.title_en": "Titel (English)",
@@ -274,7 +260,6 @@
   "admin.forms.field.display_name": "Anzeigename auf Zertifikat",
   "admin.forms.field.display_name_hint": "Optional — wird auf dem Zertifikat verwendet, wenn der vollständige Name zu lang ist.",
   "admin.forms.field.email_hint": "Optional. Kandidaten bestätigen ihre E-Mail vor dem ersten Versuch.",
-
   "admin.participants.title": "Teilnehmende",
   "admin.participants.description": "Kandidat:innen in der Zertifizierung. Pro Test kann eine aktive Zuweisung bestehen.",
   "admin.participants.list_title": "Alle Teilnehmenden ({count})",
@@ -297,7 +282,6 @@
   "admin.participants.could_not_save": "Teilnehmer:in konnte nicht gespeichert werden. Bitte erneut versuchen.",
   "admin.participants.could_not_delete": "Teilnehmer:in konnte nicht gelöscht werden. Bitte erneut versuchen.",
   "admin.participants.cannot_delete_with_assignments": "Löschen nicht möglich: Diese:r Teilnehmer:in hat Zertifizierungs-Zuweisungen. Stattdessen deaktivieren.",
-
   "admin.assignments.status.not_started": "Nicht gestartet",
   "admin.assignments.status.in_progress": "Läuft",
   "admin.assignments.status.passed": "Bestanden",
@@ -316,7 +300,14 @@
   "admin.assignments.none_selected": "Keine ausgewählt",
   "admin.assignments.edit_topics": "Zertifikats-Themen bearbeiten",
   "admin.assignments.certificate_label": "Zertifikat",
-  "admin.assignments.certificate_pending": "Zertifikat wird erstellt…",
+  "admin.assignments.certificate_missing": "Diese Zuweisung ist bestanden, aber es wurde kein Zertifikat erstellt. Die Ausstellung wird nicht automatisch wiederholt.",
+  "admin.assignments.issue_certificate": "Zertifikat jetzt ausstellen",
+  "admin.assignments.issuing_certificate": "Wird ausgestellt…",
+  "admin.assignments.certificate_issued": "Zertifikat ausgestellt.",
+  "admin.assignments.could_not_issue_certificate": "Das Zertifikat konnte nicht ausgestellt werden. Bitte erneut versuchen; falls es weiterhin fehlschlägt, geben Sie beim Support die Referenz {reference} an.",
+  "admin.assignments.issue_requires_passed": "Ein Zertifikat kann nur für eine bestandene Zuweisung ausgestellt werden.",
+  "admin.assignments.certificate_already_issued": "Für diese Zuweisung existiert bereits ein Zertifikat.",
+  "admin.assignments.passed_certificate_failed": "Als bestanden markiert, aber das Zertifikat konnte nicht ausgestellt werden (Referenz {reference}). Nutzen Sie „Zertifikat jetzt ausstellen“, um es erneut zu versuchen.",
   "admin.assignments.manual_pass": "Manuell als bestanden markieren",
   "admin.assignments.verify": "Verifizieren",
   "admin.assignments.regenerate_link": "Link neu generieren",
@@ -360,7 +351,6 @@
   "admin.assignments.download_preview": "Vorschau (PNG)",
   "admin.assignments.assets_pending": "Dateien noch nicht erzeugt.",
   "admin.assignments.regenerate_assets": "Dateien neu erzeugen",
-
   "admin.history.title": "Verlauf ({count})",
   "admin.history.empty": "Noch keine Ereignisse aufgezeichnet.",
   "history.event.participant_created": "Teilnehmer:in erstellt",
@@ -382,7 +372,6 @@
   "history.event.attempt_submitted": "Versuch {number} eingereicht",
   "history.event.attempt_passed": "Versuch bestanden",
   "history.event.attempt_failed": "Versuch nicht bestanden",
-
   "admin.certificates.title": "Zertifikate",
   "admin.certificates.description": "Ausgestellte Zertifikate, Überprüfung und Widerruf.",
   "admin.certificates.empty": "Noch keine Zertifikate ausgestellt. Sie werden automatisch erzeugt, wenn ein:e Kandidat:in besteht oder manuell als bestanden markiert wird.",
@@ -408,7 +397,6 @@
   "admin.certificates.no_email_on_file": "Für diese:n Kandidat:in ist keine E-Mail hinterlegt.",
   "admin.certificates.emailed": "Per E-Mail an {email} gesendet.",
   "admin.certificates.could_not_send": "Die E-Mail konnte nicht gesendet werden.",
-
   "admin.admins.page_title": "Administratoren",
   "admin.admins.page_description": "Superadmins verwalten den Zugriff auf den Admin-Bereich.",
   "admin.admins.back_to_settings": "← Zurück zu den Einstellungen",
@@ -433,7 +421,6 @@
   "admin.admins.could_not_create_user": "Der Anmelde-Account konnte nicht erstellt werden.",
   "admin.admins.could_not_create_profile": "Das Admin-Profil konnte nicht erstellt werden. Bitte erneut versuchen.",
   "admin.admins.created": "Admin {email} erstellt.",
-
   "admin.settings.language.back_to_settings": "← Zurück zu den Einstellungen",
   "admin.settings.language.page_description": "Mehrsprachen-Feature-Flag nur für Superadmins. Die aktive Sprache steuert alle für Kandidat:innen sichtbaren Oberflächen. Laufende Versuche behalten die Sprache, in der sie begonnen wurden.",
   "admin.settings.language.current_state_card": "Aktueller Zustand",
@@ -457,7 +444,6 @@
   "admin.settings.language.missing_settings": "Eintrag in platform_settings fehlt. Migration {migration} anwenden.",
   "admin.settings.language.deutsch": "Deutsch",
   "admin.settings.language.english": "English",
-
   "candidate.link_unavailable_title": "Link nicht verfügbar",
   "candidate.link_unavailable_body": "Dieser Zertifizierungs-Link ist nicht verfügbar. Er könnte falsch sein oder nicht mehr aktiv. Bitte mit der ausstellenden Person prüfen.",
   "candidate.welcome": "Willkommen, {name}",
@@ -470,7 +456,6 @@
   "candidate.view_your_result": "Ihr Ergebnis ansehen",
   "candidate.start_assessment": "Test starten",
   "candidate.retake_assessment": "Test wiederholen",
-
   "candidate.email.label": "E-Mail-Adresse",
   "candidate.email.placeholder": "you@example.com",
   "candidate.email.submit": "Bestätigungscode senden",
@@ -490,13 +475,11 @@
   "candidate.verify.too_many_attempts": "Zu viele fehlerhafte Versuche. Bitte fordern Sie einen neuen Code an.",
   "candidate.verify.no_code": "Kein aktiver Code. Bitte fordern Sie einen neuen an.",
   "candidate.verify.attempts_remaining": "Falscher Code. Noch {remaining} Versuche.",
-
   "candidate.actions.no_certificate_yet": "Es gibt noch kein Zertifikat zum Versenden.",
   "candidate.actions.no_email_on_file": "Für diese:n Kandidat:in ist keine E-Mail hinterlegt.",
   "candidate.actions.certificate_unavailable": "Dieses Zertifikat ist nicht verfügbar.",
   "candidate.actions.email_send_failed": "Die E-Mail konnte nicht gesendet werden.",
   "candidate.actions.email_sent": "An {email} gesendet.",
-
   "candidate.result.title": "Ihr Ergebnis",
   "candidate.result.no_attempt": "Sie haben noch keinen Versuch abgeschlossen.",
   "candidate.result.congratulations": "Glückwunsch, {name}",
@@ -506,7 +489,6 @@
   "candidate.result.review_default": "Bitte überprüfen Sie das Kursmaterial und versuchen Sie es erneut.",
   "candidate.result.passing_line": "Bestehensgrenze: {percent}%.",
   "candidate.result.score_stat": "Ergebnis: {percent}%",
-
   "candidate.certificate.title": "Ihr Zertifikat",
   "candidate.certificate.preparing_title": "Zertifikat",
   "candidate.certificate.preparing_body": "Ihr Zertifikat wird vorbereitet. Bitte schauen Sie in Kürze erneut vorbei.",
@@ -520,7 +502,6 @@
   "candidate.certificate.emailing": "Wird gesendet…",
   "candidate.certificate.download_pdf": "Zertifikat als PDF herunterladen",
   "candidate.certificate.assets_pending": "Ihre Download-Dateien werden noch vorbereitet. Bitte laden Sie die Seite in Kürze neu.",
-
   "verify.title": "Zertifikatsprüfung",
   "verify.lookup_card_title": "Zertifikat überprüfen",
   "verify.lookup_intro": "Geben Sie die Zertifikats-ID vom Zertifikat ein oder scannen Sie den QR-Code, um die Echtheit und Gültigkeit zu bestätigen.",
@@ -539,7 +520,6 @@
   "verify.completed_label": "Abgeschlossen",
   "verify.certificate_id_label": "Zertifikats-ID",
   "verify.topics_label": "Themen",
-
   "auth.login.title": "Anmelden",
   "auth.login.heading": "Admin-Anmeldung",
   "auth.login.card_title": "Zum Fortfahren anmelden",
@@ -550,16 +530,13 @@
   "auth.login.invalid": "E-Mail oder Passwort ungültig.",
   "auth.no_access.title": "Kein Zugriff",
   "auth.no_access.body": "Ihr Konto hat keinen Admin-Zugriff. Bitte wenden Sie sich an einen Superadmin.",
-
   "attempt.no_questions": "Dieser Test enthält noch keine Fragen. Bitte später erneut versuchen oder die Person kontaktieren, die den Link ausgestellt hat.",
   "attempt.multiple_choice_hint": "(alle zutreffenden Antworten auswählen)",
   "attempt.next_question": "Nächste Frage →",
   "attempt.previous_question": "← Vorherige Frage",
   "attempt.submit": "Test abschicken",
   "attempt.submitting": "Wird gesendet…",
-
   "scoring.general_topic": "Allgemein",
-
   "email.certificate.subject": "Ihr Zertifikat – {course}",
   "email.certificate.heading": "Ihr Zertifikat",
   "email.certificate.greeting": "Hallo {name}, herzlichen Glückwunsch zum Abschluss von <strong>{course}</strong>.",
@@ -579,7 +556,6 @@
   "email.invite.cta": "Jetzt starten",
   "email.invite.fallback": "Falls die Schaltfläche nicht funktioniert, kopieren Sie diesen Link in Ihren Browser: {url}",
   "email.invite.ignore_note": "Wenn Sie diese E-Mail nicht erwartet haben, können Sie sie ignorieren.",
-
   "validation.invalid_date": "Bitte ein gültiges Datum angeben.",
   "admin.dashboard.manage_seminars": "Seminare verwalten",
   "verify.seminar_label": "Seminar",
@@ -622,7 +598,6 @@
   "admin.seminars.delete_confirm": "Seminar \"{title}\" löschen?",
   "admin.seminars.event_date": "Seminardatum",
   "admin.seminars.event_date_hint": "Der Tag, an dem das Seminar stattgefunden hat. Erscheint auf dem Zertifikat.",
-
   "validation.template_svg_required": "Bitte eine SVG-Datei hochladen oder den SVG-Code einfügen.",
   "validation.template_not_svg": "Das sieht nicht nach einer SVG-Datei aus (kein <svg>-Element gefunden).",
   "validation.template_external_refs": "Die Vorlage verweist auf externe Dateien. Bilder müssen als data:-URI eingebettet sein, sonst fehlen sie auf dem Zertifikat.",
@@ -657,7 +632,6 @@
   "admin.templates.could_not_create": "Vorlage konnte nicht angelegt werden. Bitte erneut versuchen.",
   "admin.templates.could_not_save": "Vorlage konnte nicht gespeichert werden. Bitte erneut versuchen.",
   "admin.templates.could_not_delete": "Vorlage konnte nicht gelöscht werden. Bitte erneut versuchen.",
-
   "admin.seminars.saved": "Seminar gespeichert.",
   "admin.seminars.could_not_create": "Seminar konnte nicht erstellt werden. Bitte erneut versuchen.",
   "admin.seminars.could_not_save": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
@@ -665,5 +639,10 @@
   "admin.seminars.cannot_delete_with_questions": "Löschen nicht möglich: Dieses Seminar hat Fragen oder Tests. Stattdessen deaktivieren.",
   "admin.forms.field.template_inactive": "{name} (inaktiv)",
   "validation.template_no_placeholders": "In dieser SVG-Datei wurden keine Platzhalter gefunden. Vermutlich wurde die Schrift beim Export in Pfade umgewandelt – dann können Name, Datum und Zertifikats-ID nicht eingesetzt werden. Bitte ohne „Schrift in Pfade umwandeln“ exportieren.",
-  "validation.template_no_name_placeholder": "Die Vorlage enthält keinen Platzhalter für den Namen ({{participant_name}}). Ohne ihn würde jedes Zertifikat ohne Namen ausgestellt."
+  "validation.template_no_name_placeholder": "Die Vorlage enthält keinen Platzhalter für den Namen ({{participant_name}}). Ohne ihn würde jedes Zertifikat ohne Namen ausgestellt.",
+  "error.boundary_title": "Etwas ist schiefgelaufen",
+  "error.boundary_body": "Diese Seite konnte nicht geladen werden. Ihr Fortschritt ist gespeichert — bitte versuchen Sie es erneut.",
+  "error.boundary_retry": "Erneut versuchen",
+  "error.boundary_reference_label": "Referenz",
+  "error.boundary_contact": "Falls das Problem bestehen bleibt, geben Sie beim Support bitte diese Referenz an."
 }

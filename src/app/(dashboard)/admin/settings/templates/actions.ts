@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
+import { logger } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { templateSchema } from "./schema";
 
@@ -49,6 +50,11 @@ export async function createTemplate(
   });
 
   if (error) {
+    logger.error(
+      "admin.template.create_failed",
+      { svgLength: parsed.data.svg_template.length },
+      error,
+    );
     return { message: t("admin.templates.could_not_create") };
   }
 
@@ -86,6 +92,11 @@ export async function updateTemplate(
     .eq("id", id);
 
   if (error) {
+    logger.error(
+      "admin.template.update_failed",
+      { templateId: id, svgLength: parsed.data.svg_template.length },
+      error,
+    );
     return { message: t("admin.templates.could_not_save") };
   }
 
@@ -100,7 +111,18 @@ export async function toggleTemplateActive(formData: FormData): Promise<void> {
   const active = formData.get("active") === "true";
   if (!id) return;
 
-  await supabase.from("certificate_templates").update({ active }).eq("id", id);
+  const { error } = await supabase
+    .from("certificate_templates")
+    .update({ active })
+    .eq("id", id);
+  if (error) {
+    logger.error(
+      "admin.template.toggle_active_failed",
+      { templateId: id, active },
+      error,
+    );
+  }
+
   revalidatePath("/admin/settings/templates");
   revalidatePath("/admin/courses");
   revalidatePath("/admin/seminars");
@@ -118,7 +140,10 @@ export async function deleteTemplate(
 
   // Archive-first, like every other guarded delete: a template still attached to
   // a course/seminar or questionnaire may only be deactivated.
-  const [{ count: courseCount }, { count: questionnaireCount }] = await Promise.all([
+  const [
+    { count: courseCount, error: courseCountError },
+    { count: questionnaireCount, error: questionnaireCountError },
+  ] = await Promise.all([
     supabase
       .from("courses")
       .select("*", { count: "exact", head: true })
@@ -129,6 +154,16 @@ export async function deleteTemplate(
       .eq("certificate_template_id", id),
   ]);
 
+  // A failed count reads as zero and would delete artwork still attached to a
+  // course or seminar.
+  if (courseCountError || questionnaireCountError) {
+    logger.error(
+      "admin.template.usage_count_failed",
+      { templateId: id },
+      courseCountError ?? questionnaireCountError,
+    );
+  }
+
   if ((courseCount ?? 0) > 0 || (questionnaireCount ?? 0) > 0) {
     return { message: t("admin.templates.cannot_delete_in_use") };
   }
@@ -138,6 +173,7 @@ export async function deleteTemplate(
     .delete()
     .eq("id", id);
   if (error) {
+    logger.error("admin.template.delete_failed", { templateId: id }, error);
     return { message: t("admin.templates.could_not_delete") };
   }
 

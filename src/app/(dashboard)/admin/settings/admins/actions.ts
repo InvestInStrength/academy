@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireSuperadmin } from "@/lib/auth/admin";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 import { getServerT } from "@/lib/i18n";
+import { logger } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { createAdminSchema } from "./schema";
 
@@ -42,6 +43,12 @@ export async function createAdmin(
   });
 
   if (createError || !created.user) {
+    // The address is the payload here, so only the role is safe to record.
+    logger.error(
+      "admin.account.create_user_failed",
+      { role: parsed.data.role },
+      createError,
+    );
     return { message: t("admin.admins.could_not_create_user") };
   }
 
@@ -52,8 +59,24 @@ export async function createAdmin(
   });
 
   if (profileError) {
+    logger.error(
+      "admin.account.create_profile_failed",
+      { adminId: created.user.id, role: parsed.data.role },
+      profileError,
+    );
     // Roll back the orphaned auth user so a retry is clean.
-    await service.auth.admin.deleteUser(created.user.id);
+    const { error: rollbackError } = await service.auth.admin.deleteUser(
+      created.user.id,
+    );
+    // A failed rollback leaves an auth user with no profile: it cannot sign in
+    // anywhere useful, but the address is now taken and a retry will collide.
+    if (rollbackError) {
+      logger.error(
+        "admin.account.rollback_delete_user_failed",
+        { adminId: created.user.id },
+        rollbackError,
+      );
+    }
     return { message: t("admin.admins.could_not_create_profile") };
   }
 
@@ -72,7 +95,16 @@ export async function setAdminActive(formData: FormData): Promise<void> {
   // A superadmin cannot lock themselves out.
   if (!id || id === user.id) return;
 
-  await supabase.from("admin_profiles").update({ active }).eq("id", id);
+  const { error } = await supabase
+    .from("admin_profiles")
+    .update({ active })
+    .eq("id", id);
+  // Silent failure here means an admin the superadmin believes is disabled can
+  // still sign in — worth an error even though the action returns void.
+  if (error) {
+    logger.error("admin.account.set_active_failed", { adminId: id, active }, error);
+  }
+
   revalidatePath(ADMINS_PATH);
 }
 
@@ -86,6 +118,13 @@ export async function setAdminRole(formData: FormData): Promise<void> {
   // Don't allow changing your own role (avoids removing the last superadmin).
   if (!id || id === user.id || !role) return;
 
-  await supabase.from("admin_profiles").update({ role }).eq("id", id);
+  const { error } = await supabase
+    .from("admin_profiles")
+    .update({ role })
+    .eq("id", id);
+  if (error) {
+    logger.error("admin.account.set_role_failed", { adminId: id, role }, error);
+  }
+
   revalidatePath(ADMINS_PATH);
 }

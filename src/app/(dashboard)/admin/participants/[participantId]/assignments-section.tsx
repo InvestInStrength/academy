@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/admin/action-button";
 import { AssignmentCreateForm } from "./assignment-create-form";
 import { AssignmentTopicsForm } from "./assignment-topics-form";
+import { IssueCertificateForm } from "./issue-certificate-form";
 import { ManualPassForm } from "./manual-pass-form";
 import { CopyLinkButton } from "./copy-link-button";
 import {
@@ -304,11 +305,17 @@ export function AssignmentsSection({
                           </div>
                         );
                       }
+                      // Passed with no certificate row is a stranded issuance,
+                      // not work in progress — nothing retries it in the
+                      // background, so the admin needs the retry here.
                       if (assignment.status === "passed") {
                         return (
-                          <p className="text-sm text-slate-500">
-                            {t("admin.assignments.certificate_pending")}
-                          </p>
+                          <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50/60 p-3">
+                            <p className="text-sm text-amber-900">
+                              {t("admin.assignments.certificate_missing")}
+                            </p>
+                            <IssueCertificateForm assignmentId={assignment.id} />
+                          </div>
                         );
                       }
                       return (

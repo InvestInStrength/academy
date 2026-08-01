@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
+import { logger } from "@/lib/logger";
 import type { CertificateAssetType } from "@/types/database";
 
 import { renderSvgToPng, pngToPdf, A4_LANDSCAPE_PT } from "./assets";
@@ -13,9 +14,13 @@ import { assetPath, uploadCertificateAsset } from "./storage";
  *
  * Best-effort by contract: it never throws to the caller, so issuing a
  * certificate is never blocked by a render/upload failure. The certificate
- * ID + verification token stay valid; a failure is logged
- * (`certificate_generation_failed`) and surfaces as "pending/failed" in the UI.
- * Service-role only (Storage write + admin-RLS table).
+ * ID + verification token stay valid; a failure surfaces as "pending/failed"
+ * in the UI. Service-role only (Storage write + admin-RLS table).
+ *
+ * Both callers discard the returned error, so every failure is written to the
+ * structured log here. The `certificate_generation_failed` history event is
+ * additional, not primary: it needs a participant to hang off, and the failure
+ * that broke generation may be the very reason we never resolved one.
  */
 
 type SnapshotShape = { svg?: unknown } | null;
@@ -29,28 +34,45 @@ export type AssetGenerationResult = {
 export async function generateCertificateAssets(
   certificateId: string,
 ): Promise<AssetGenerationResult> {
-  const service = createSupabaseServiceRoleClient();
-
   let participantId: string | null = null;
   let assignmentId: string | null = null;
 
+  // Outside the try in every earlier version, which broke the never-throws
+  // contract on a missing service-role key: the throw escaped into
+  // issueCertificate *after* the certificate row already existed.
+  let service: ReturnType<typeof createSupabaseServiceRoleClient>;
   try {
-    const { data: cert } = await service
+    service = createSupabaseServiceRoleClient();
+  } catch (error) {
+    logger.error("certificate_assets_client_unavailable", { certificateId }, error);
+    return { ok: false, generated: [], error: "Service client unavailable." };
+  }
+
+  try {
+    const { data: cert, error: certError } = await service
       .from("certificates")
       .select("id, certificate_public_snapshot, certification_assignment_id")
       .eq("id", certificateId)
       .maybeSingle();
 
     if (!cert) {
+      logger.error("certificate_assets_certificate_missing", { certificateId }, certError);
       return { ok: false, generated: [], error: "Certificate not found." };
     }
     assignmentId = cert.certification_assignment_id;
 
-    const { data: assignment } = await service
+    const { data: assignment, error: assignmentError } = await service
       .from("certification_assignments")
       .select("participant_id")
       .eq("id", cert.certification_assignment_id)
       .maybeSingle();
+    if (assignmentError) {
+      logger.error(
+        "certificate_assets_assignment_load_failed",
+        { certificateId, assignmentId },
+        assignmentError,
+      );
+    }
     participantId = assignment?.participant_id ?? null;
 
     const snapshot = cert.certificate_public_snapshot as SnapshotShape;
@@ -104,7 +126,7 @@ export async function generateCertificateAssets(
     if (upsertError) throw new Error(upsertError.message);
 
     if (participantId) {
-      await service.from("account_history").insert({
+      const { error: historyError } = await service.from("account_history").insert({
         participant_id: participantId,
         certification_assignment_id: assignmentId,
         event_type: "certificate_assets_generated",
@@ -112,13 +134,27 @@ export async function generateCertificateAssets(
         event_data: { assets: ["official_pdf", "official_png_preview"] },
         created_by_admin_id: null,
       });
+      if (historyError) {
+        logger.error(
+          "certificate_assets_history_write_failed",
+          { certificateId, assignmentId },
+          historyError,
+        );
+      }
     }
 
     return { ok: true, generated: ["official_pdf", "official_png_preview"] };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+
+    logger.error(
+      "certificate_assets_generation_failed",
+      { certificateId, assignmentId, historyRecorded: Boolean(participantId) },
+      error,
+    );
+
     if (participantId) {
-      await service.from("account_history").insert({
+      const { error: historyError } = await service.from("account_history").insert({
         participant_id: participantId,
         certification_assignment_id: assignmentId,
         event_type: "certificate_generation_failed",
@@ -126,7 +162,15 @@ export async function generateCertificateAssets(
         event_data: { error: message },
         created_by_admin_id: null,
       });
+      if (historyError) {
+        logger.error(
+          "certificate_assets_failure_history_write_failed",
+          { certificateId, assignmentId },
+          historyError,
+        );
+      }
     }
+
     return { ok: false, generated: [], error: message };
   }
 }

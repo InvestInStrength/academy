@@ -3,16 +3,13 @@
   "meta.app_description": "Certification management platform for INVEST IN STRENGTH.",
   "meta.brand": "INVEST IN STRENGTH",
   "meta.brand_subtitle": "Certification admin",
-
   "home.heading": "Certification Platform",
   "home.intro": "Issue, manage, and verify professional certifications. Candidates use a personal link to complete their assessment; certificates can be verified publicly by their certificate ID.",
   "home.verify_cta": "Verify a certificate",
   "home.admin_cta": "Admin sign in",
-
   "legal.impressum": "Imprint",
   "legal.agb": "Terms",
   "legal.back_home": "← Back to home",
-
   "common.save": "Save",
   "common.save_changes": "Save changes",
   "common.saving": "Saving…",
@@ -47,7 +44,6 @@
   "common.not_passed": "Not passed",
   "common.revoked": "Revoked",
   "common.valid": "Valid",
-
   "validation.title_required": "Title is required.",
   "validation.email_invalid": "Enter a valid email address.",
   "validation.too_many_attempts": "Too many attempts. Please wait a moment and try again.",
@@ -70,7 +66,6 @@
   "validation.passing_range": "Must be between 0 and 100.",
   "validation.needs_one_question": "An active questionnaire needs at least one question.",
   "validation.password_min": "Password must be at least 8 characters.",
-
   "nav.dashboard": "Dashboard",
   "nav.courses": "Courses",
   "nav.seminars": "Seminars",
@@ -81,17 +76,14 @@
   "nav.settings": "Settings",
   "nav.administrators": "Administrators",
   "nav.language": "Language",
-
   "admin.sections_label": "Admin sections",
   "admin.open_menu": "Open menu",
-
   "admin.dashboard.title": "Dashboard",
   "admin.dashboard.description": "Overview of your certification content.",
   "admin.dashboard.get_started": "Get started:",
   "admin.dashboard.manage_courses": "Manage courses",
   "admin.dashboard.build_questions": "Build the question bank",
   "admin.dashboard.create_questionnaire": "Create a questionnaire",
-
   "admin.courses.title": "Courses",
   "admin.courses.description": "Top-level container for the certification. Topics, questions, and questionnaires each belong to a course.",
   "admin.courses.intro.title": "Quick start: how to set up a course",
@@ -126,7 +118,6 @@
   "admin.courses.could_not_save": "Could not save changes. Please try again.",
   "admin.courses.could_not_delete": "Could not delete the course. Please try again.",
   "admin.courses.saved": "Course saved.",
-
   "admin.topics.add_card": "Add a topic",
   "admin.topics.list_title": "Topics ({count})",
   "admin.topics.empty": "No topics yet. Add one above. Topics drive the learning recommendations shown to candidates who do not pass.",
@@ -142,7 +133,6 @@
   "admin.topics.could_not_create": "Could not create the topic. Please try again.",
   "admin.topics.could_not_save": "Could not save the topic. Please try again.",
   "admin.topics.could_not_delete": "Could not delete the topic. Please try again.",
-
   "admin.questions.title": "Question Bank",
   "admin.questions.description": "Reusable questions. Each belongs to a course and (optionally) a topic.",
   "admin.questions.new_button": "New question",
@@ -172,7 +162,6 @@
   "admin.questions.saved": "Question saved.",
   "admin.questions.topic_not_in_course": "The selected topic does not belong to the selected course.",
   "admin.questions.choose_topic_from_course": "Choose a topic from this course.",
-
   "admin.questionnaires.title": "Questionnaires",
   "admin.questionnaires.description": "Configured assessments. Passing threshold and shuffle behaviour are per questionnaire.",
   "admin.questionnaires.new_button": "New questionnaire",
@@ -203,7 +192,6 @@
   "admin.questionnaires.saved": "Questionnaire saved.",
   "admin.questionnaires.create_button": "Create questionnaire",
   "admin.questionnaires.save_button": "Save questionnaire",
-
   "admin.settings.title": "Settings",
   "admin.settings.description": "Platform configuration and certificate templates.",
   "admin.settings.admins_card": "Administrators",
@@ -213,9 +201,7 @@
   "admin.settings.language_description": "Multilanguage feature flag. Toggle the active platform language (DE/EN) and enable the dormant second language.",
   "admin.settings.manage_language": "Manage language",
   "admin.settings.placeholder": "Certificate template management and other settings will appear here.",
-
   "admin.placeholder.note": "This feature arrives in a later slice.",
-
   "admin.forms.field.title": "Title",
   "admin.forms.field.title_de": "Title (Deutsch)",
   "admin.forms.field.title_en": "Title (English)",
@@ -274,7 +260,6 @@
   "admin.forms.field.display_name": "Certificate display name",
   "admin.forms.field.display_name_hint": "Optional — used on the certificate if the full name is too long.",
   "admin.forms.field.email_hint": "Optional. Candidates confirm their email before their first attempt.",
-
   "admin.participants.title": "Participants",
   "admin.participants.description": "Candidates being certified. Each can hold one active assignment per questionnaire.",
   "admin.participants.list_title": "All participants ({count})",
@@ -297,7 +282,6 @@
   "admin.participants.could_not_save": "Could not save the participant. Please try again.",
   "admin.participants.could_not_delete": "Could not delete the participant. Please try again.",
   "admin.participants.cannot_delete_with_assignments": "Cannot delete: this participant has certification assignments. Deactivate those instead.",
-
   "admin.assignments.status.not_started": "Not started",
   "admin.assignments.status.in_progress": "In progress",
   "admin.assignments.status.passed": "Passed",
@@ -316,7 +300,14 @@
   "admin.assignments.none_selected": "None selected",
   "admin.assignments.edit_topics": "Edit certificate topics",
   "admin.assignments.certificate_label": "Certificate",
-  "admin.assignments.certificate_pending": "Certificate pending…",
+  "admin.assignments.certificate_missing": "This assignment is passed but no certificate was created. Issuance is not retried automatically.",
+  "admin.assignments.issue_certificate": "Issue certificate now",
+  "admin.assignments.issuing_certificate": "Issuing…",
+  "admin.assignments.certificate_issued": "Certificate issued.",
+  "admin.assignments.could_not_issue_certificate": "The certificate could not be issued. Please try again; if it keeps failing, quote reference {reference} to support.",
+  "admin.assignments.issue_requires_passed": "A certificate can only be issued for a passed assignment.",
+  "admin.assignments.certificate_already_issued": "This assignment already has a certificate.",
+  "admin.assignments.passed_certificate_failed": "Marked as passed, but the certificate could not be issued (reference {reference}). Use “Issue certificate now” to retry.",
   "admin.assignments.manual_pass": "Manually mark as passed",
   "admin.assignments.verify": "Verify",
   "admin.assignments.regenerate_link": "Regenerate link",
@@ -360,7 +351,6 @@
   "admin.assignments.download_preview": "Preview (PNG)",
   "admin.assignments.assets_pending": "Files not generated yet.",
   "admin.assignments.regenerate_assets": "Regenerate files",
-
   "admin.history.title": "Account history ({count})",
   "admin.history.empty": "No events recorded yet.",
   "history.event.participant_created": "Participant created",
@@ -382,7 +372,6 @@
   "history.event.attempt_submitted": "Attempt {number} submitted",
   "history.event.attempt_passed": "Attempt passed",
   "history.event.attempt_failed": "Attempt failed",
-
   "admin.certificates.title": "Certificates",
   "admin.certificates.description": "Issued certificates, verification, and revocation.",
   "admin.certificates.empty": "No certificates issued yet. They are generated automatically when a candidate passes, or when an admin manually passes a candidate.",
@@ -408,7 +397,6 @@
   "admin.certificates.no_email_on_file": "This candidate has no email on file.",
   "admin.certificates.emailed": "Emailed to {email}.",
   "admin.certificates.could_not_send": "Could not send the email.",
-
   "admin.admins.page_title": "Administrators",
   "admin.admins.page_description": "Superadmins manage who can access the admin area.",
   "admin.admins.back_to_settings": "← Back to settings",
@@ -433,7 +421,6 @@
   "admin.admins.could_not_create_user": "Could not create the sign-in account.",
   "admin.admins.could_not_create_profile": "Could not create the admin profile. Please try again.",
   "admin.admins.created": "Admin {email} created.",
-
   "admin.settings.language.back_to_settings": "← Back to settings",
   "admin.settings.language.page_description": "Superadmin-only multilanguage feature flag. The active language drives every candidate-facing surface. In-progress attempts keep the language they started in.",
   "admin.settings.language.current_state_card": "Current state",
@@ -457,7 +444,6 @@
   "admin.settings.language.missing_settings": "Platform settings row is missing. Apply migration {migration}.",
   "admin.settings.language.deutsch": "Deutsch",
   "admin.settings.language.english": "English",
-
   "candidate.link_unavailable_title": "Link unavailable",
   "candidate.link_unavailable_body": "This certification link isn't available. It may be incorrect or no longer active. Please check with whoever issued it.",
   "candidate.welcome": "Welcome, {name}",
@@ -470,7 +456,6 @@
   "candidate.view_your_result": "View your result",
   "candidate.start_assessment": "Start assessment",
   "candidate.retake_assessment": "Retake assessment",
-
   "candidate.email.label": "Email address",
   "candidate.email.placeholder": "you@example.com",
   "candidate.email.submit": "Send verification code",
@@ -490,13 +475,11 @@
   "candidate.verify.too_many_attempts": "Too many incorrect attempts. Request a new code.",
   "candidate.verify.no_code": "No active code. Request a new one.",
   "candidate.verify.attempts_remaining": "Incorrect code. {remaining} attempts remaining.",
-
   "candidate.actions.no_certificate_yet": "There's no certificate to send yet.",
   "candidate.actions.no_email_on_file": "There's no email on file for this candidate.",
   "candidate.actions.certificate_unavailable": "This certificate isn't available.",
   "candidate.actions.email_send_failed": "Could not send the email.",
   "candidate.actions.email_sent": "Sent to {email}.",
-
   "candidate.result.title": "Your result",
   "candidate.result.no_attempt": "You haven't completed an attempt yet.",
   "candidate.result.congratulations": "Congratulations, {name}",
@@ -506,7 +489,6 @@
   "candidate.result.review_default": "Review the course material and try again.",
   "candidate.result.passing_line": "Passing score: {percent}%.",
   "candidate.result.score_stat": "Score: {percent}%",
-
   "candidate.certificate.title": "Your certificate",
   "candidate.certificate.preparing_title": "Certificate",
   "candidate.certificate.preparing_body": "Your certificate is being prepared. Please check back shortly.",
@@ -520,7 +502,6 @@
   "candidate.certificate.emailing": "Sending…",
   "candidate.certificate.download_pdf": "Download certificate (PDF)",
   "candidate.certificate.assets_pending": "Your download files are still being prepared. Please reload shortly.",
-
   "verify.title": "Certificate verification",
   "verify.lookup_card_title": "Verify a certificate",
   "verify.lookup_intro": "Enter the certificate ID printed on the certificate, or scan its QR code, to confirm it is genuine and still valid.",
@@ -539,7 +520,6 @@
   "verify.completed_label": "Completed",
   "verify.certificate_id_label": "Certificate ID",
   "verify.topics_label": "Topics",
-
   "auth.login.title": "Sign in",
   "auth.login.heading": "Admin sign in",
   "auth.login.card_title": "Sign in to continue",
@@ -550,16 +530,13 @@
   "auth.login.invalid": "Invalid email or password.",
   "auth.no_access.title": "No access",
   "auth.no_access.body": "Your account does not have admin access. Please contact a superadmin.",
-
   "attempt.no_questions": "This assessment doesn't have any questions yet. Please check back later or contact whoever issued your link.",
   "attempt.multiple_choice_hint": "(select all that apply)",
   "attempt.next_question": "Next question →",
   "attempt.previous_question": "← Previous question",
   "attempt.submit": "Submit assessment",
   "attempt.submitting": "Submitting…",
-
   "scoring.general_topic": "General",
-
   "email.certificate.subject": "Your certificate – {course}",
   "email.certificate.heading": "Your certificate",
   "email.certificate.greeting": "Hi {name}, congratulations on completing <strong>{course}</strong>.",
@@ -579,7 +556,6 @@
   "email.invite.cta": "Start now",
   "email.invite.fallback": "If the button doesn't work, copy this link into your browser: {url}",
   "email.invite.ignore_note": "If you didn't expect this email, you can safely ignore it.",
-
   "validation.invalid_date": "Enter a valid date.",
   "admin.dashboard.manage_seminars": "Manage seminars",
   "verify.seminar_label": "Seminar",
@@ -622,7 +598,6 @@
   "admin.seminars.delete_confirm": "Delete seminar \"{title}\"?",
   "admin.seminars.event_date": "Seminar date",
   "admin.seminars.event_date_hint": "The day the seminar was held. Printed on the certificate.",
-
   "validation.template_svg_required": "Upload an SVG file or paste the SVG code.",
   "validation.template_not_svg": "That doesn't look like an SVG file (no <svg> element found).",
   "validation.template_external_refs": "The template links to external files. Images must be embedded as data: URIs or they will be missing from the certificate.",
@@ -657,7 +632,6 @@
   "admin.templates.could_not_create": "Could not create the template. Please try again.",
   "admin.templates.could_not_save": "Could not save the template. Please try again.",
   "admin.templates.could_not_delete": "Could not delete the template. Please try again.",
-
   "admin.seminars.saved": "Seminar saved.",
   "admin.seminars.could_not_create": "Could not create the seminar. Please try again.",
   "admin.seminars.could_not_save": "Could not save your changes. Please try again.",
@@ -665,5 +639,10 @@
   "admin.seminars.cannot_delete_with_questions": "Can't delete: this seminar has questions or tests. Deactivate it instead.",
   "admin.forms.field.template_inactive": "{name} (inactive)",
   "validation.template_no_placeholders": "No placeholders were found in this SVG. The type was probably converted to outlines on export — the name, date and certificate ID then cannot be filled in. Please re-export without “convert text to outlines”.",
-  "validation.template_no_name_placeholder": "The template has no placeholder for the name ({{participant_name}}). Without it every certificate would be issued with no name on it."
+  "validation.template_no_name_placeholder": "The template has no placeholder for the name ({{participant_name}}). Without it every certificate would be issued with no name on it.",
+  "error.boundary_title": "Something went wrong",
+  "error.boundary_body": "This page could not be loaded. Your progress is saved — please try again.",
+  "error.boundary_retry": "Try again",
+  "error.boundary_reference_label": "Reference",
+  "error.boundary_contact": "If the problem persists, quote this reference to support."
 }

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
+import { logger } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { basePathFor, messagePrefixFor } from "./shared";
 import { courseSchema } from "./schema";
@@ -82,6 +83,7 @@ export async function createCourse(
     .single();
 
   if (error || !data) {
+    logger.error("admin.course.create_failed", { kind: d.kind }, error);
     return { message: t(`${messagePrefixFor(d.kind)}.could_not_create`) };
   }
 
@@ -112,12 +114,15 @@ export async function updateCourse(
   // `kind` is immutable: read the stored value instead of trusting the posted
   // one, so a record can never jump between the two admin sections (which would
   // also change which certificate template its future certificates use).
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("courses")
     .select("kind")
     .eq("id", id)
     .maybeSingle();
   if (!existing) {
+    // A read failure and a deleted row both land here but mean very different
+    // things, so the error object is what makes them distinguishable in a log.
+    logger.error("admin.course.load_failed", { courseId: id }, existingError);
     return { message: t("validation.generic_error") };
   }
   const kind = existing.kind;
@@ -141,6 +146,7 @@ export async function updateCourse(
 
   const p = messagePrefixFor(kind);
   if (error) {
+    logger.error("admin.course.update_failed", { courseId: id, kind }, error);
     return { message: t(`${p}.could_not_save`) };
   }
 
@@ -155,7 +161,11 @@ export async function toggleCourseActive(formData: FormData): Promise<void> {
   const active = formData.get("active") === "true";
   if (!id) return;
 
-  await supabase.from("courses").update({ active }).eq("id", id);
+  const { error } = await supabase.from("courses").update({ active }).eq("id", id);
+  if (error) {
+    logger.error("admin.course.toggle_active_failed", { courseId: id, active }, error);
+  }
+
   revalidateBoth(id);
 }
 
@@ -169,24 +179,39 @@ export async function deleteCourse(
   const id = String(formData.get("id") ?? "");
   if (!id) return { message: t("validation.generic_error") };
 
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("courses")
     .select("kind")
     .eq("id", id)
     .maybeSingle();
+  if (existingError) {
+    logger.error("admin.course.load_failed", { courseId: id }, existingError);
+  }
 
   // Only unused courses may be hard-deleted; otherwise deactivate.
-  const [{ count: questionCount }, { count: questionnaireCount }] =
-    await Promise.all([
-      supabase
-        .from("questions")
-        .select("*", { count: "exact", head: true })
-        .eq("course_id", id),
-      supabase
-        .from("questionnaires")
-        .select("*", { count: "exact", head: true })
-        .eq("course_id", id),
-    ]);
+  const [
+    { count: questionCount, error: questionCountError },
+    { count: questionnaireCount, error: questionnaireCountError },
+  ] = await Promise.all([
+    supabase
+      .from("questions")
+      .select("*", { count: "exact", head: true })
+      .eq("course_id", id),
+    supabase
+      .from("questionnaires")
+      .select("*", { count: "exact", head: true })
+      .eq("course_id", id),
+  ]);
+
+  // A failed count reads as zero below and would wave the delete through, so
+  // this is the loudest signal in the action even though it changes nothing.
+  if (questionCountError || questionnaireCountError) {
+    logger.error(
+      "admin.course.usage_count_failed",
+      { courseId: id },
+      questionCountError ?? questionnaireCountError,
+    );
+  }
 
   const p = messagePrefixFor(existing?.kind ?? "course");
   if ((questionCount ?? 0) > 0 || (questionnaireCount ?? 0) > 0) {
@@ -195,6 +220,7 @@ export async function deleteCourse(
 
   const { error } = await supabase.from("courses").delete().eq("id", id);
   if (error) {
+    logger.error("admin.course.delete_failed", { courseId: id }, error);
     return { message: t(`${p}.could_not_delete`) };
   }
 

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { reportError } from "@/lib/logger";
 import { getServerT } from "@/lib/i18n";
 import { pickLocalized } from "@/lib/i18n/content";
 import { certificationUrl } from "@/lib/public-url";
@@ -528,10 +529,159 @@ export async function manualPass(
   // "no attempt completed". Service-role internally; best-effort.
   await recordManualPassAttempt(assignmentId, locale);
 
-  await issueCertificate(supabase, assignmentId, { adminId: user.id });
+  const issued = await issueCertificateSafely(supabase, assignmentId, user.id, {
+    participantId: assignment.participant_id,
+  });
 
   revalidatePath(`/admin/participants/${assignment.participant_id}`);
+
+  // The pass itself stands even when issuance fails, but this must NOT report
+  // ok:true — ManualPassForm styles the message on `ok`, so a green box would
+  // tell the admin everything worked while the candidate sits stranded without
+  // a certificate. Fail the action so it renders as an error; the message says
+  // the pass succeeded and points at the retry.
+  if (!issued.ok) {
+    return {
+      ok: false,
+      message: t("admin.assignments.passed_certificate_failed", {
+        reference: issued.reference,
+      }),
+    };
+  }
+
   return { ok: true, message: t("admin.assignments.marked_passed") };
+}
+
+type IssueOutcome =
+  | { ok: true; certificateId: string }
+  | { ok: false; reference: string };
+
+/**
+ * Runs `issueCertificate` and turns every failure — a null return or a thrown
+ * error — into a support reference plus an immutable `certificate_issue_failed`
+ * event, so a stranded passed-without-certificate assignment is traceable from
+ * the participant's history instead of only from the server log.
+ */
+async function issueCertificateSafely(
+  supabase: Supabase,
+  assignmentId: string,
+  adminId: string,
+  params: { participantId: string },
+): Promise<IssueOutcome> {
+  let certificateId: string | null = null;
+  let thrown: unknown = null;
+
+  try {
+    certificateId = await issueCertificate(supabase, assignmentId, { adminId });
+  } catch (error) {
+    thrown = error;
+  }
+
+  if (certificateId) return { ok: true, certificateId };
+
+  // A null return means issueCertificate already logged the specific cause; the
+  // reference is what ties the admin's screen to that log line.
+  const reference = reportError(
+    "certificate_issue_failed",
+    thrown ?? new Error("issueCertificate returned no certificate id"),
+    { assignmentId },
+  );
+
+  await logAccountEvent(supabase, adminId, {
+    participantId: params.participantId,
+    assignmentId,
+    type: "certificate_issue_failed",
+    label: "Certificate issuance failed",
+    data: { reference },
+  });
+
+  return { ok: false, reference };
+}
+
+/**
+ * Issues the certificate for an assignment that is already `passed` but has no
+ * certificate row — the state left behind when the INSERT inside
+ * `issueCertificate` fails after the assignment has flipped to passed. Nothing
+ * retries it in the background and `manualPass` refuses an already-passed
+ * assignment, so without this action recovery meant editing the database by
+ * hand while the candidate waited on "your certificate is being prepared".
+ */
+export async function reissueCertificate(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { supabase, user } = await requireAdmin();
+  const { t } = await getServerT();
+
+  const assignmentId = String(formData.get("assignment_id") ?? "");
+  if (!assignmentId) return { message: t("validation.generic_error") };
+
+  const { data: assignment, error: loadError } = await supabase
+    .from("certification_assignments")
+    .select("id, participant_id, status, certificate_id")
+    .eq("id", assignmentId)
+    .maybeSingle();
+
+  if (loadError) {
+    const reference = reportError("certificate_reissue_load_failed", loadError, {
+      assignmentId,
+    });
+    return { message: t("admin.assignments.could_not_issue_certificate", { reference }) };
+  }
+  if (!assignment) return { message: t("admin.assignments.assignment_gone") };
+
+  if (assignment.status !== "passed") {
+    return { message: t("admin.assignments.issue_requires_passed") };
+  }
+
+  // `certificate_id` alone is not enough: the assignment backlink is written
+  // after the certificate row, so a certificate can exist with the link unset.
+  const { data: existing, error: existingError } = await supabase
+    .from("certificates")
+    .select("id")
+    .eq("certification_assignment_id", assignmentId)
+    .maybeSingle();
+
+  // A failed read must not be mistaken for "no certificate". Falling through
+  // would issue against an assignment that may already be fine, and write a
+  // spurious — and immutable — certificate_issue_failed history row.
+  if (existingError) {
+    const reference = reportError("certificate_reissue_lookup_failed", existingError, {
+      assignmentId,
+    });
+    return { message: t("admin.assignments.could_not_issue_certificate", { reference }) };
+  }
+
+  if (assignment.certificate_id || existing) {
+    return { message: t("admin.assignments.certificate_already_issued") };
+  }
+
+  const outcome = await issueCertificateSafely(supabase, assignmentId, user.id, {
+    participantId: assignment.participant_id,
+  });
+
+  if (outcome.ok) {
+    await logAccountEvent(supabase, user.id, {
+      participantId: assignment.participant_id,
+      assignmentId,
+      type: "certificate_reissued",
+      label: "Certificate issued by admin retry",
+      data: { certificate_id: outcome.certificateId },
+    });
+  }
+
+  // Revalidate either way — a failure adds a history event of its own.
+  revalidatePath(`/admin/participants/${assignment.participant_id}`);
+
+  if (!outcome.ok) {
+    return {
+      message: t("admin.assignments.could_not_issue_certificate", {
+        reference: outcome.reference,
+      }),
+    };
+  }
+
+  return { ok: true, message: t("admin.assignments.certificate_issued") };
 }
 
 /** Re-renders + re-uploads the certificate's official PDF + PNG preview.

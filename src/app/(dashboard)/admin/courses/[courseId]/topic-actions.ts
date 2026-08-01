@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
+import { logger } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { topicSchema } from "./topic-schema";
 
@@ -58,6 +59,11 @@ export async function createTopic(
   });
 
   if (error) {
+    logger.error(
+      "admin.topic.create_failed",
+      { courseId: parsed.data.course_id },
+      error,
+    );
     return { message: t("admin.topics.could_not_create") };
   }
 
@@ -96,6 +102,11 @@ export async function updateTopic(
     .eq("id", id);
 
   if (error) {
+    logger.error(
+      "admin.topic.update_failed",
+      { topicId: id, courseId: parsed.data.course_id },
+      error,
+    );
     return { message: t("admin.topics.could_not_save") };
   }
 
@@ -111,7 +122,18 @@ export async function toggleTopicActive(formData: FormData): Promise<void> {
   const active = formData.get("active") === "true";
   if (!id) return;
 
-  await supabase.from("course_topics").update({ active }).eq("id", id);
+  const { error } = await supabase
+    .from("course_topics")
+    .update({ active })
+    .eq("id", id);
+  if (error) {
+    logger.error(
+      "admin.topic.toggle_active_failed",
+      { topicId: id, courseId, active },
+      error,
+    );
+  }
+
   revalidateOwner(courseId);
 }
 
@@ -126,10 +148,15 @@ export async function deleteTopic(
   const courseId = String(formData.get("course_id") ?? "");
   if (!id) return { message: t("validation.generic_error") };
 
-  const { count: questionCount } = await supabase
+  const { count: questionCount, error: countError } = await supabase
     .from("questions")
     .select("*", { count: "exact", head: true })
     .eq("topic_id", id);
+
+  // A failed count reads as zero and would let the delete through.
+  if (countError) {
+    logger.error("admin.topic.usage_count_failed", { topicId: id }, countError);
+  }
 
   if ((questionCount ?? 0) > 0) {
     return { message: t("admin.topics.cannot_delete_with_questions") };
@@ -137,6 +164,7 @@ export async function deleteTopic(
 
   const { error } = await supabase.from("course_topics").delete().eq("id", id);
   if (error) {
+    logger.error("admin.topic.delete_failed", { topicId: id, courseId }, error);
     return { message: t("admin.topics.could_not_delete") };
   }
 

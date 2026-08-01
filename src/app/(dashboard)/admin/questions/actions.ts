@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { getServerT } from "@/lib/i18n";
+import { logger } from "@/lib/logger";
 import { fieldErrorsFromZod, type FormState } from "@/lib/form";
 import { questionSchema } from "./schema";
 
@@ -13,12 +14,21 @@ async function topicBelongsToCourse(
   topicId: string,
   courseId: string,
 ): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("course_topics")
     .select("id")
     .eq("id", topicId)
     .eq("course_id", courseId)
     .maybeSingle();
+  // A read failure is reported to the admin as "topic not in course", which is
+  // a misleading validation message unless the real cause is in the log.
+  if (error) {
+    logger.error(
+      "admin.question.topic_check_failed",
+      { topicId, courseId },
+      error,
+    );
+  }
   return Boolean(data);
 }
 
@@ -31,7 +41,10 @@ function parseQuestionForm(formData: FormData) {
   let options: unknown;
   try {
     options = JSON.parse(String(formData.get("options") ?? "[]"));
-  } catch {
+  } catch (error) {
+    // An unparseable payload means the editor sent something malformed; the
+    // admin only sees "options required", so record what actually happened.
+    logger.warn("admin.question.options_payload_invalid", {}, error);
     options = [];
   }
 
@@ -96,6 +109,11 @@ export async function createQuestion(
     .single();
 
   if (error || !inserted) {
+    logger.error(
+      "admin.question.create_failed",
+      { courseId: data.course_id, topicId: data.topic_id },
+      error,
+    );
     return { message: t("admin.questions.could_not_create") };
   }
 
@@ -111,8 +129,23 @@ export async function createQuestion(
   );
 
   if (optionsError) {
+    logger.error(
+      "admin.question.options_insert_failed",
+      { questionId: inserted.id, optionCount: data.options.length },
+      optionsError,
+    );
     // Roll back the orphaned question so the bank stays consistent.
-    await supabase.from("questions").delete().eq("id", inserted.id);
+    const { error: rollbackError } = await supabase
+      .from("questions")
+      .delete()
+      .eq("id", inserted.id);
+    if (rollbackError) {
+      logger.error(
+        "admin.question.rollback_delete_failed",
+        { questionId: inserted.id },
+        rollbackError,
+      );
+    }
     return { message: t("admin.questions.could_not_save_options") };
   }
 
@@ -168,12 +201,23 @@ export async function updateQuestion(
     .eq("id", id);
 
   if (error) {
+    logger.error("admin.question.update_failed", { questionId: id }, error);
     return { message: t("admin.questions.could_not_save") };
   }
 
   // Options have no external references in Slice 1, and every attempt stores its
   // own snapshot, so replacing the option set on edit is safe.
-  await supabase.from("question_options").delete().eq("question_id", id);
+  const { error: optionsDeleteError } = await supabase
+    .from("question_options")
+    .delete()
+    .eq("question_id", id);
+  if (optionsDeleteError) {
+    logger.error(
+      "admin.question.options_delete_failed",
+      { questionId: id },
+      optionsDeleteError,
+    );
+  }
   const { error: optionsError } = await supabase.from("question_options").insert(
     data.options.map((option, index) => ({
       question_id: id,
@@ -186,6 +230,13 @@ export async function updateQuestion(
   );
 
   if (optionsError) {
+    // The old options are already deleted at this point, so the question is
+    // left without any — the data-loss window M0 tracks for RPC conversion.
+    logger.error(
+      "admin.question.options_insert_failed",
+      { questionId: id, optionCount: data.options.length, afterDelete: true },
+      optionsError,
+    );
     return { message: t("admin.questions.options_failed") };
   }
 
@@ -201,7 +252,15 @@ export async function toggleQuestionActive(formData: FormData): Promise<void> {
   const active = formData.get("active") === "true";
   if (!id) return;
 
-  await supabase.from("questions").update({ active }).eq("id", id);
+  const { error } = await supabase.from("questions").update({ active }).eq("id", id);
+  if (error) {
+    logger.error(
+      "admin.question.toggle_active_failed",
+      { questionId: id, active },
+      error,
+    );
+  }
+
   revalidatePath("/admin/questions");
   revalidatePath(`/admin/questions/${id}`);
 }
@@ -216,10 +275,19 @@ export async function deleteQuestion(
   const id = String(formData.get("id") ?? "");
   if (!id) return { message: t("validation.generic_error") };
 
-  const { count: usageCount } = await supabase
+  const { count: usageCount, error: countError } = await supabase
     .from("questionnaire_questions")
     .select("*", { count: "exact", head: true })
     .eq("question_id", id);
+
+  // A failed count reads as zero and would let a linked question be deleted.
+  if (countError) {
+    logger.error(
+      "admin.question.usage_count_failed",
+      { questionId: id },
+      countError,
+    );
+  }
 
   if ((usageCount ?? 0) > 0) {
     return { message: t("admin.questions.cannot_delete_in_use") };
@@ -227,6 +295,7 @@ export async function deleteQuestion(
 
   const { error } = await supabase.from("questions").delete().eq("id", id);
   if (error) {
+    logger.error("admin.question.delete_failed", { questionId: id }, error);
     return { message: t("admin.questions.could_not_delete") };
   }
 
