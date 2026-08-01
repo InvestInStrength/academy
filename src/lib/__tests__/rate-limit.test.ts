@@ -5,12 +5,75 @@ import {
   extractCount,
   inMemoryRateLimit,
   rateLimit,
+  redisRestCredentials,
 } from "../rate-limit";
 
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+describe("redisRestCredentials — both naming conventions", () => {
+  it("reads the explicit Upstash names", () => {
+    expect(
+      redisRestCredentials({
+        UPSTASH_REDIS_REST_URL: "https://a.upstash.io",
+        UPSTASH_REDIS_REST_TOKEN: "tok-a",
+      }),
+    ).toEqual({ url: "https://a.upstash.io", token: "tok-a" });
+  });
+
+  it("reads the Vercel Marketplace KV names (the production case)", () => {
+    expect(
+      redisRestCredentials({
+        KV_REST_API_URL: "https://b.upstash.io",
+        KV_REST_API_TOKEN: "tok-b",
+      }),
+    ).toEqual({ url: "https://b.upstash.io", token: "tok-b" });
+  });
+
+  it("prefers the explicit Upstash names when both are present", () => {
+    expect(
+      redisRestCredentials({
+        UPSTASH_REDIS_REST_URL: "https://explicit.upstash.io",
+        UPSTASH_REDIS_REST_TOKEN: "tok-explicit",
+        KV_REST_API_URL: "https://kv.upstash.io",
+        KV_REST_API_TOKEN: "tok-kv",
+      }),
+    ).toEqual({ url: "https://explicit.upstash.io", token: "tok-explicit" });
+  });
+
+  it("strips a trailing slash so `${url}/pipeline` never double-slashes", () => {
+    expect(
+      redisRestCredentials({
+        KV_REST_API_URL: "https://c.upstash.io/",
+        KV_REST_API_TOKEN: "tok-c",
+      })?.url,
+    ).toBe("https://c.upstash.io");
+  });
+
+  it("returns null when either half is missing or empty", () => {
+    expect(redisRestCredentials({})).toBeNull();
+    expect(
+      redisRestCredentials({ KV_REST_API_URL: "https://d.upstash.io" }),
+    ).toBeNull();
+    expect(
+      redisRestCredentials({
+        KV_REST_API_URL: "",
+        KV_REST_API_TOKEN: "tok-d",
+      }),
+    ).toBeNull();
+  });
+
+  it("never falls back to the read-only token (INCR would fail)", () => {
+    expect(
+      redisRestCredentials({
+        KV_REST_API_URL: "https://e.upstash.io",
+        KV_REST_API_READ_ONLY_TOKEN: "tok-readonly",
+      }),
+    ).toBeNull();
+  });
 });
 
 describe("inMemoryRateLimit", () => {
@@ -99,8 +162,13 @@ describe("rateLimit — durable backend", () => {
 
 describe("rateLimit — no Upstash configured", () => {
   it("uses the in-memory backend", async () => {
+    // Clear BOTH naming conventions: leaving KV_* unstubbed would let a
+    // developer machine with the Vercel integration pulled locally hit real
+    // Redis and make this test pass for the wrong reason.
     vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
     vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+    vi.stubEnv("KV_REST_API_URL", "");
+    vi.stubEnv("KV_REST_API_TOKEN", "");
     const key = `unset-${Math.random()}`;
     expect(await rateLimit(key, 1, 60_000)).toBe(true);
     expect(await rateLimit(key, 1, 60_000)).toBe(false);

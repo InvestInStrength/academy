@@ -5,8 +5,9 @@ import "server-only";
  *
  * 1. DURABLE (preferred): a fixed-window counter in Upstash Redis via its REST
  *    API, shared across every serverless instance and surviving redeploys.
- *    Active only when both `UPSTASH_REDIS_REST_URL` and
- *    `UPSTASH_REDIS_REST_TOKEN` are set. No SDK dependency — one HTTP round-trip.
+ *    Active when Redis REST credentials are present under EITHER supported
+ *    naming convention (see `redisRestCredentials`). No SDK dependency — one
+ *    HTTP round-trip.
  * 2. IN-MEMORY fallback: a per-process sliding window. Used when Upstash isn't
  *    configured, or if a Redis call fails (fail-soft — a Redis hiccup must never
  *    hard-block legitimate candidates). Does NOT span instances; a stopgap only.
@@ -102,16 +103,45 @@ async function durableRateLimit(
   }
 }
 
+/**
+ * Resolves the Redis REST credentials, accepting BOTH naming conventions:
+ *
+ *  - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — what you get when
+ *    copying keys straight out of the Upstash console (what
+ *    `.env.local.example` documents, and what local dev typically uses).
+ *  - `KV_REST_API_URL` / `KV_REST_API_TOKEN` — what the Upstash Marketplace
+ *    integration injects into a Vercel project. Same service, same REST
+ *    protocol, different variable names.
+ *
+ * Supporting only the first set is why production rate limiting silently ran on
+ * the in-memory fallback: the integration had provisioned a database, but under
+ * names this module never read — so it received zero commands and Upstash
+ * eventually archived it for inactivity.
+ *
+ * Deliberately never reads `KV_REST_API_READ_ONLY_TOKEN`: the limiter issues
+ * INCR/PEXPIRE, which a read-only token cannot execute.
+ *
+ * Exported for tests.
+ */
+export function redisRestCredentials(
+  env: Record<string, string | undefined> = process.env,
+): { url: string; token: string } | null {
+  const url = env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL;
+  const token = env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN;
+  if (!url || !token) return null;
+  return { url: url.replace(/\/+$/, ""), token };
+}
+
 /** Returns true if the action is allowed, false if the limit is exceeded. */
 export async function rateLimit(
   key: string,
   limit: number,
   windowMs: number,
 ): Promise<boolean> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const credentials = redisRestCredentials();
 
-  if (url && token) {
+  if (credentials) {
+    const { url, token } = credentials;
     const durable = await durableRateLimit(url, token, key, limit, windowMs);
     if (durable !== null) return durable;
     // Fall through to the in-memory stopgap on any Redis failure.
