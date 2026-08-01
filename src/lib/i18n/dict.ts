@@ -34,3 +34,30 @@ export function t(
     name in params ? String(params[name]) : match,
   );
 }
+
+/** HTML-escapes a value that will be interpolated into markup. */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Like `t()`, but HTML-escapes every param value. REQUIRED for any message
+ * rendered via `dangerouslySetInnerHTML`: the template's own trusted markup
+ * (e.g. `<strong>`) survives, while interpolated data — such as admin-entered
+ * questionnaire titles shown on candidate pages — cannot inject HTML. */
+export function tHtml(
+  dict: Record<string, string>,
+  key: string,
+  params?: Record<string, string | number>,
+): string {
+  if (!params) return t(dict, key);
+  const escaped: Record<string, string> = {};
+  for (const [name, value] of Object.entries(params)) {
+    escaped[name] = escapeHtml(String(value));
+  }
+  return t(dict, key, escaped);
+}

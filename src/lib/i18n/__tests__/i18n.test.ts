@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getDictionary, t } from "../dict";
+import { escapeHtml, getDictionary, t, tHtml } from "../dict";
 
 describe("t() — dictionary lookup", () => {
   const dict = {
@@ -27,6 +27,44 @@ describe("t() — dictionary lookup", () => {
 
   it("leaves unknown placeholders untouched", () => {
     expect(t(dict, "greeting", {})).toBe("Hallo {name}!");
+  });
+});
+
+describe("escapeHtml", () => {
+  it("escapes the five HTML metacharacters", () => {
+    expect(escapeHtml(`<img src=x onerror="a" & 'b'>`)).toBe(
+      "&lt;img src=x onerror=&quot;a&quot; &amp; &#39;b&#39;&gt;",
+    );
+  });
+
+  it("leaves plain text untouched", () => {
+    expect(escapeHtml("Schulter-Biomechanik 01")).toBe("Schulter-Biomechanik 01");
+  });
+});
+
+describe("tHtml() — HTML-safe param substitution", () => {
+  const dict = {
+    intro: "Prüfung <strong>{title}</strong> zugewiesen.",
+    plain: "Kein Markup",
+  };
+
+  it("keeps the template's own markup but escapes param values", () => {
+    expect(tHtml(dict, "intro", { title: `<img src=x onerror=alert(1)>` })).toBe(
+      "Prüfung <strong>&lt;img src=x onerror=alert(1)&gt;</strong> zugewiesen.",
+    );
+  });
+
+  it("behaves like t() for benign values and no params", () => {
+    expect(tHtml(dict, "intro", { title: "Shoulder" })).toBe(
+      "Prüfung <strong>Shoulder</strong> zugewiesen.",
+    );
+    expect(tHtml(dict, "plain")).toBe("Kein Markup");
+  });
+
+  it("escapes values that would break out of an attribute context", () => {
+    expect(tHtml(dict, "intro", { title: `" onmouseover="x` })).toBe(
+      "Prüfung <strong>&quot; onmouseover=&quot;x</strong> zugewiesen.",
+    );
   });
 });
 

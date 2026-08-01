@@ -351,8 +351,11 @@ export async function recordAttempt(params: {
   };
 
   // Update the in-progress attempt row. Guarded by `submitted_at IS NULL` so
-  // we never overwrite an already-submitted attempt.
-  const { error: updError } = await service
+  // we never overwrite an already-submitted attempt. `.select("id")` makes the
+  // matched row count observable: a 0-row match means a concurrent submit won
+  // the race, and the loser must not write answers, touch the assignment, or
+  // log events — otherwise attempt_answers and history rows are duplicated.
+  const { data: finalized, error: updError } = await service
     .from("attempts")
     .update({
       submitted_at: new Date().toISOString(),
@@ -364,10 +367,20 @@ export async function recordAttempt(params: {
       recommendation_snapshot: recommendations as unknown as Json,
     })
     .eq("id", attemptId)
-    .is("submitted_at", null);
+    .is("submitted_at", null)
+    .select("id");
 
   if (updError) {
+    console.error("[recordAttempt] attempt finalize failed", {
+      attemptId,
+      error: updError.message,
+    });
     throw new Error("Failed to record attempt");
+  }
+  if (!finalized || finalized.length === 0) {
+    // Lost the double-submit race: the attempt is already finalized. The
+    // caller redirects to the result page, which renders the winner's data.
+    return { passed: score.passed, attempt_number: attemptNumber };
   }
 
   const answerRows = score.graded.map((question: GradedQuestion, index) => ({
@@ -393,23 +406,49 @@ export async function recordAttempt(params: {
   }));
 
   if (answerRows.length > 0) {
-    await service.from("attempt_answers").insert(answerRows);
+    const { error: answersError } = await service
+      .from("attempt_answers")
+      .insert(answerRows);
+    if (answersError) {
+      // The attempt row is already finalized; the score stands. Log loudly —
+      // per-answer detail for this attempt is lost and admins should know.
+      console.error("[recordAttempt] attempt_answers insert failed", {
+        attemptId,
+        error: answersError.message,
+      });
+    }
   }
 
-  // Update assignment status. Never downgrade a passed assignment.
+  // Update assignment status. Never downgrade a passed assignment — the
+  // `.neq("status", "passed")` guard is on BOTH paths so a stale fail
+  // submission (second tab, replayed POST) can never overwrite a pass that
+  // was committed after this request loaded its context.
   if (score.passed) {
-    await service
+    const { error: passError } = await service
       .from("certification_assignments")
       .update({ status: "passed", passed_at: new Date().toISOString() })
       .eq("id", context.assignment.id)
       .neq("status", "passed");
+    if (passError) {
+      console.error("[recordAttempt] assignment pass update failed", {
+        assignmentId: context.assignment.id,
+        error: passError.message,
+      });
+    }
     // Generate the certificate immediately after passing (idempotent).
     await issueCertificate(service, context.assignment.id);
-  } else if (context.assignment.status !== "passed") {
-    await service
+  } else {
+    const { error: failError } = await service
       .from("certification_assignments")
       .update({ status: "failed" })
-      .eq("id", context.assignment.id);
+      .eq("id", context.assignment.id)
+      .neq("status", "passed");
+    if (failError) {
+      console.error("[recordAttempt] assignment fail update failed", {
+        assignmentId: context.assignment.id,
+        error: failError.message,
+      });
+    }
   }
 
   await logEvent(
@@ -511,7 +550,11 @@ export async function recordManualPassAttempt(
     manual_pass: true,
   };
 
-  const { error: updError } = await service
+  // Same double-finalize guard as recordAttempt: a 0-row match means another
+  // call (double-clicked manual pass, or a candidate submit racing this one)
+  // already finalized the attempt. Returning here keeps its answer rows and
+  // history events from being duplicated onto the winner's attempt.
+  const { data: finalized, error: updError } = await service
     .from("attempts")
     .update({
       submitted_at: new Date().toISOString(),
@@ -523,8 +566,16 @@ export async function recordManualPassAttempt(
       recommendation_snapshot: recommendations as unknown as Json,
     })
     .eq("id", attempt.id)
-    .is("submitted_at", null);
-  if (updError) return;
+    .is("submitted_at", null)
+    .select("id");
+  if (updError) {
+    console.error("[recordManualPassAttempt] attempt finalize failed", {
+      attemptId: attempt.id,
+      error: updError.message,
+    });
+    return;
+  }
+  if (!finalized || finalized.length === 0) return;
 
   const answerRows = score.graded.map((question: GradedQuestion, index) => ({
     attempt_id: attempt.id,

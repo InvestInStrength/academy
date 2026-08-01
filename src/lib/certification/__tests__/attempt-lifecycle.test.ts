@@ -50,14 +50,25 @@ type FakeQuery = {
   ): FakeQuery;
 };
 
-function makeFakeService(seed: AttemptRow[] = []) {
+function makeFakeService(
+  seed: AttemptRow[] = [],
+  /** Models a concurrent attempt-start race: `raceWinner` is invisible to the
+   * first lookup (the racing request has not inserted yet) and visible after
+   * it, while the INSERT is rejected with `failInsertWith` — exactly what
+   * migration 0008's `uniq_open_attempt_per_assignment` does to the loser. */
+  opts: { failInsertWith?: string; raceWinner?: AttemptRow } = {},
+) {
   const rows: AttemptRow[] = [...seed];
   let nextRowId = rows.length + 1;
+  let lookups = 0;
 
   function builder() {
-    let working: AttemptRow[] = rows.slice();
+    const visible =
+      opts.raceWinner && lookups >= 1 ? [...rows, opts.raceWinner] : rows.slice();
+    let working: AttemptRow[] = visible;
     let mode: "query" | "insert" = "query";
     let insertedRow: AttemptRow | null = null;
+    let insertError: { message: string } | null = null;
 
     const api: FakeQuery = {
       select(_cols: string) {
@@ -91,11 +102,12 @@ function makeFakeService(seed: AttemptRow[] = []) {
         if (mode === "insert") {
           return { data: insertedRow, error: null };
         }
+        lookups += 1;
         return { data: working[0] ?? null, error: null };
       },
       async single() {
         if (mode === "insert") {
-          return { data: insertedRow, error: null };
+          return { data: insertedRow, error: insertError };
         }
         if (working.length === 0) {
           return { data: null, error: { message: "not found" } as { message: string } };
@@ -104,6 +116,11 @@ function makeFakeService(seed: AttemptRow[] = []) {
       },
       insert(row: Partial<AttemptRow> & { certification_assignment_id: string; attempt_number: number }) {
         mode = "insert";
+        if (opts.failInsertWith) {
+          insertError = { message: opts.failInsertWith };
+          insertedRow = null;
+          return api;
+        }
         insertedRow = {
           id: `attempt-${nextRowId++}`,
           certification_assignment_id: row.certification_assignment_id,
@@ -203,6 +220,37 @@ describe("startOrResumeAttemptWith", () => {
     expect(result.language).toBe("en");
     expect(rows).toHaveLength(2);
     expect(rows[1].submitted_at).toBeNull();
+  });
+
+  it("resumes the winner's row when a concurrent start loses the insert race", async () => {
+    // Both requests find no open attempt; the other inserts first, so this
+    // insert violates uniq_open_attempt_per_assignment (migration 0008). The
+    // loser must resume the winner's row, not 500 mid-assessment.
+    const { client, rows } = makeFakeService([], {
+      failInsertWith:
+        'duplicate key value violates unique constraint "uniq_open_attempt_per_assignment"',
+      raceWinner: {
+        id: "winner-attempt",
+        certification_assignment_id: "asgn-1",
+        attempt_number: 1,
+        submitted_at: null,
+        language: "de",
+        answers: { "q-1": ["opt-a"] },
+      },
+    });
+
+    const result = await startOrResumeAttemptWith(client, "asgn-1", "en");
+    expect(result.id).toBe("winner-attempt");
+    expect(result.language).toBe("de"); // winner's frozen language wins
+    expect(result.answers).toEqual({ "q-1": ["opt-a"] });
+    expect(rows).toHaveLength(0); // loser inserted nothing
+  });
+
+  it("still throws when the insert fails and no open attempt exists to resume", async () => {
+    const { client } = makeFakeService([], { failInsertWith: "connection reset" });
+    await expect(startOrResumeAttemptWith(client, "asgn-1", "de")).rejects.toThrow(
+      /Failed to start attempt/,
+    );
   });
 
   it("scopes attempt_number by assignment — separate assignments get their own counter", async () => {

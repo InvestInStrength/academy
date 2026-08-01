@@ -5,7 +5,7 @@ import { cache } from "react";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 import type { Locale } from "@/types/database";
 
-import { DEFAULT_LOCALE, getDictionary, t } from "./dict";
+import { DEFAULT_LOCALE, escapeHtml, getDictionary, t, tHtml } from "./dict";
 
 /**
  * Server-only i18n runtime — Slice 7a foundation.
@@ -17,7 +17,7 @@ import { DEFAULT_LOCALE, getDictionary, t } from "./dict";
  */
 
 export type { Locale };
-export { getDictionary, t, DEFAULT_LOCALE };
+export { getDictionary, t, tHtml, escapeHtml, DEFAULT_LOCALE };
 
 /** Reads `platform_settings.active_language`. Returns 'de' on any error so the
  * platform always renders something (DE-first invariant). */
@@ -38,16 +38,18 @@ export const getActiveLanguage = cache(async (): Promise<Locale> => {
 });
 
 /** Convenience for server components: resolves the active locale + a bound
- * `t()` in one go. */
+ * `t()` (and `tHtml()` for `dangerouslySetInnerHTML` sites) in one go. */
 export async function getServerT(): Promise<{
   locale: Locale;
   t: (key: string, params?: Record<string, string | number>) => string;
+  tHtml: (key: string, params?: Record<string, string | number>) => string;
 }> {
   const locale = await getActiveLanguage();
   const dict = getDictionary(locale);
   return {
     locale,
     t: (key, params) => t(dict, key, params),
+    tHtml: (key, params) => tHtml(dict, key, params),
   };
 }
 

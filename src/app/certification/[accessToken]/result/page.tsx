@@ -20,7 +20,7 @@ export default async function ResultPage({
 }) {
   const { accessToken } = await params;
   const context = await getCandidateContext(accessToken);
-  const { locale, t } = await getServerT();
+  const { locale, t, tHtml } = await getServerT();
 
   if (!context) {
     return (
@@ -90,7 +90,7 @@ export default async function ResultPage({
               <p
                 className="mx-auto max-w-md text-base leading-relaxed text-slate-600"
                 dangerouslySetInnerHTML={{
-                  __html: t("candidate.result.passed_body", { title }),
+                  __html: tHtml("candidate.result.passed_body", { title }),
                 }}
               />
             </div>

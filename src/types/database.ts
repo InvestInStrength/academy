@@ -1,8 +1,8 @@
 /**
- * Database types mirroring supabase/migrations/0001_core_schema.sql.
+ * Database types mirroring ALL migrations in supabase/migrations/ (0001–0008).
  *
  * Hand-maintained (not generated) so the project does not require the Supabase
- * CLI to build. If you change the migration, update this file to match. The
+ * CLI to build. If you change a migration, update this file to match. The
  * shape follows the convention used by `supabase gen types typescript`, so it
  * can be swapped for generated types later without touching call sites.
  */
@@ -22,6 +22,13 @@ export type QuestionType = "single_choice" | "multiple_choice";
 export type CourseKind = "course" | "seminar";
 export type AssignmentStatus = "not_started" | "in_progress" | "passed" | "failed";
 export type CertificateStatus = "valid" | "revoked";
+/** Why an admin voided a submitted attempt (migration 0008). The attempt row
+ * itself stays immutable — invalidation is an overlay, never an edit. */
+export type AttemptInvalidationKind =
+  | "technical_malfunction"
+  | "duplicate_submission"
+  | "integrity_concern"
+  | "administrative_error";
 
 export type CertificateAssetType =
   | "official_pdf"
@@ -504,6 +511,10 @@ export type Database = {
           recommendation_snapshot: Json | null;
           answers: Json | null;
           language: Locale;
+          invalidated_at: string | null;
+          invalidated_by_admin_id: string | null;
+          invalidation_kind: AttemptInvalidationKind | null;
+          invalidation_reason: string | null;
           created_at: string;
         };
         Insert: {
@@ -520,6 +531,10 @@ export type Database = {
           recommendation_snapshot?: Json | null;
           answers?: Json | null;
           language?: Locale;
+          invalidated_at?: string | null;
+          invalidated_by_admin_id?: string | null;
+          invalidation_kind?: AttemptInvalidationKind | null;
+          invalidation_reason?: string | null;
           created_at?: string;
         };
         Update: {
@@ -536,6 +551,10 @@ export type Database = {
           recommendation_snapshot?: Json | null;
           answers?: Json | null;
           language?: Locale;
+          invalidated_at?: string | null;
+          invalidated_by_admin_id?: string | null;
+          invalidation_kind?: AttemptInvalidationKind | null;
+          invalidation_reason?: string | null;
           created_at?: string;
         };
       };

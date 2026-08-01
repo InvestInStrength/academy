@@ -24,7 +24,7 @@ export default async function CertificationHubPage({
   const { accessToken } = await params;
   const { busy } = await searchParams;
   const context = await getCandidateContext(accessToken);
-  const { locale, t } = await getServerT();
+  const { locale, t, tHtml } = await getServerT();
 
   if (!context) {
     return (
@@ -54,7 +54,7 @@ export default async function CertificationHubPage({
           <p
             className="text-sm text-slate-600"
             dangerouslySetInnerHTML={{
-              __html: t("candidate.assigned_intro", { title }),
+              __html: tHtml("candidate.assigned_intro", { title }),
             }}
           />
           <EmailVerificationFlow

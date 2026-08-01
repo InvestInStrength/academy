@@ -31,23 +31,26 @@ export async function startOrResumeAttemptWith(
   assignmentId: string,
   currentActiveLanguage: Locale,
 ): Promise<InProgressAttempt> {
-  const { data: existing } = await service
-    .from("attempts")
-    .select("id, attempt_number, language, answers")
-    .eq("certification_assignment_id", assignmentId)
-    .is("submitted_at", null)
-    .order("attempt_number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existing) {
+  const findOpenAttempt = async () => {
+    const { data } = await service
+      .from("attempts")
+      .select("id, attempt_number, language, answers")
+      .eq("certification_assignment_id", assignmentId)
+      .is("submitted_at", null)
+      .order("attempt_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return null;
     return {
-      id: existing.id,
-      attempt_number: existing.attempt_number,
-      language: existing.language,
-      answers: sanitizeAnswerMap(existing.answers),
+      id: data.id,
+      attempt_number: data.attempt_number,
+      language: data.language,
+      answers: sanitizeAnswerMap(data.answers),
     };
-  }
+  };
+
+  const existing = await findOpenAttempt();
+  if (existing) return existing;
 
   const { data: last } = await service
     .from("attempts")
@@ -69,6 +72,12 @@ export async function startOrResumeAttemptWith(
     .single();
 
   if (error || !inserted) {
+    // Lost a concurrent attempt-start race (two tabs, double navigation): the
+    // winner's row now violates either unique(assignment, attempt_number) or
+    // the one-open-attempt index from migration 0008. Resolve by resuming the
+    // winner's row instead of 500-ing mid-assessment.
+    const winner = await findOpenAttempt();
+    if (winner) return winner;
     throw new Error(`Failed to start attempt: ${error?.message ?? "unknown"}`);
   }
 
