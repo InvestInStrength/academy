@@ -1,9 +1,24 @@
 # Certificate Output System — spec & architecture
 
-Status: **planned** (not yet built). This document is the source of truth for the
-expanded certificate output scope. Implement via the roadmap slice
-"**Certificate Output System**" — do NOT build the rendering layer until that
-slice is explicitly started.
+Status: **partially built and live** (corrected 2026-08-01 — this header
+previously said "planned", which was stale by two months).
+
+- **Shipped:** official PDF + high-resolution PNG preview, rendered server-side
+  (`@resvg/resvg-js` + `pdf-lib`) and stored in the public Supabase Storage
+  bucket `certificates`, tracked in `certificate_assets`, with an admin
+  "Regenerate files" action. See `src/lib/certificate/{generate,assets,storage}.ts`.
+- **Not built:** the Instagram Story / feed / square formats (blocked on the
+  client's social designs — decision D-21), the website badge, fit-to-box text
+  shrinking, name-overflow warnings, template preview with sample data, and
+  PDF-as-email-attachment (the certificate email still attaches the SVG).
+- **Changed since this spec was written:** the implemented account_history
+  events are `certificate_assets_generated` / `certificate_generation_failed`,
+  not the `certificate_pdf_generated` / `certificate_preview_generated` named
+  below.
+
+This document remains the source of truth for the *remaining* scope; treat the
+milestone plan in `docs/academy/07-milestone-backlog.md` (M5) as authoritative
+for sequencing.
 
 ## Why
 The audience pays for and is proud of these qualifications. After passing, a

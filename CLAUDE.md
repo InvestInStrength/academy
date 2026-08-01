@@ -36,7 +36,7 @@ certificate template differ. See `docs/SEMINARS.md` before touching either.
   `server-only`. Reserved for later anonymous flows (attempts, verification). Not
   used in Slice 1.
 - `src/lib/supabase/proxy.ts` — session refresh helper for the proxy.
-- `src/lib/auth/admin.ts` — `requireAdmin()` / `getAdminUser()`.
+- `src/lib/auth/admin.ts` — `requireAdmin()` / `requireSuperadmin()`.
 - `src/lib/form.ts` — `FormState` shape + Zod error flattening for `useActionState`.
 - `src/components/ui/*` — small hand-rolled primitives (no component library).
 - `src/components/admin/*` — admin chrome (sidebar, page header, action button).
@@ -67,14 +67,27 @@ certificate template differ. See `docs/SEMINARS.md` before touching either.
   create/edit use `useActionState` + `FormState`.
 
 ## Database
+- **Migrations are tracked by the Supabase CLI** (since 2026-08-01). The project
+  is linked to ref `nvozlhcxpnmhcbquxbxl`; 0001–0007 were baselined with
+  `supabase migration repair --status applied`, and 0008 was the first applied
+  via `supabase db push`. Do NOT paste SQL into the dashboard editor any more —
+  add a migration file and push it, or the CLI's view drifts from reality.
+  Credentials come from `.env.tools` (gitignored, distributed by Control Tower).
 - Migrations:
   - `0001_core_schema.sql` — full model.
   - `0002_platform_settings_and_attempt_language.sql` — Slice 7a multilanguage
     foundation (typed `platform_settings` single-row table; `attempts.language`
     frozen at attempt-start).
+  - `0004_certificate_assets.sql` — `certificate_assets` (one row per generated
+    file) + typed `certificate_templates`.
+  - `0005_attempt_progress.sql` — `attempts.answers` draft map (autosave).
+  - `0006_email_verification_codes.sql` — hashed 6-digit candidate OTP.
   - `0007_seminars.sql` — the Seminar certification kind. Adds `courses.kind`
     (`course` | `seminar`), `courses.event_date` (seminars only, printed on the
     certificate) and `courses.certificate_template_id` (per-seminar artwork).
+  - `0008_attempt_hardening.sql` — M0 integrity. One open attempt per assignment
+    (partial unique index), submitted attempts immutable (trigger, whitelisting
+    only the four invalidation columns it adds for M4).
   - `0003_localized_content_columns.sql` — Slice 7b. Adds `_de`/`_en` text
     columns to `courses`, `course_topics`, `questions`, `question_options`,
     `questionnaires`. Backfills `_de` from the legacy column. Updates
@@ -131,10 +144,13 @@ Plan + audit: `docs/slice-7a-plan.md`, `docs/codex-brief-multilanguage.md`,
   certificate generation, public verification, and Resend email delivery are done.
 - **Verified end-to-end against a live Supabase project + Resend domain
   (2026-05-29) — the full flow works.**
-- **Top pre-launch item: a UI/UX + functionality polish sweep** across all
-  surfaces (client-flagged). Other cross-cutting items: durable rate-limit store,
-  server-side PNG/PDF + Storage, certificate-template CRUD, automated tests,
-  candidate email verification. See `docs/ROADMAP.md`.
+- **Shipped since that list was written** (do not re-plan these): durable
+  rate-limit store, server-side PNG/PDF + Storage, certificate-template CRUD,
+  candidate email verification, and ~190 unit tests. **Top pre-launch item
+  remains a UI/UX + functionality polish sweep** (client-flagged).
+- **CI runs on every push and PR** (`.github/workflows/ci.yml`: typecheck, lint,
+  tests, production build). Protect `main` and mark `verify` required so it
+  blocks rather than merely reports.
 - Certificates (current/interim): rendered SVG frozen into
   `certificate_public_snapshot` at issue (`src/lib/certificate/{render,issue}.ts`);
   never shows the score. Email via `src/lib/email/certificate-email.ts` (Resend;
@@ -150,8 +166,12 @@ Plan + audit: `docs/slice-7a-plan.md`, `docs/codex-brief-multilanguage.md`,
   (explicit field selection only — never `select("*")`, never expose
   scores/answers/email/admin notes beyond what each surface needs). Scoring is
   pure in `src/lib/certification/scoring.ts`.
-- Rate limiting (`src/lib/rate-limit.ts`) is in-memory only — must be backed by a
-  durable store before production.
+- Rate limiting (`src/lib/rate-limit.ts`) uses Upstash Redis over REST with a
+  per-process in-memory fallback. It accepts **either** `UPSTASH_REDIS_REST_*`
+  **or** the `KV_REST_API_*` names the Vercel Upstash integration injects.
+  Production's database is currently **archived** (it received no traffic while
+  the names mismatched), so prod is still on the in-memory fallback until it is
+  restored — see `docs/academy/09-risk-register.md`.
 - Full slice plan, locked decisions, and the Codex audit response live in
   **`docs/ROADMAP.md`** (read before starting new work). Raw audit:
   **`AUDIT_FOR_CLAUDE.md`**.
@@ -164,5 +184,6 @@ enforce topic↔course, question↔questionnaire-course, and content locking (a
 questionnaire/question used by an assignment is frozen); assignment uniqueness
 index; `certification_assignment_topics` join table; `certificate_public_snapshot`.
 
-Deferred (tracked in roadmap): full RPC transactionalization of multi-step writes,
-automated tests, rate limiting (Slice 3).
+Deferred (tracked in roadmap): full RPC transactionalization of multi-step writes.
+(Automated tests and rate limiting are no longer deferred — both shipped; see
+above.)

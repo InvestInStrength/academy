@@ -41,13 +41,22 @@ receive a verifiable certificate.
    | `NEXT_PUBLIC_SUPABASE_URL` | Public project URL |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key (RLS protects data) |
    | `SUPABASE_SERVICE_ROLE_KEY` | **Server only.** Never expose to the browser |
-   | `NEXT_PUBLIC_SITE_URL` | e.g. `http://localhost:3000` |
+   | `NEXT_PUBLIC_SITE_URL` | e.g. `http://localhost:3000`. Validated at boot — it is frozen into certificate QR codes, so a wrong value mints permanently broken certificates |
+   | `RESEND_API_KEY` | Transactional email. Unset ⇒ email disabled (candidates cannot verify their address, so they cannot sit an exam) |
+   | `RESEND_FROM` | Verified sender, e.g. `INVEST IN STRENGTH <noreply@yourdomain>` |
+   | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Durable rate limiting. Optional locally; unset ⇒ per-process fallback. On Vercel the Upstash integration supplies `KV_REST_API_URL` / `KV_REST_API_TOKEN` instead — the limiter accepts either pair |
 
-3. **Database** — run the migration in the Supabase SQL Editor:
+3. **Database** — apply all migrations with the Supabase CLI (they are tracked;
+   do not paste SQL into the dashboard editor):
 
+   ```bash
+   supabase link --project-ref <your-project-ref>
+   supabase db push
    ```
-   supabase/migrations/0001_core_schema.sql
-   ```
+
+   Migrations live in `supabase/migrations/` (`0001` … `0008`). On a project
+   whose schema was applied by hand, baseline first with
+   `supabase migration repair --status applied 0001 … 000N`.
 
 4. **Disable public signup** in Supabase (Authentication → Providers / settings).
    Admins are created in-app by a superadmin; there is no self-service signup.
@@ -107,7 +116,12 @@ receive a verifiable certificate.
 
 ## Roadmap
 
-See `docs/ROADMAP.md` for the slice plan and locked decisions, and
-`AUDIT_FOR_CLAUDE.md` for the foundation audit. Current status: Slice 1
-(foundation + content CRUD) and Slice 1.5 (hardening) complete; next is Slice 2
-(participants & certification assignments).
+**Start with `docs/academy/README.md`** — the current audit, capability matrix,
+milestone plan (M0–M6) and decision register. It supersedes the older documents
+where they disagree.
+
+`docs/ROADMAP.md` holds the original slice plan and locked decisions, and
+`AUDIT_FOR_CLAUDE.md` the foundation audit. Current status: the certification
+platform is **live in production** (slices 1–7 + Seminars + Certificate Output
+MVP shipped); work in progress is milestone **M0 — production truth and
+stabilization**.
