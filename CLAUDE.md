@@ -120,6 +120,12 @@ Plan + audit: `docs/slice-7a-plan.md`, `docs/codex-brief-multilanguage.md`,
 - `pnpm lint` — ESLint
 
 ## Status & roadmap
+- **Academy scope package (2026-08-01): `docs/academy/README.md`** — full audit of
+  code + live production, capability matrix for the academy expansion (learning,
+  commerce, accounts), milestone plan M0–M6, decision + risk registers. Read it
+  before planning new work; it also corrects several stale claims in THIS file and
+  in `docs/ROADMAP.md` (e.g. durable Upstash rate limiting, Slice 6 PDF/PNG,
+  template CRUD, and email verification are all SHIPPED; ~171 unit tests exist).
 - **MVP slices 1, 1.5, 2, 3, 4, and 5 are all complete.** Foundation, admin auth,
   content CRUD, hardening, participants + assignments, candidate attempt flow,
   certificate generation, public verification, and Resend email delivery are done.
