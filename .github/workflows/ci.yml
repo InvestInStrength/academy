@@ -1,0 +1,60 @@
+name: CI
+
+# The deploy gate. Vercel builds every push to main automatically, so this is
+# the only thing standing between a broken commit and production — keep it
+# fast and keep it required (Settings → Branches → protect `main` with this
+# check, otherwise it reports but blocks nothing).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the Vercel project's Node 24.x runtime.
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # Includes the certificate raster tests, which run resvg + pdf-lib for
+      # real (no mocks) and take ~10s. They are the reason CI has a generous
+      # timeout: they catch font/binary regressions nothing else would.
+      - name: Test
+        run: pnpm test
+
+      # Catches the failure mode where code compiles but the production build
+      # breaks — e.g. a server-only import pulled into a client component.
+      # Supabase env vars are validated at module load (src/lib/env.ts), so the
+      # build needs syntactically valid placeholders; these are NOT secrets and
+      # never reach a deployed artifact.
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_PUBLIC_SITE_URL: https://investinstrength.academy
