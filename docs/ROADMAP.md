@@ -1,8 +1,23 @@
 # Invest in Strength — Roadmap & Slice Plan
 
-Living plan. Updated 2026-05-29 after the independent Codex audit
-(`AUDIT_FOR_CLAUDE.md`). Read that file for the full findings; this file is the
-actionable slice breakdown.
+> **⚠️ SUPERSEDED for forward planning (2026-08-04).**
+>
+> This file remains the accurate record of **slices 1–7 + Seminars**, which built
+> the certification platform now live in production. It is NOT the current plan.
+>
+> **New work is planned in [`docs/academy/`](academy/README.md)** — a full audit
+> of the code and the live database, a 112-row capability matrix against the
+> target academy scope (learning content, Stripe payments, participant
+> accounts), and milestones **M0–M6**. Where this file and the academy package
+> disagree, the academy package is right: it was written against verified
+> production state, and it corrects several stale claims here (see
+> "Cross-cutting" below).
+>
+> Current milestone: **M0 — production truth & stabilization** (see status below).
+
+Historical context: this plan was written 2026-05-29 after the independent Codex
+audit (`AUDIT_FOR_CLAUDE.md`). Read that file for the original findings; this
+file is the actionable slice breakdown that followed.
 
 ## Locked decisions (2026-05-29)
 
@@ -27,6 +42,66 @@ Still open (decide when we reach the relevant slice, not blocking now):
 - Whether manual-pass certificates are visually distinguishable (Slice 4).
 
 ## Status
+
+### 🔨 M0 — Production truth & stabilization (in progress, 2026-08-01→02)
+
+The first milestone of the academy plan. Goal: fix every known live defect and
+end operational blindness *before* any new feature work. Detail and acceptance
+criteria in [`docs/academy/07-milestone-backlog.md`](academy/07-milestone-backlog.md).
+
+**Shipped (7 commits, all CI-green, verified on production):**
+
+- **CI at last** (`.github/workflows/ci.yml`) — typecheck, lint, 190 tests and a
+  production build on every push and PR. Nothing ran automatically before; a
+  commit breaking every test would have deployed unimpeded.
+- **Stored XSS closed.** `t()` interpolated params raw into two candidate pages
+  rendered via `dangerouslySetInnerHTML`, so an admin-entered questionnaire
+  title could execute script in every candidate's browser. New `tHtml()` keeps
+  the template's own markup and escapes every parameter.
+- **Attempt-integrity guards** + migration `0008_attempt_hardening.sql`: one open
+  attempt per assignment (partial unique index), submitted attempts immutable
+  (trigger), double-submit no longer duplicates answer rows or history events,
+  and the fail path can no longer overwrite a committed pass.
+- **Certificate re-issue path.** A passed assignment whose issuance failed was
+  previously unrecoverable — manual pass refuses, nothing retries, the candidate
+  waits forever. Also fixed a 23505 handler that returned `null` instead of the
+  winner's certificate under concurrency.
+- **Structured logging** (`src/lib/logger.ts`) + error boundaries. The codebase
+  emitted *nothing* on failure; every incident was undiagnosable from Vercel
+  logs. Deliberately omits Supabase's `details` field, which Postgres fills with
+  the full rejected row (i.e. participant emails).
+- **`/api/health`** — the app's first API route. Shallow is open; deep requires
+  `HEALTH_CHECK_TOKEN`. The proxy now skips `/api/*`, which was costing every
+  request a Supabase Auth round-trip (DB probe: 2.5s timeout → 330ms).
+- **ActionButton failures are visible.** 13 admin actions returned `void` and
+  ignored the write result, so a rejected mutation looked identical to success —
+  including several invisible *refusals* (duplicate active assignment, re-send
+  with no email on file, language guards).
+- **Rate limiting fixed** — see the Upstash note under Cross-cutting.
+- **Reconciliation** (`scripts/reconcile.mjs`) — eight invariants the schema
+  cannot enforce, read-only, surfaces and never repairs. Clean against prod.
+- **Migrations are Supabase-CLI-tracked.** 0001–0007 baselined with
+  `migration repair`; 0008 applied via `db push`. Do not paste SQL into the
+  dashboard editor any more.
+
+**Blocked on the founder (each needs a browser or a decision):**
+
+1. **Restore the Upstash database** — see Cross-cutting.
+2. **`HEALTH_CHECK_TOKEN`** in Vercel prod env, to enable deep health probes.
+3. **Protect `main`** and mark `verify` a required check — CI currently reports
+   but does not block.
+4. **Sentry DSN** — `reportError()` in `src/lib/logger.ts` is the single seam.
+5. **Decision D-04** (revoked-certificate assets): revoking flips a status but
+   the pristine PDF stays publicly downloadable at a stable URL. The
+   recommendation is a private bucket + signed URLs, which breaks previously
+   emailed links — hence a client call. See
+   [`docs/academy/08-decision-register.md`](academy/08-decision-register.md).
+
+**Next milestone:** M1 — participant accounts, enrollments/entitlements, jobs +
+email events, audit log. Not started; it is a structural change to a live
+credentialing system and should begin deliberately.
+
+### Slices 1–7 + Seminars (the platform as it exists today)
 
 - ✅ **Slice 1 — Foundation + admin content CRUD.** Done.
 - ✅ **Slice 1.5 — Foundation Hardening.** Done (2026-05-29): auto-admin removed +
@@ -449,7 +524,25 @@ client-provided official + social **SVG designs** · Supabase **Storage** bucket
 deps (`@resvg/resvg-js`, `pdf-lib`).
 
 ## Cross-cutting (track across slices)
-- Rate limiting (login, token, attempt).
-- Generated Supabase types.
-- Error surfacing + server-side logging.
-- Tests for schemas, actions, and critical DB invariants.
+
+Status corrected 2026-08-04 against the code and the live project.
+
+- ✅ **Rate limiting** (login, token, attempt) — implemented, Upstash REST with a
+  per-process fallback. **But production is still on the fallback.** The Vercel
+  Upstash integration provisions the store named `iis-ratelimit` and injects
+  `KV_REST_API_URL` / `KV_REST_API_TOKEN`, while the code read only
+  `UPSTASH_REDIS_REST_URL` / `_TOKEN`. The limiter therefore never issued a
+  command, and **Upstash archived the database for inactivity on 2026-07-04** —
+  one naming mismatch caused both the broken feature and the dead database.
+  `src/lib/rate-limit.ts` now accepts either pair; restoring the database in the
+  Vercel/Upstash dashboard is the remaining step, after which
+  `/api/health?deep=1` flips `rateLimitStore` to `ok`.
+- ⬜ **Generated Supabase types.** Still hand-maintained in
+  `src/types/database.ts` (kept in sync through 0008). Now that the CLI is
+  linked, `supabase gen types` is finally available — worth doing in M1.
+- ✅ **Error surfacing + server-side logging** — `src/lib/logger.ts`, error
+  boundaries, and the ActionButton migration. Sentry still needs a DSN.
+- 🔨 **Tests** — 190 unit tests, run in CI. Coverage is still inverted: pure
+  logic is well covered, while everything touching the network, database or auth
+  (server actions, the DTO layer, `issue.ts`) has none. Integration and
+  smoke-journey tests are M0 §E / M1.
